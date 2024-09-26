@@ -1,4 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import * as Swagger from 'swagger-schema-official';
+import * as yaml from 'js-yaml';
 
 @Component({
   selector: 'app-api-document-upload-button',
@@ -9,14 +11,11 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 })
 export class ApiDocumentUploadButtonComponent {
   @ViewChild('fileInput') fileInput!: ElementRef;
+  
+  private swaggerSpec!: Swagger.Spec;
 
   fileContent: string | null = null;
   fileLines: string[] = [];
-
-  ngAfterViewInit() {
-    // The ViewChild will be available here
-    console.log(this.fileInput);
-  }
 
   triggerFileInput() {
     this.fileInput.nativeElement.click();
@@ -30,9 +29,12 @@ export class ApiDocumentUploadButtonComponent {
       reader.onload = (e: any) => {
         this.fileContent = e.target.result;
         if (this.fileContent) {
-          this.fileLines = this.fileContent.split(/\r?\n/);
-          console.log('File content:', this.fileContent);
-          console.log('File lines:', this.fileLines);
+          try {
+            this.swaggerSpec = yaml.load(this.fileContent) as Swagger.Spec;
+            console.log('Parsed Swagger Spec:', this.swaggerSpec);
+          } catch (error) {
+            console.error('Error parsing the file as JSON:', error);
+          }
         } else {
           console.error('File content is null or empty');
         }
