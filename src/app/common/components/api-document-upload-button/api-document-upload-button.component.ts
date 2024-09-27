@@ -31,6 +31,7 @@ export class ApiDocumentUploadButtonComponent {
         if (this.fileContent) {
           try {
             this.swaggerSpec = yaml.load(this.fileContent) as Swagger.Spec;
+            
             console.log('Parsed Swagger Spec:', this.swaggerSpec);
           } catch (error) {
             console.error('Error parsing the file as JSON:', error);

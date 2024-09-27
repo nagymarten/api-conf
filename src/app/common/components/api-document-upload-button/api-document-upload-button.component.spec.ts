@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { ApiDocumentUploadButtonComponent } from './api-document-upload-button.component';
 
 describe('ApiDocumentUploadButtonComponent', () => {

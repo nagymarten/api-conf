@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ApiDocumentUploadButtonComponent } from '../components/api-document-upload-button/api-document-upload-button.component';
+import { ApiDocumentUploadButtonComponent } from './common/components/api-document-upload-button/api-document-upload-button.component';
 
 @Component({
   selector: 'app-root',
