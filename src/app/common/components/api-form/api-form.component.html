@@ -2,23 +2,23 @@
     <h1>To-Do Form</h1>
     <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
         <div>
-            <label for="title">Title</label>
-            <input id="title" formControlName="title" type="text">
+            <label for="version">Version</label>
+            <input id="version" formControlName="version" type="text">
         </div>
 
         <div>
-            <label for="description">Description</label>
-            <input id="description" formControlName="description" type="text">
+            <label for="consumes">consumes</label>
+            <input id="consumes" formControlName="consumes" type="text">
         </div>
 
         <div>
-            <label for="id">ID</label>
-            <input id="id" formControlName="id" type="text">
+            <label for="paths">Paths</label>
+            <input id="paths" formControlName="paths" type="text">
         </div>
 
         <div>
-            <label for="serverUrl">Server URL</label>
-            <input id="serverUrl" formControlName="serverUrl" type="text">
+            <label for="security">security</label>
+            <input id="security" formControlName="security" type="text">
         </div>
 
         <button type="submit">Submit</button>

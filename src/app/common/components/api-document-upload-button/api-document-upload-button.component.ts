@@ -1,6 +1,6 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
-import * as Swagger from 'swagger-schema-official';
-import * as yaml from 'js-yaml';
+import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { ApiDataService } from '../../../services/api-data.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-api-document-upload-button',
@@ -9,13 +9,11 @@ import * as yaml from 'js-yaml';
   templateUrl: './api-document-upload-button.component.html',
   styleUrl: './api-document-upload-button.component.css',
 })
-export class ApiDocumentUploadButtonComponent {
+export class ApiDocumentUploadButtonComponent implements OnDestroy {
   @ViewChild('fileInput') fileInput!: ElementRef;
-  
-  private swaggerSpec!: Swagger.Spec;
+  private swaggerSubscription!: Subscription;
 
-  fileContent: string | null = null;
-  fileLines: string[] = [];
+  constructor(private apiDataService: ApiDataService) {}
 
   triggerFileInput() {
     this.fileInput.nativeElement.click();
@@ -24,28 +22,29 @@ export class ApiDocumentUploadButtonComponent {
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
+      // Call the service to parse the file
+      this.apiDataService.parseSwaggerFile(file);
+    }
+  }
 
-      reader.onload = (e: any) => {
-        this.fileContent = e.target.result;
-        if (this.fileContent) {
-          try {
-            this.swaggerSpec = yaml.load(this.fileContent) as Swagger.Spec;
-            
-            console.log('Parsed Swagger Spec:', this.swaggerSpec);
-          } catch (error) {
-            console.error('Error parsing the file as JSON:', error);
-          }
-        } else {
-          console.error('File content is null or empty');
+  ngOnInit() {
+    // Subscribe to the Swagger spec updates from the ApiDataService
+    this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
+      next: (swaggerSpec) => {
+        if (swaggerSpec) {
+          console.log('Parsed Swagger Spec:', swaggerSpec);
         }
-      };
+      },
+      error: (error) => {
+        console.error('Error receiving Swagger data:', error);
+      },
+    });
+  }
 
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-      };
-
-      reader.readAsText(file);
+  ngOnDestroy() {
+    // Unsubscribe to avoid memory leaks
+    if (this.swaggerSubscription) {
+      this.swaggerSubscription.unsubscribe();
     }
   }
 }
