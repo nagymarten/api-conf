@@ -1,0 +1,14 @@
+.large-textarea {
+    width: 100%;
+    /* Full width to occupy all available space */
+    height: auto;
+    /* Auto height */
+    padding: 15px;
+    /* Increase padding for a bigger feel */
+    font-size: 16px;
+    /* Increase font size */
+    min-height: 150px;
+    /* Minimum height for larger textareas */
+    box-sizing: border-box;
+    /* Include padding and border in the element's total width and height */
+}

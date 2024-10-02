@@ -24,7 +24,7 @@ export class ApiDataService {
       if (fileContent) {
         try {
           const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
-          this.swaggerSpecSubject.next(swaggerSpec); // Emit the parsed data
+          this.swaggerSpecSubject.next(swaggerSpec);
         } catch (error) {
           console.error('Error parsing the file as YAML:', error);
           this.swaggerSpecSubject.error(error);
@@ -48,24 +48,22 @@ export class ApiDataService {
   }
 
   getOpenApiVersion(): string {
-    const swaggerSpec = this.swaggerSpecSubject.getValue(); // Get the current value of the spec
+    const swaggerSpec = this.swaggerSpecSubject.getValue();
     if (swaggerSpec?.openapi) {
-      return swaggerSpec.openapi; // OpenAPI 3.x
+      return swaggerSpec.openapi;
     } else if (swaggerSpec?.swagger) {
-      return swaggerSpec.swagger; // Swagger 2.0
+      return swaggerSpec.swagger;
     } else {
       return 'Unknown version';
     }
   }
 
   getServers(): Array<{ url: string; description?: string }> | string {
-    const swaggerSpec = this.swaggerSpecSubject.getValue(); // Get the current value of the spec
+    const swaggerSpec = this.swaggerSpecSubject.getValue();
 
-    // Check if it's OpenAPI 3.x and has servers
     if (swaggerSpec?.openapi && (swaggerSpec as any).servers) {
-      return (swaggerSpec as any).servers; // OpenAPI 3.x servers
+      return (swaggerSpec as any).servers;
     } else if (swaggerSpec?.swagger === '2.0') {
-      // Swagger 2.0 doesn't have servers but uses host, basePath, and schemes
       const host = swaggerSpec.host || 'localhost';
       const basePath = swaggerSpec.basePath || '/';
       const schemes = swaggerSpec.schemes
@@ -79,8 +77,7 @@ export class ApiDataService {
   }
 }
 
-// Extend the Swagger Spec interface to support OpenAPI 3.x
 interface ExtendedSwaggerSpec extends Swagger.Spec {
-  openapi?: string; // For OpenAPI 3.x
-  servers?: Array<{ url: string; description?: string }>; // For OpenAPI 3.x servers
+  openapi?: string;
+  servers?: Array<{ url: string; description?: string }>;
 }

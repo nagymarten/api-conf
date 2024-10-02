@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container full-width">
   <h1>To-Do Form</h1>
   <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
     <div>
@@ -12,33 +12,33 @@
     </div>
 
     <div>
-        <label for="open-api-version-label">open-api-version:</label>
+        <label for="open-api-version-label">Open API Version:</label>
         <label id="open-api-version-label">{{ todoForm.get("openApiVersion")?.value }}</label>
     </div>
 
     <div>
-      <label for="schemes">schemes</label>
-      <input id="schschemes" formControlName="schemes" type="text" />
+      <label for="schemes">Schemes</label>
+      <textarea id="schemes" formControlName="schemes" rows="6" class="large-textarea"></textarea>
     </div>
 
     <div>
       <label for="paths">Paths</label>
-      <input id="paths" formControlName="paths" type="text" />
+      <textarea id="paths" formControlName="paths" rows="6" class="large-textarea"></textarea>
     </div>
 
     <div>
         <label for="models">Models</label>
-        <input id="models" formControlName="models" type="text" />
+        <textarea id="models" formControlName="models" rows="6" class="large-textarea"></textarea>
     </div>
 
     <div>
-      <label for="security">security</label>
-      <input id="security" formControlName="security" type="text" />
+      <label for="security">Security</label>
+      <textarea id="security" formControlName="security" rows="6" class="large-textarea"></textarea>
     </div>
 
     <div>
-        <label for="servers">servers</label>
-        <input id="servers" formControlName="servers" type="text" />
+        <label for="servers">Servers</label>
+        <textarea id="servers" formControlName="servers" rows="6" class="large-textarea"></textarea>
     </div>
 
     <button type="submit">Submit</button>

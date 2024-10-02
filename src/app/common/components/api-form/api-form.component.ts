@@ -38,7 +38,7 @@ export class ApiFormComponent implements OnInit, OnDestroy {
             schemes: JSON.stringify(swaggerSpec.schemes || '', null, 2),
             paths: JSON.stringify(swaggerSpec.paths, null, 2),
             security: JSON.stringify(swaggerSpec.security || '', null, 2),
-            servers: this.getServers(swaggerSpec), // Get servers
+            servers: this.getServers(swaggerSpec),
             models: this.getServers(swaggerSpec.schemes)
           });
         }

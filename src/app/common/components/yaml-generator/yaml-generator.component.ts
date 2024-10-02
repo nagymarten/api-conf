@@ -8,7 +8,7 @@ import { Component } from '@angular/core';
   styleUrl: './yaml-generator.component.css',
 })
 export class YamlGeneratorComponent {
-  private jsonData = {
+  private yamlData = {
     openapi: '3.0.0',
     info: {
       title: 'Simple To-Do API',
@@ -50,14 +50,14 @@ export class YamlGeneratorComponent {
   };
 
   generateYamlFile() {
-    const jsonString = JSON.stringify(this.jsonData, null, 2);
+    const yamlString = JSON.stringify(this.yamlData, null, 2);
 
-    const blob = new Blob([jsonString], { type: 'application/yaml' });
+    const blob = new Blob([yamlString], { type: 'application/yaml' });
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'api-spec.yml'; // The name of the downloaded file
-    link.click(); // Trigger the download
+    link.download = 'api-spec.yml'; 
+    link.click();
 
     URL.revokeObjectURL(link.href);
   }
