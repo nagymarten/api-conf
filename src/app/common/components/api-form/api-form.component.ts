@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ApiDataService } from '../../../services/api-data.service';
 import { Subscription } from 'rxjs';
@@ -10,30 +10,36 @@ import { Subscription } from 'rxjs';
   templateUrl: './api-form.component.html',
   styleUrl: './api-form.component.css',
 })
-export class ApiFormComponent implements OnInit {
+export class ApiFormComponent implements OnInit, OnDestroy {
   todoForm: FormGroup;
   swaggerSubscription!: Subscription;
 
   constructor(private fb: FormBuilder, private apiDataService: ApiDataService) {
     this.todoForm = this.fb.group({
+      openApiVersion: [''],
       version: [''],
-      consumes: [''],
-      paths: [''], 
+      title: [''],
+      models: [''],
+      paths: [''],
       security: [''],
+      servers: [''],
+      schemes: [''],
     });
   }
 
   ngOnInit(): void {
-    // Subscribe to the Swagger spec observable and update the form when data is available
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          // Update the form fields with the Swagger spec data
           this.todoForm.patchValue({
-            version: JSON.stringify(swaggerSpec.info.version, null, 2),
-            consumes: JSON.stringify(swaggerSpec.consumes, null, 2),
+            openApiVersion: this.apiDataService.getOpenApiVersion(),
+            version: swaggerSpec.info?.version || '',
+            title: swaggerSpec.info?.title || '',
+            schemes: JSON.stringify(swaggerSpec.schemes || '', null, 2),
             paths: JSON.stringify(swaggerSpec.paths, null, 2),
-            security: JSON.stringify(swaggerSpec.responses, null, 2),
+            security: JSON.stringify(swaggerSpec.security || '', null, 2),
+            servers: this.getServers(swaggerSpec), // Get servers
+            models: this.getServers(swaggerSpec.schemes)
           });
         }
       },
@@ -43,14 +49,20 @@ export class ApiFormComponent implements OnInit {
     });
   }
 
-  onSubmit() {
-    console.log(this.todoForm.value);
-  }
-
   ngOnDestroy(): void {
-    // Unsubscribe to prevent memory leaks
     if (this.swaggerSubscription) {
       this.swaggerSubscription.unsubscribe();
     }
+  }
+
+  /**
+   * Calls the ApiDataService's getServers method to fetch server information
+   */
+  getServers(swaggerSpec: any): string {
+    return JSON.stringify(this.apiDataService.getServers(), null, 2);
+  }
+
+  onSubmit() {
+    console.log(this.todoForm.value);
   }
 }

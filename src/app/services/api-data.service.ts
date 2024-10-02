@@ -7,8 +7,10 @@ import * as yaml from 'js-yaml';
   providedIn: 'root',
 })
 export class ApiDataService {
-  private swaggerSpecSubject = new BehaviorSubject<Swagger.Spec | null>(null);
-  swaggerSpec$: Observable<Swagger.Spec | null> =
+  private swaggerSpecSubject = new BehaviorSubject<ExtendedSwaggerSpec | null>(
+    null
+  );
+  swaggerSpec$: Observable<ExtendedSwaggerSpec | null> =
     this.swaggerSpecSubject.asObservable();
 
   constructor() {}
@@ -21,7 +23,7 @@ export class ApiDataService {
 
       if (fileContent) {
         try {
-          const swaggerSpec = yaml.load(fileContent) as Swagger.Spec;
+          const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
           this.swaggerSpecSubject.next(swaggerSpec); // Emit the parsed data
         } catch (error) {
           console.error('Error parsing the file as YAML:', error);
@@ -41,7 +43,44 @@ export class ApiDataService {
     reader.readAsText(file);
   }
 
-  getSwaggerSpec(): Observable<Swagger.Spec | null> {
+  getSwaggerSpec(): Observable<ExtendedSwaggerSpec | null> {
     return this.swaggerSpec$;
   }
+
+  getOpenApiVersion(): string {
+    const swaggerSpec = this.swaggerSpecSubject.getValue(); // Get the current value of the spec
+    if (swaggerSpec?.openapi) {
+      return swaggerSpec.openapi; // OpenAPI 3.x
+    } else if (swaggerSpec?.swagger) {
+      return swaggerSpec.swagger; // Swagger 2.0
+    } else {
+      return 'Unknown version';
+    }
+  }
+
+  getServers(): Array<{ url: string; description?: string }> | string {
+    const swaggerSpec = this.swaggerSpecSubject.getValue(); // Get the current value of the spec
+
+    // Check if it's OpenAPI 3.x and has servers
+    if (swaggerSpec?.openapi && (swaggerSpec as any).servers) {
+      return (swaggerSpec as any).servers; // OpenAPI 3.x servers
+    } else if (swaggerSpec?.swagger === '2.0') {
+      // Swagger 2.0 doesn't have servers but uses host, basePath, and schemes
+      const host = swaggerSpec.host || 'localhost';
+      const basePath = swaggerSpec.basePath || '/';
+      const schemes = swaggerSpec.schemes
+        ? swaggerSpec.schemes.join(', ')
+        : 'http';
+
+      return `${schemes}://${host}${basePath}`;
+    } else {
+      return 'No servers found';
+    }
+  }
+}
+
+// Extend the Swagger Spec interface to support OpenAPI 3.x
+interface ExtendedSwaggerSpec extends Swagger.Spec {
+  openapi?: string; // For OpenAPI 3.x
+  servers?: Array<{ url: string; description?: string }>; // For OpenAPI 3.x servers
 }

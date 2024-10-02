@@ -1,26 +1,46 @@
 <div class="container">
-    <h1>To-Do Form</h1>
-    <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
-        <div>
-            <label for="version">Version</label>
-            <input id="version" formControlName="version" type="text">
-        </div>
+  <h1>To-Do Form</h1>
+  <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
+    <div>
+      <label for="title-label">Title:</label>
+      <label id="title-label">{{ todoForm.get("title")?.value }}</label>
+    </div>
 
-        <div>
-            <label for="consumes">consumes</label>
-            <input id="consumes" formControlName="consumes" type="text">
-        </div>
+    <div>
+      <label for="version-label">Version:</label>
+      <label id="version-label">{{ todoForm.get("version")?.value }}</label>
+    </div>
 
-        <div>
-            <label for="paths">Paths</label>
-            <input id="paths" formControlName="paths" type="text">
-        </div>
+    <div>
+        <label for="open-api-version-label">open-api-version:</label>
+        <label id="open-api-version-label">{{ todoForm.get("openApiVersion")?.value }}</label>
+    </div>
 
-        <div>
-            <label for="security">security</label>
-            <input id="security" formControlName="security" type="text">
-        </div>
+    <div>
+      <label for="schemes">schemes</label>
+      <input id="schschemes" formControlName="schemes" type="text" />
+    </div>
 
-        <button type="submit">Submit</button>
-    </form>
+    <div>
+      <label for="paths">Paths</label>
+      <input id="paths" formControlName="paths" type="text" />
+    </div>
+
+    <div>
+        <label for="models">Models</label>
+        <input id="models" formControlName="models" type="text" />
+    </div>
+
+    <div>
+      <label for="security">security</label>
+      <input id="security" formControlName="security" type="text" />
+    </div>
+
+    <div>
+        <label for="servers">servers</label>
+        <input id="servers" formControlName="servers" type="text" />
+    </div>
+
+    <button type="submit">Submit</button>
+  </form>
 </div>

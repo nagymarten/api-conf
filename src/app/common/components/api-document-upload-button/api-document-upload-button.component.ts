@@ -22,13 +22,11 @@ export class ApiDocumentUploadButtonComponent implements OnDestroy {
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
-      // Call the service to parse the file
       this.apiDataService.parseSwaggerFile(file);
     }
   }
 
   ngOnInit() {
-    // Subscribe to the Swagger spec updates from the ApiDataService
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
@@ -42,7 +40,6 @@ export class ApiDocumentUploadButtonComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
-    // Unsubscribe to avoid memory leaks
     if (this.swaggerSubscription) {
       this.swaggerSubscription.unsubscribe();
     }
