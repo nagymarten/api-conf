@@ -55,9 +55,6 @@ export class ApiFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Calls the ApiDataService's getServers method to fetch server information
-   */
   getServers(swaggerSpec: any): string {
     return JSON.stringify(this.apiDataService.getServers(), null, 2);
   }
