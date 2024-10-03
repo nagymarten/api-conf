@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ApiDataService } from '../../../services/api-data.service';
 import { Subscription } from 'rxjs';
+import * as yaml from 'js-yaml'; 
+
 
 @Component({
   selector: 'app-api-form',
@@ -60,6 +62,36 @@ export class ApiFormComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    console.log(this.todoForm.value);
+    const formData = this.todoForm.value;
+    console.log(formData);
+
+      const safeParse = (data: string) => {
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          return {}; // Return an empty object if parsing fails
+        }
+      };
+
+    const yamlData = yaml.dump({
+      openapi: formData.openApiVersion,
+      info: {
+        version: formData.version,
+        title: formData.title,
+      },
+      servers: safeParse(formData.servers), // Safely parse servers
+      schemes: safeParse(formData.schemes), // Safely parse schemes
+      paths: safeParse(formData.paths), // Safely parse paths
+      security: safeParse(formData.security), // Safely parse security
+      models: safeParse(formData.models), // Safely parse models
+    });
+
+    const blob = new Blob([yamlData], { type: 'text/yaml' });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'api-spec.yml';
+    link.click();
+    URL.revokeObjectURL(link.href);
   }
 }
