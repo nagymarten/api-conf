@@ -3,12 +3,13 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ApiDataService } from '../../../services/api-data.service';
 import { Subscription } from 'rxjs';
 import * as yaml from 'js-yaml'; 
+import { Router, RouterModule } from '@angular/router';
 
 
 @Component({
   selector: 'app-api-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterModule],
   templateUrl: './api-form.component.html',
   styleUrl: './api-form.component.css',
 })
@@ -16,16 +17,15 @@ export class ApiFormComponent implements OnInit, OnDestroy {
   todoForm: FormGroup;
   swaggerSubscription!: Subscription;
 
-  constructor(private fb: FormBuilder, private apiDataService: ApiDataService) {
+  constructor(private fb: FormBuilder, private apiDataService: ApiDataService, private router: Router) {
     this.todoForm = this.fb.group({
       openApiVersion: [''],
       version: [''],
       title: [''],
-      models: [''],
+      schemes: [''],
       paths: [''],
       security: [''],
       servers: [''],
-      schemes: [''],
     });
   }
 
@@ -41,7 +41,6 @@ export class ApiFormComponent implements OnInit, OnDestroy {
             paths: JSON.stringify(swaggerSpec.paths, null, 2),
             security: JSON.stringify(swaggerSpec.security || '', null, 2),
             servers: this.getServers(swaggerSpec),
-            models: this.getServers(swaggerSpec.schemes)
           });
         }
       },
@@ -61,17 +60,21 @@ export class ApiFormComponent implements OnInit, OnDestroy {
     return JSON.stringify(this.apiDataService.getServers(), null, 2);
   }
 
+  navigateToPathPAge() {
+    this.router.navigate(['/path']);
+  }
+
   onSubmit() {
     const formData = this.todoForm.value;
     console.log(formData);
 
-      const safeParse = (data: string) => {
-        try {
-          return JSON.parse(data);
-        } catch (e) {
-          return {}; // Return an empty object if parsing fails
-        }
-      };
+    const safeParse = (data: string) => {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return {};
+      }
+    };
 
     const yamlData = yaml.dump({
       openapi: formData.openApiVersion,
@@ -79,11 +82,11 @@ export class ApiFormComponent implements OnInit, OnDestroy {
         version: formData.version,
         title: formData.title,
       },
-      servers: safeParse(formData.servers), // Safely parse servers
-      schemes: safeParse(formData.schemes), // Safely parse schemes
-      paths: safeParse(formData.paths), // Safely parse paths
-      security: safeParse(formData.security), // Safely parse security
-      models: safeParse(formData.models), // Safely parse models
+      servers: safeParse(formData.servers),
+      schemes: safeParse(formData.schemes),
+      paths: safeParse(formData.paths),
+      security: safeParse(formData.security),
+      models: safeParse(formData.models),
     });
 
     const blob = new Blob([yamlData], { type: 'text/yaml' });

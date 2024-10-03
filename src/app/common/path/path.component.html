@@ -1,0 +1,4 @@
+<div *ngFor="let path of apiPaths | keyvalue">
+    <h3>{{ path.key }}</h3>
+    <pre>{{ path.value | json }}</pre>
+</div>
