@@ -1,16 +1,30 @@
-<div class="api-details" *ngIf="methodDetails">
-    <h1>{{ methodDetails?.summary || method | uppercase }} {{ apiPath }}</h1>
+<form [formGroup]="methodDetailsForm" (ngSubmit)="onUpdateDocument()">
+    <div class="api-details">
+        <h1>
+            <!-- Use form control for summary -->
+            <input formControlName="summary" placeholder="Summary" />
+            {{ method | uppercase }} {{ apiPath }}
+        </h1>
 
-    <p *ngIf="methodDetails?.description">{{ methodDetails?.description }}</p>
+        <p *ngIf="methodDetailsForm.get('description')?.value">
+            <!-- Use form control for description -->
+            <textarea formControlName="description" placeholder="Description"></textarea>
+        </p>
 
-    <h2>Request</h2>
-    <div *ngIf="methodDetails?.requestBody">
-        <strong>Body:</strong>
-        <pre>{{ methodDetails?.requestBody | json }}</pre>
+        <h2>Request</h2>
+        <div *ngIf="methodDetailsForm.get('requestBody')?.value">
+            <strong>Body:</strong>
+            <!-- Use textarea for requestBody -->
+            <textarea formControlName="requestBody" placeholder="Request Body"></textarea>
+        </div>
+
+        <h2>Responses</h2>
+        <div *ngIf="methodDetailsForm.get('responses')?.value">
+            <!-- Use textarea for responses -->
+            <textarea formControlName="responses" placeholder="Responses"></textarea>
+        </div>
     </div>
 
-    <h2>Responses</h2>
-    <div *ngIf="methodDetails?.responses">
-        <pre>{{ methodDetails?.responses | json }}</pre>
-    </div>
-</div>
+    <!-- Add the Update button -->
+    <button type="submit" [disabled]="!methodDetailsForm.valid">Update Document</button>
+</form>

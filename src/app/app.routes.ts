@@ -5,7 +5,7 @@ import { SidebarComponent } from './common/components/sidebar/sidebar.component'
 import { ApiDetailComponent } from './common/components/api-detail/api-detail.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/api', pathMatch: 'full' },
+  { path: '', redirectTo: '', pathMatch: 'full' },
   { path: 'api', component: SidebarComponent },
   { path: 'api/:path/:method', component: ApiDetailComponent },
   { path: 'path', component: PathComponent },
