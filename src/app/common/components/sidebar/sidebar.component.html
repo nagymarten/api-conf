@@ -1,0 +1,37 @@
+<mat-sidenav-container class="sidenav-container">
+    <!-- Sidenav -->
+    <mat-sidenav mode="side" opened class="sidenav">
+        <mat-toolbar color="primary">API Overview</mat-toolbar>
+
+        <!-- Display API paths dynamically -->
+        <mat-accordion>
+            <mat-expansion-panel *ngFor="let path of apiPaths | keyvalue">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>{{ path.key }}</mat-panel-title> <!-- Display the API path -->
+                </mat-expansion-panel-header>
+
+                <!-- Loop through and display HTTP methods (e.g., POST, GET, DELETE, etc.) -->
+                <mat-list>
+                    <mat-list-item *ngFor="let method of path.value">
+                        <button [routerLink]="['/api', path.key, method.method]" class="method-link">
+                            <div class="method-details">
+                                <!-- Display summary first -->
+                                <p>{{ method.summary || 'No summary available' }}</p>
+                                <!-- Display method type (e.g., POST, GET, etc.) after the summary -->
+                                <span class="method-type">{{ method.method.toUpperCase() }}</span>
+                            </div>
+                        </button>
+                    </mat-list-item>
+                </mat-list>
+            </mat-expansion-panel>
+        </mat-accordion>
+    </mat-sidenav>
+
+    <!-- Sidenav content -->
+    <mat-sidenav-content>
+        <h1>Main Content Area</h1>
+        <p>Select an API method from the sidebar.</p>
+        <!-- Example upload button component -->
+        <app-api-document-upload-button></app-api-document-upload-button>
+    </mat-sidenav-content>
+</mat-sidenav-container>
