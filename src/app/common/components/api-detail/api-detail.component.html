@@ -1,0 +1,16 @@
+<div class="api-details" *ngIf="methodDetails">
+    <h1>{{ methodDetails?.summary || method | uppercase }} {{ apiPath }}</h1>
+
+    <p *ngIf="methodDetails?.description">{{ methodDetails?.description }}</p>
+
+    <h2>Request</h2>
+    <div *ngIf="methodDetails?.requestBody">
+        <strong>Body:</strong>
+        <pre>{{ methodDetails?.requestBody | json }}</pre>
+    </div>
+
+    <h2>Responses</h2>
+    <div *ngIf="methodDetails?.responses">
+        <pre>{{ methodDetails?.responses | json }}</pre>
+    </div>
+</div>

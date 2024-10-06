@@ -13,14 +13,12 @@
                 <!-- Loop through and display HTTP methods (e.g., POST, GET, DELETE, etc.) -->
                 <mat-list>
                     <mat-list-item *ngFor="let method of path.value">
-                        <button [routerLink]="['/api', path.key, method.method]" class="method-link">
+                        <a [routerLink]="['/api', path.key, method.method]" class="method-link">
                             <div class="method-details">
-                                <!-- Display summary first -->
-                                <p>{{ method.summary || 'No summary available' }}</p>
-                                <!-- Display method type (e.g., POST, GET, etc.) after the summary -->
-                                <span class="method-type">{{ method.method.toUpperCase() }}</span>
+                                <p>{{ method.summary || 'No summary available' }}</p> <!-- Display summary first -->
+                                <span class="method-type">{{ method.method.toUpperCase() }}</span> <!-- Display method type -->
                             </div>
-                        </button>
+                        </a>
                     </mat-list-item>
                 </mat-list>
             </mat-expansion-panel>
@@ -29,9 +27,7 @@
 
     <!-- Sidenav content -->
     <mat-sidenav-content>
-        <h1>Main Content Area</h1>
-        <p>Select an API method from the sidebar.</p>
-        <!-- Example upload button component -->
+        <router-outlet></router-outlet>
         <app-api-document-upload-button></app-api-document-upload-button>
     </mat-sidenav-content>
 </mat-sidenav-container>
