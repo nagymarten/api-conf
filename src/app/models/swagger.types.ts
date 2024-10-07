@@ -1,6 +1,15 @@
 // swagger.types.ts
 import * as Swagger from 'swagger-schema-official';
 
+export type HttpMethod =
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'delete'
+  | 'patch'
+  | 'options'
+  | 'head';
+
 // Extend the Operation interface to include requestBody (for OpenAPI 3.0+)
 export interface ExtendedOperation extends Swagger.Operation {
   requestBody?: any; // OpenAPI 3.0 requestBody

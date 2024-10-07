@@ -5,13 +5,12 @@ import { ApiDataService } from '../../../services/api-data.service';
 import {
   ExtendedOperation,
   ExtendedSwaggerSpec,
+  HttpMethod,
   Paths,
-} from '../../../models/swagger.types'; // Import the types
+} from '../../../models/swagger.types';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
-import * as yaml from 'js-yaml';
-import { Operation } from 'swagger-schema-official';
 
 @Component({
   selector: 'app-api-detail',
@@ -102,37 +101,54 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
       },
     });
   }
+
   onUpdateDocument() {
-const formData = this.methodDetailsForm.value;
-    console.log(formData);
+    this.apiDataService
+      .getSwaggerSpec()
+      .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
+        if (swaggerSpec && swaggerSpec.paths) {
+          const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
 
-    const safeParse = (data: string) => {
-      try {
-        return JSON.parse(data);
-      } catch (e) {
-        return {};
-      }
-    };
+          if (apiPathObject) {
+            // Cast the method to HttpMethod
+            const method = this.method.toLowerCase() as HttpMethod;
 
-    const yamlData = yaml.dump({
-      openapi: formData.openApiVersion,
-      info: {
-        version: formData.version,
-        title: formData.title,
-      },
-      servers: safeParse(formData.servers),
-      schemes: safeParse(formData.schemes),
-      paths: safeParse(formData.paths),
-      security: safeParse(formData.security),
-      models: safeParse(formData.models),
-    });
+            // Ensure that methodDetails is treated as ExtendedOperation
+            const methodDetails = apiPathObject[method] as ExtendedOperation;
 
-    const blob = new Blob([yamlData], { type: 'text/yaml' });
+            if (methodDetails) {
+              const formData = this.methodDetailsForm.value;
 
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'api-spec.yml';
-    link.click();
-    URL.revokeObjectURL(link.href);
-  } 
+              // Update the method details based on form data
+              methodDetails.summary = formData.summary || methodDetails.summary;
+              methodDetails.description =
+                formData.description || methodDetails.description;
+              methodDetails.requestBody =
+                JSON.parse(formData.requestBody) || methodDetails.requestBody;
+              methodDetails.responses =
+                JSON.parse(formData.responses) || methodDetails.responses;
+
+              // Update the paths in the Swagger spec
+              swaggerSpec.paths[this.apiPath][method] = methodDetails;
+
+              // Call the service to update the Swagger spec and notify subscribers
+              this.apiDataService.setPaths(
+                JSON.stringify(swaggerSpec.paths, null, 2)
+              );
+
+              console.log('Updated Paths:', swaggerSpec.paths);
+            } else {
+              console.error(
+                `No method found for path: ${this.apiPath} and method: ${this.method}`
+              );
+            }
+          } else {
+            console.error(`No path found for: ${this.apiPath}`);
+          }
+        } else {
+          console.error('No Swagger spec or paths found.');
+        }
+        console.log('Parsed Swagger Spec:', swaggerSpec);
+      });
+  }
 }

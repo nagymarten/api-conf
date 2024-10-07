@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs';
   styleUrl: './api-document-upload-button.component.css',
 })
 export class ApiDocumentUploadButtonComponent implements OnDestroy {
-  @ViewChild('fileInput') fileInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   private swaggerSubscription!: Subscription;
 
   constructor(private apiDataService: ApiDataService) {}
