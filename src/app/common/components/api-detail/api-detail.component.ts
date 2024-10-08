@@ -24,6 +24,7 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
   method: string = '';
   methodDetailsForm!: FormGroup;
   swaggerSubscription!: Subscription;
+  activeTab: string = 'general'; // Default to 'General' tab
 
   constructor(
     private route: ActivatedRoute,
@@ -31,8 +32,11 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router
   ) {}
+
   ngOnDestroy(): void {
-    throw new Error('Method not implemented.');
+    if (this.swaggerSubscription) {
+      this.swaggerSubscription.unsubscribe();
+    }
   }
 
   ngOnInit(): void {
@@ -50,6 +54,10 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
       this.method = params['method'];
       this.fetchMethodDetails();
     });
+  }
+
+  setActiveTab(tab: string): void {
+    this.activeTab = tab;
   }
 
   fetchMethodDetails(): void {
@@ -95,7 +103,6 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
           console.error('Received null Swagger spec');
         }
       },
-
       error: (error) => {
         console.error('Error fetching Swagger spec:', error);
       },

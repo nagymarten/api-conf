@@ -1,26 +1,45 @@
 <form [formGroup]="methodDetailsForm" (ngSubmit)="onUpdateDocument()">
-    <div class="api-details">
+    <div class="tabs">
+        <ul>
+            <li [ngClass]="{'active': activeTab === 'general'}" (click)="setActiveTab('general')">General</li>
+            <li [ngClass]="{'active': activeTab === 'parameters'}" (click)="setActiveTab('parameters')">Parameters</li>
+            <li [ngClass]="{'active': activeTab === 'request'}" (click)="setActiveTab('request')">Request</li>
+            <li [ngClass]="{'active': activeTab === 'responses'}" (click)="setActiveTab('responses')">Responses</li>
+        </ul>
+    </div>
+
+    <!-- Content for the General tab -->
+    <div *ngIf="activeTab === 'general'" class="api-details">
         <h1>
-            <!-- Use form control for summary -->
             <input formControlName="summary" placeholder="Summary" />
             {{ method | uppercase }} {{ apiPath }}
         </h1>
 
         <p *ngIf="methodDetailsForm.get('description')?.value">
-            <!-- Use form control for description -->
             <textarea formControlName="description" placeholder="Description"></textarea>
         </p>
+    </div>
 
+    <!-- Content for the Parameters tab -->
+    <div *ngIf="activeTab === 'parameters'">
+        <!-- Add parameters-related form fields here -->
+        <h2>Parameters</h2>
+        <p>Parameters content goes here...</p>
+    </div>
+
+    <!-- Content for the Request tab -->
+    <div *ngIf="activeTab === 'request'">
         <h2>Request</h2>
         <div *ngIf="methodDetailsForm.get('requestBody')?.value">
             <strong>Body:</strong>
-            <!-- Use textarea for requestBody -->
             <textarea formControlName="requestBody" placeholder="Request Body"></textarea>
         </div>
+    </div>
 
+    <!-- Content for the Responses tab -->
+    <div *ngIf="activeTab === 'responses'">
         <h2>Responses</h2>
         <div *ngIf="methodDetailsForm.get('responses')?.value">
-            <!-- Use textarea for responses -->
             <textarea formControlName="responses" placeholder="Responses"></textarea>
         </div>
     </div>
