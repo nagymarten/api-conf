@@ -11,6 +11,7 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
+import { X } from '@angular/cdk/keycodes';
 
 interface ResponseDetails {
   description?: string; // Optional description
@@ -99,7 +100,7 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
                 this.responsesArray = this.parseResponses(
                   methodDetails.responses
                 );
-                this.setResponseData(this.responsesArray[0].code); // Set default response (e.g., 200)
+                this.setResponseData(this.responsesArray[0].code);
               }
             } else {
               console.error(
@@ -181,10 +182,38 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
               methodDetails.summary = formData.summary || methodDetails.summary;
               methodDetails.description =
                 formData.description || methodDetails.description;
-              methodDetails.requestBody =
-                JSON.parse(formData.requestBody) || methodDetails.requestBody;
-              methodDetails.responses =
-                JSON.parse(formData.responses) || methodDetails.responses;
+
+              // Parse and update requestBody
+              if (
+                formData.requestBody &&
+                this.isValidJson(formData.requestBody)
+              ) {
+                methodDetails.requestBody = JSON.parse(formData.requestBody);
+              }
+
+              // Update responses
+              const updatedResponses: { [statusCode: string]: any } = {};
+              this.responsesArray.forEach((response) => {
+                const responseForm = {
+                  description: response.description,
+                  headers:
+                    response.headers && this.isValidJson(response.headers)
+                      ? JSON.parse(response.headers)
+                      : undefined,
+                  content: {
+                    'application/json': {
+                      schema:
+                        response.bodySchema &&
+                        this.isValidJson(response.bodySchema)
+                          ? JSON.parse(response.bodySchema)
+                          : {},
+                    },
+                  },
+                };
+                updatedResponses[response.code] = responseForm;
+              });
+
+              methodDetails.responses = updatedResponses;
 
               // Update the paths in the Swagger spec
               swaggerSpec.paths[this.apiPath][method] = methodDetails;
@@ -208,5 +237,15 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
         }
         console.log('Parsed Swagger Spec:', swaggerSpec);
       });
+  }
+
+  // Utility function to check if a string is valid JSON
+  private isValidJson(jsonString: string): boolean {
+    try {
+      JSON.parse(jsonString);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

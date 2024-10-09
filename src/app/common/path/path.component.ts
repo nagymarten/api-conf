@@ -106,7 +106,6 @@ export class PathComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Submit the form and log the updated API data
   onSubmit(): void {
     console.log(this.apiForm.value);
     // You can now send this data to the backend or process it further.
@@ -118,7 +117,6 @@ export class PathComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper methods to cast to FormArray
   getMethods(pathGroup: AbstractControl): FormArray {
     return pathGroup.get('methods') as FormArray;
   }
@@ -127,7 +125,6 @@ export class PathComponent implements OnInit, OnDestroy {
     return methodGroup.get('parameters') as FormArray;
   }
 
-  // Casts the paths control to a FormArray for template usage
   get paths(): FormArray {
     return this.apiForm.get('paths') as FormArray;
   }
