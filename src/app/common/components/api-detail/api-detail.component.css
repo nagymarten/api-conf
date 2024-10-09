@@ -49,3 +49,196 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+.responses-tab {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.status-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.status-label {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.response-action {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.response-message {
+    margin-top: 20px;
+}
+
+.response-message label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: block;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+    height: 100px;
+}
+
+.headers-section,
+.body-section {
+    margin-top: 30px;
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.add-header-button {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.no-headers {
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 10px;
+}
+
+.body-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.body-format {
+    background-color: #e0f7fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.body-add-button {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.body-schema {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.schema-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.generate-json {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.responses-tab {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.response-codes {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.status-code {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.success {
+    background-color: #28a745;
+    color: white;
+}
+
+.error {
+    background-color: #dc3545;
+    color: white;
+}
+
+.warning {
+    background-color: #ffc107;
+    color: white;
+}
+
+.add-response {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.response-section {
+    margin-top: 20px;
+}
+
+textarea,
+pre {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 10px;
+    height: 100px;
+    font-family: monospace;
+}
+
+.headers-section,
+.body-section {
+    margin-top: 30px;
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+pre {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    overflow: auto;
+}

@@ -12,6 +12,16 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
 
+interface ResponseDetails {
+  description?: string; // Optional description
+  headers?: { [headerName: string]: any }; // Optional headers
+  content?: {
+    [contentType: string]: {
+      schema: any; // The schema for the response body
+    };
+  };
+}
+
 @Component({
   selector: 'app-api-detail',
   standalone: true,
@@ -24,7 +34,9 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
   method: string = '';
   methodDetailsForm!: FormGroup;
   swaggerSubscription!: Subscription;
-  activeTab: string = 'general'; // Default to 'General' tab
+  activeTab: string = 'general';
+  activeResponseCode: number = 200; // Default response status code
+  responsesArray: any[] = []; // Store the parsed responses dynamically
 
   constructor(
     private route: ActivatedRoute,
@@ -45,7 +57,9 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
       summary: [''],
       description: [''],
       requestBody: [''],
-      responses: [''],
+      responseMessage: [''], // To hold dynamic response message
+      headers: [''], // To hold headers of response
+      responseBody: [''], // To hold response body schema
     });
 
     // Get the path and method from the route parameters
@@ -66,29 +80,27 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
         if (swaggerSpec) {
           const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
 
-          if (
-            apiPathObject &&
-            apiPathObject[
+          if (apiPathObject) {
+            const methodDetails = apiPathObject[
               this.method.toLowerCase() as keyof typeof apiPathObject
-            ]
-          ) {
-            const methodDetails =
-              apiPathObject[
-                this.method.toLowerCase() as keyof typeof apiPathObject
-              ];
+            ] as ExtendedOperation;
 
             if (methodDetails) {
-              const extendedMethodDetails = methodDetails as ExtendedOperation;
+              // Populate form with summary and description
               this.methodDetailsForm.patchValue({
-                summary: extendedMethodDetails.summary || '',
-                description: extendedMethodDetails.description || '',
+                summary: methodDetails.summary || '',
+                description: methodDetails.description || '',
                 requestBody:
-                  JSON.stringify(extendedMethodDetails.requestBody, null, 2) ||
-                  '',
-                responses:
-                  JSON.stringify(extendedMethodDetails.responses, null, 2) ||
-                  '',
+                  JSON.stringify(methodDetails.requestBody, null, 2) || '',
               });
+
+              // Parse the responses and store them
+              if (methodDetails.responses) {
+                this.responsesArray = this.parseResponses(
+                  methodDetails.responses
+                );
+                this.setResponseData(this.responsesArray[0].code); // Set default response (e.g., 200)
+              }
             } else {
               console.error(
                 'methodDetails is undefined for the given API path and method.'
@@ -107,6 +119,45 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
         console.error('Error fetching Swagger spec:', error);
       },
     });
+  }
+
+  // Parse the responses object into a usable array
+  parseResponses(responses: any): Array<any> {
+    const parsedResponses = [];
+    for (const [statusCode, response] of Object.entries(responses)) {
+      const responseDetails = response as ResponseDetails; // Cast to known type
+      const responseContent =
+        responseDetails.content?.['application/json']?.schema || null;
+      parsedResponses.push({
+        code: statusCode,
+        description: responseDetails.description || '',
+        headers: responseDetails.headers || null,
+        bodySchema: responseContent
+          ? JSON.stringify(responseContent, null, 2)
+          : 'No body content',
+      });
+    }
+    return parsedResponses;
+  }
+
+  // Set the form values based on the selected response code
+  setResponseData(statusCode: string): void {
+    this.activeResponseCode = parseInt(statusCode, 10);
+    const response = this.responsesArray.find((r) => r.code === statusCode);
+
+    if (response) {
+      this.methodDetailsForm.patchValue({
+        responseMessage: response.description,
+        headers: response.headers
+          ? JSON.stringify(response.headers, null, 2)
+          : 'No headers defined',
+        responseBody: response.bodySchema,
+      });
+    }
+  }
+
+  onAddResponse(): void {
+    console.log('Add response clicked');
   }
 
   onUpdateDocument() {

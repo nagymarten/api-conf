@@ -1,28 +1,22 @@
 <form [formGroup]="methodDetailsForm" (ngSubmit)="onUpdateDocument()">
     <div class="tabs">
         <ul>
-            <li [ngClass]="{'active': activeTab === 'general'}" (click)="setActiveTab('general')">General</li>
-            <li [ngClass]="{'active': activeTab === 'parameters'}" (click)="setActiveTab('parameters')">Parameters</li>
-            <li [ngClass]="{'active': activeTab === 'request'}" (click)="setActiveTab('request')">Request</li>
-            <li [ngClass]="{'active': activeTab === 'responses'}" (click)="setActiveTab('responses')">Responses</li>
+            <li [ngClass]="{ active: activeTab === 'general' }" (click)="setActiveTab('general')">General</li>
+            <li [ngClass]="{ active: activeTab === 'parameters' }" (click)="setActiveTab('parameters')">Parameters</li>
+            <li [ngClass]="{ active: activeTab === 'request' }" (click)="setActiveTab('request')">Request</li>
+            <li [ngClass]="{ active: activeTab === 'responses' }" (click)="setActiveTab('responses')">Responses</li>
         </ul>
     </div>
 
     <!-- Content for the General tab -->
     <div *ngIf="activeTab === 'general'" class="api-details">
-        <h1>
-            <input formControlName="summary" placeholder="Summary" />
-            {{ method | uppercase }} {{ apiPath }}
-        </h1>
-
-        <p *ngIf="methodDetailsForm.get('description')?.value">
-            <textarea formControlName="description" placeholder="Description"></textarea>
-        </p>
+        <h1><input formControlName="summary" placeholder="Summary" /> {{ method | uppercase }} {{ apiPath }}</h1>
+        <p *ngIf="methodDetailsForm.get('description')?.value"><textarea formControlName="description"
+                placeholder="Description"></textarea></p>
     </div>
 
     <!-- Content for the Parameters tab -->
     <div *ngIf="activeTab === 'parameters'">
-        <!-- Add parameters-related form fields here -->
         <h2>Parameters</h2>
         <p>Parameters content goes here...</p>
     </div>
@@ -37,10 +31,35 @@
     </div>
 
     <!-- Content for the Responses tab -->
-    <div *ngIf="activeTab === 'responses'">
-        <h2>Responses</h2>
-        <div *ngIf="methodDetailsForm.get('responses')?.value">
-            <textarea formControlName="responses" placeholder="Responses"></textarea>
+    <div *ngIf="activeTab === 'responses'" class="responses-tab">
+        <!-- Status codes for selecting different responses -->
+        <div class="response-codes">
+            <button *ngFor="let response of responsesArray" class="status-code"
+                (click)="setResponseData(response.code)">
+                {{ response.code }}
+            </button>
+        </div>
+
+        <div class="response-section">
+            <div class="response-message">
+                <label for="responseMessage">Response</label>
+                <textarea id="responseMessage" formControlName="responseMessage"
+                    placeholder="Response message..."></textarea>
+            </div>
+
+            <div class="headers-section">
+                <h3>Headers</h3>
+                <div *ngIf="methodDetailsForm.get('headers')?.value">
+                    <pre>{{ methodDetailsForm.get('headers')?.value }}</pre>
+                </div>
+            </div>
+
+            <div class="body-section">
+                <h3>Body</h3>
+                <div class="body-schema">
+                    <pre>{{ methodDetailsForm.get('responseBody')?.value }}</pre>
+                </div>
+            </div>
         </div>
     </div>
 
