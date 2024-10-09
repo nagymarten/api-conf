@@ -241,4 +241,60 @@ pre {
     padding: 10px;
     border-radius: 4px;
     overflow: auto;
+}.responses-tab {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.response-codes-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.response-codes {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.response-buttons {
+    display: flex;
+    gap: 10px;
+    /* Adds spacing between response buttons */
+}
+
+.add-response-container {
+    margin-left: auto;
+    /* Ensure it aligns to the right */
+}
+
+.status-code {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+}
+
+.status-code:hover {
+    background-color: #0056b3;
+}
+
+.add-response-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-response-button:hover {
+    background-color: #0056b3;
 }

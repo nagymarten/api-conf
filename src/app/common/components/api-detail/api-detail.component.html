@@ -62,16 +62,32 @@
 
   <!-- Content for the Responses tab -->
   <div *ngIf="activeTab === 'responses'" class="responses-tab">
-    <!-- Status codes for selecting different responses -->
-    <div class="response-codes">
-      <button
-        type="button"
-        *ngFor="let response of responsesArray"
-        class="status-code"
-        (click)="setResponseData(response.code)"
-      >
-        {{ response.code }}
-      </button>
+    <!-- Container for response codes and add button -->
+    <div class="response-codes-container">
+      <div class="response-codes">
+        <div class="response-buttons">
+          <!-- Status codes for selecting different responses -->
+          <button
+            type="button"
+            *ngFor="let response of responsesArray"
+            class="status-code"
+            (click)="setResponseData(response.code)"
+          >
+            {{ response.code }}
+          </button>
+        </div>
+
+        <!-- Add New Response Button -->
+        <div class="add-response-container">
+          <button
+            type="button"
+            class="add-response-button"
+            (click)="onAddResponse()"
+          >
+            + Add Response
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="response-section">

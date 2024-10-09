@@ -11,7 +11,6 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
-import { F, X } from '@angular/cdk/keycodes';
 
 interface ResponseDetails {
   description?: string; // Optional description
@@ -140,9 +139,6 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
     }
     return parsedResponses;
   }
-  onAddResponse(): void {
-    console.log('Add response clicked');
-  }
 
   // Set the form values based on the selected response code
   setResponseData(statusCode: string): void {
@@ -238,6 +234,119 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
         }
         console.log('Parsed Swagger Spec:', swaggerSpec);
       });
+  }
+
+  onAddResponse(): void {
+    // Prompt the user to enter a new response code
+    const newResponseCode = prompt(
+      'Enter the new response code (e.g., 201, 404):'
+    );
+
+    if (newResponseCode && !isNaN(Number(newResponseCode))) {
+      // Check if the response code already exists in the array
+      const existingResponse = this.responsesArray.find(
+        (response) => response.code === newResponseCode
+      );
+
+      if (!existingResponse) {
+        // Create a new response entry
+        const newResponse: ResponseDetails = {
+          description: 'New response description', // Ensure description is always a string
+          headers: {},
+          content: {
+            'application/json': {
+              schema: {},
+            },
+          },
+        };
+
+        // Add the new response to the responsesArray
+        this.responsesArray.push({
+          code: newResponseCode,
+          description: newResponse.description,
+          headers: newResponse.headers,
+          bodySchema:
+            JSON.stringify(
+              newResponse.content?.['application/json']?.schema,
+              null,
+              2
+            ) || 'No body content',
+        });
+
+        // Update the Swagger spec with the new response code
+        this.apiDataService.getSwaggerSpec().subscribe({
+          next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
+            if (swaggerSpec && swaggerSpec.paths) {
+              const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
+
+              if (apiPathObject) {
+                const method = this.method.toLowerCase() as HttpMethod;
+                const methodDetails = apiPathObject[
+                  method
+                ] as ExtendedOperation;
+
+                if (methodDetails) {
+                  // Create a response object that matches the `Response` type
+                  const newSwaggerResponse = {
+                    description: newResponse.description || '',
+                  };
+
+                  // Only add headers if they are defined
+                  if (Object.keys(newResponse.headers || {}).length > 0) {
+                    (newSwaggerResponse as any).headers = newResponse.headers;
+                  }
+
+                  // Only add content if it is defined
+                  if (
+                    newResponse.content &&
+                    newResponse.content['application/json']
+                  ) {
+                    (newSwaggerResponse as any).content = {
+                      'application/json': {
+                        schema: newResponse.content['application/json'].schema,
+                      },
+                    };
+                  }
+
+                  // Assign the new response to the Swagger response object
+                  methodDetails.responses[newResponseCode] = newSwaggerResponse;
+
+                  // Update the paths in the Swagger spec
+                  swaggerSpec.paths[this.apiPath][method] = methodDetails;
+
+                  // Call the service to update the Swagger spec and notify subscribers
+                  this.apiDataService.setPaths(
+                    JSON.stringify(swaggerSpec.paths, null, 2)
+                  );
+
+                  console.log(
+                    'Added new response to Paths:',
+                    swaggerSpec.paths
+                  );
+                } else {
+                  console.error(
+                    `No method found for path: ${this.apiPath} and method: ${this.method}`
+                  );
+                }
+              } else {
+                console.error(`No path found for: ${this.apiPath}`);
+              }
+            } else {
+              console.error('No Swagger spec or paths found.');
+            }
+          },
+          error: (error) => {
+            console.error('Error fetching Swagger spec:', error);
+          },
+        });
+
+        console.log(`Added new response with code: ${newResponseCode}`);
+      } else {
+        alert(`Response code ${newResponseCode} already exists.`);
+      }
+    } else {
+      alert('Please enter a valid numeric response code.');
+    }
   }
 
   // Utility function to check if a string is valid JSON
