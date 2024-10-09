@@ -11,7 +11,7 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
-import { X } from '@angular/cdk/keycodes';
+import { F, X } from '@angular/cdk/keycodes';
 
 interface ResponseDetails {
   description?: string; // Optional description
@@ -140,6 +140,9 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
     }
     return parsedResponses;
   }
+  onAddResponse(): void {
+    console.log('Add response clicked');
+  }
 
   // Set the form values based on the selected response code
   setResponseData(statusCode: string): void {
@@ -157,10 +160,6 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  onAddResponse(): void {
-    console.log('Add response clicked');
-  }
-
   onUpdateDocument() {
     this.apiDataService
       .getSwaggerSpec()
@@ -169,21 +168,19 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
           const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
 
           if (apiPathObject) {
-            // Cast the method to HttpMethod
             const method = this.method.toLowerCase() as HttpMethod;
 
-            // Ensure that methodDetails is treated as ExtendedOperation
             const methodDetails = apiPathObject[method] as ExtendedOperation;
 
             if (methodDetails) {
               const formData = this.methodDetailsForm.value;
 
-              // Update the method details based on form data
+              // Update the method summary and description
               methodDetails.summary = formData.summary || methodDetails.summary;
               methodDetails.description =
                 formData.description || methodDetails.description;
 
-              // Parse and update requestBody
+              // Parse and update requestBody if it exists and is valid
               if (
                 formData.requestBody &&
                 this.isValidJson(formData.requestBody)
@@ -191,29 +188,33 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
                 methodDetails.requestBody = JSON.parse(formData.requestBody);
               }
 
-              // Update responses
-              const updatedResponses: { [statusCode: string]: any } = {};
-              this.responsesArray.forEach((response) => {
-                const responseForm = {
-                  description: response.description,
-                  headers:
-                    response.headers && this.isValidJson(response.headers)
-                      ? JSON.parse(response.headers)
-                      : undefined,
-                  content: {
+              // Update only the active response
+              if (this.activeResponseCode) {
+                const responseToUpdate =
+                  methodDetails.responses[this.activeResponseCode];
+
+                // Ensure the response exists and is not a reference ($ref)
+                if (responseToUpdate && !('$ref' in responseToUpdate)) {
+                  const responseDetails = responseToUpdate as ResponseDetails;
+
+                  responseDetails.description =
+                    formData.responseMessage || responseDetails.description;
+                  responseDetails.headers =
+                    formData.headers && this.isValidJson(formData.headers)
+                      ? JSON.parse(formData.headers)
+                      : responseDetails.headers;
+                  responseDetails.content = {
                     'application/json': {
                       schema:
-                        response.bodySchema &&
-                        this.isValidJson(response.bodySchema)
-                          ? JSON.parse(response.bodySchema)
-                          : {},
+                        formData.responseBody &&
+                        this.isValidJson(formData.responseBody)
+                          ? JSON.parse(formData.responseBody)
+                          : responseDetails.content?.['application/json']
+                              ?.schema,
                     },
-                  },
-                };
-                updatedResponses[response.code] = responseForm;
-              });
-
-              methodDetails.responses = updatedResponses;
+                  };
+                }
+              }
 
               // Update the paths in the Swagger spec
               swaggerSpec.paths[this.apiPath][method] = methodDetails;

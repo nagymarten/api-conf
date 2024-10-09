@@ -1,68 +1,107 @@
 <form [formGroup]="methodDetailsForm" (ngSubmit)="onUpdateDocument()">
-    <div class="tabs">
-        <ul>
-            <li [ngClass]="{ active: activeTab === 'general' }" (click)="setActiveTab('general')">General</li>
-            <li [ngClass]="{ active: activeTab === 'parameters' }" (click)="setActiveTab('parameters')">Parameters</li>
-            <li [ngClass]="{ active: activeTab === 'request' }" (click)="setActiveTab('request')">Request</li>
-            <li [ngClass]="{ active: activeTab === 'responses' }" (click)="setActiveTab('responses')">Responses</li>
-        </ul>
+  <div class="tabs">
+    <ul>
+      <li
+        [ngClass]="{ active: activeTab === 'general' }"
+        (click)="setActiveTab('general')"
+      >
+        <button type="button">General</button>
+      </li>
+      <li
+        [ngClass]="{ active: activeTab === 'parameters' }"
+        (click)="setActiveTab('parameters')"
+      >
+        <button type="button">Parameters</button>
+      </li>
+      <li
+        [ngClass]="{ active: activeTab === 'request' }"
+        (click)="setActiveTab('request')"
+      >
+        <button type="button">Request</button>
+      </li>
+      <li
+        [ngClass]="{ active: activeTab === 'responses' }"
+        (click)="setActiveTab('responses')"
+      >
+        <button type="button">Responses</button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Content for the General tab -->
+  <div *ngIf="activeTab === 'general'" class="api-details">
+    <h1>
+      <input formControlName="summary" placeholder="Summary" />
+      {{ method | uppercase }} {{ apiPath }}
+    </h1>
+    <p *ngIf="methodDetailsForm.get('description')?.value">
+      <textarea
+        formControlName="description"
+        placeholder="Description"
+      ></textarea>
+    </p>
+  </div>
+
+  <!-- Content for the Parameters tab -->
+  <div *ngIf="activeTab === 'parameters'">
+    <h2>Parameters</h2>
+    <p>Parameters content goes here...</p>
+  </div>
+
+  <!-- Content for the Request tab -->
+  <div *ngIf="activeTab === 'request'">
+    <h2>Request</h2>
+    <div *ngIf="methodDetailsForm.get('requestBody')?.value">
+      <strong>Body:</strong>
+      <textarea
+        formControlName="requestBody"
+        placeholder="Request Body"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Content for the Responses tab -->
+  <div *ngIf="activeTab === 'responses'" class="responses-tab">
+    <!-- Status codes for selecting different responses -->
+    <div class="response-codes">
+      <button
+        type="button"
+        *ngFor="let response of responsesArray"
+        class="status-code"
+        (click)="setResponseData(response.code)"
+      >
+        {{ response.code }}
+      </button>
     </div>
 
-    <!-- Content for the General tab -->
-    <div *ngIf="activeTab === 'general'" class="api-details">
-        <h1><input formControlName="summary" placeholder="Summary" /> {{ method | uppercase }} {{ apiPath }}</h1>
-        <p *ngIf="methodDetailsForm.get('description')?.value"><textarea formControlName="description"
-                placeholder="Description"></textarea></p>
-    </div>
+    <div class="response-section">
+      <div class="response-message">
+        <label for="responseMessage">Response</label>
+        <textarea
+          id="responseMessage"
+          formControlName="responseMessage"
+          placeholder="Response message..."
+        ></textarea>
+      </div>
 
-    <!-- Content for the Parameters tab -->
-    <div *ngIf="activeTab === 'parameters'">
-        <h2>Parameters</h2>
-        <p>Parameters content goes here...</p>
-    </div>
-
-    <!-- Content for the Request tab -->
-    <div *ngIf="activeTab === 'request'">
-        <h2>Request</h2>
-        <div *ngIf="methodDetailsForm.get('requestBody')?.value">
-            <strong>Body:</strong>
-            <textarea formControlName="requestBody" placeholder="Request Body"></textarea>
+      <div class="headers-section">
+        <h3>Headers</h3>
+        <div *ngIf="methodDetailsForm.get('headers')?.value">
+          <pre>{{ methodDetailsForm.get("headers")?.value }}</pre>
         </div>
-    </div>
+      </div>
 
-    <!-- Content for the Responses tab -->
-    <div *ngIf="activeTab === 'responses'" class="responses-tab">
-        <!-- Status codes for selecting different responses -->
-        <div class="response-codes">
-            <button *ngFor="let response of responsesArray" class="status-code"
-                (click)="setResponseData(response.code)">
-                {{ response.code }}
-            </button>
+      <div class="body-section">
+        <h3>Body</h3>
+        <div class="body-schema">
+          <pre>{{ methodDetailsForm.get("responseBody")?.value }}</pre>
         </div>
-
-        <div class="response-section">
-            <div class="response-message">
-                <label for="responseMessage">Response</label>
-                <textarea id="responseMessage" formControlName="responseMessage"
-                    placeholder="Response message..."></textarea>
-            </div>
-
-            <div class="headers-section">
-                <h3>Headers</h3>
-                <div *ngIf="methodDetailsForm.get('headers')?.value">
-                    <pre>{{ methodDetailsForm.get('headers')?.value }}</pre>
-                </div>
-            </div>
-
-            <div class="body-section">
-                <h3>Body</h3>
-                <div class="body-schema">
-                    <pre>{{ methodDetailsForm.get('responseBody')?.value }}</pre>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Add the Update button -->
-    <button type="submit" [disabled]="!methodDetailsForm.valid">Update Document</button>
+  <!-- Add the Update button -->
+  <button type="submit" [disabled]="!methodDetailsForm.valid">
+    Update Document
+  </button>
 </form>
