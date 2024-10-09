@@ -23,7 +23,12 @@
         [ngClass]="{ active: activeTab === 'responses' }"
         (click)="setActiveTab('responses')"
       >
-        <button type="button">Responses</button>
+        <button
+          type="button"
+          [ngClass]="{ 'active-response-button': activeTab === 'responses' }"
+        >
+          Responses
+        </button>
       </li>
     </ul>
   </div>
@@ -62,31 +67,43 @@
 
   <!-- Content for the Responses tab -->
   <div *ngIf="activeTab === 'responses'" class="responses-tab">
-    <!-- Container for response codes and add button -->
+    <!-- Container for response codes and add/delete buttons -->
     <div class="response-codes-container">
       <div class="response-codes">
-        <div class="response-buttons">
-          <!-- Status codes for selecting different responses -->
+        <div
+          class="status-code-container"
+          *ngFor="let response of responsesArray"
+        >
           <button
             type="button"
-            *ngFor="let response of responsesArray"
             class="status-code"
-            (click)="setResponseData(response.code)"
+            [ngClass]="{
+              'delete-mode': showDeleteButtons,
+              'highlight-response': activeResponseCode == response.code
+            }"
+            (click)="
+              showDeleteButtons
+                ? onDeleteResponse(response.code)
+                : setResponseData(response.code)
+            "
           >
             {{ response.code }}
           </button>
         </div>
+      </div>
 
-        <!-- Add New Response Button -->
-        <div class="add-response-container">
-          <button
-            type="button"
-            class="add-response-button"
-            (click)="onAddResponse()"
-          >
-            + Add Response
-          </button>
-        </div>
+      <!-- Add Response and Delete Response buttons aligned to the right -->
+      <div class="add-delete-response-container">
+        <button type="button" class="add-response" (click)="onAddResponse()">
+          + Add Response
+        </button>
+        <button
+          type="button"
+          class="delete-responses-toggle"
+          (click)="toggleDeleteResponses()"
+        >
+          X
+        </button>
       </div>
     </div>
 

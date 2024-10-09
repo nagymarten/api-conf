@@ -34,3 +34,13 @@ export interface Paths {
     };
   };
 }
+
+export interface ResponseDetails {
+  description?: string;
+  headers?: { [headerName: string]: any };
+  content?: {
+    [contentType: string]: {
+      schema: any;
+    };
+  };
+}

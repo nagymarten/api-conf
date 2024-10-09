@@ -7,20 +7,11 @@ import {
   ExtendedSwaggerSpec,
   HttpMethod,
   Paths,
+  ResponseDetails,
 } from '../../../models/swagger.types';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
-
-interface ResponseDetails {
-  description?: string; // Optional description
-  headers?: { [headerName: string]: any }; // Optional headers
-  content?: {
-    [contentType: string]: {
-      schema: any; // The schema for the response body
-    };
-  };
-}
 
 @Component({
   selector: 'app-api-detail',
@@ -35,8 +26,10 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
   methodDetailsForm!: FormGroup;
   swaggerSubscription!: Subscription;
   activeTab: string = 'general';
-  activeResponseCode: number = 200; // Default response status code
-  responsesArray: any[] = []; // Store the parsed responses dynamically
+  activeResponseCode: number = 200;
+  responsesArray: any[] = [];
+  showDeleteButtons: boolean = false;
+  hoveredResponseCode: string | null = null; 
 
   constructor(
     private route: ActivatedRoute,
@@ -236,6 +229,68 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
       });
   }
 
+  onDeleteResponse(responseCode: string): void {
+    // Confirm if the user really wants to delete the response
+    const confirmDelete = confirm(
+      `Are you sure you want to delete the response with code ${responseCode}?`
+    );
+
+    if (confirmDelete) {
+      // Remove the response from the responsesArray
+      this.responsesArray = this.responsesArray.filter(
+        (response) => response.code !== responseCode
+      );
+
+      // Update the Swagger spec with the removed response
+      this.apiDataService.getSwaggerSpec().subscribe({
+        next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
+          if (swaggerSpec && swaggerSpec.paths) {
+            const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
+
+            if (apiPathObject) {
+              const method = this.method.toLowerCase() as HttpMethod;
+              const methodDetails = apiPathObject[method] as ExtendedOperation;
+
+              if (methodDetails) {
+                // Check if the response code exists in methodDetails.responses
+                if (methodDetails.responses[responseCode]) {
+                  // Delete the response by deleting the property with the response code
+                  delete methodDetails.responses[responseCode];
+
+                  // Update the paths in the Swagger spec
+                  swaggerSpec.paths[this.apiPath][method] = methodDetails;
+
+                  // Call the service to update the Swagger spec and notify subscribers
+                  this.apiDataService.setPaths(
+                    JSON.stringify(swaggerSpec.paths, null, 2)
+                  );
+
+                  console.log(`Deleted response with code: ${responseCode}`);
+                  console.log('Updated Paths:', swaggerSpec.paths);
+                } else {
+                  console.error(
+                    `Response with code ${responseCode} not found.`
+                  );
+                }
+              } else {
+                console.error(
+                  `No method found for path: ${this.apiPath} and method: ${this.method}`
+                );
+              }
+            } else {
+              console.error(`No path found for: ${this.apiPath}`);
+            }
+          } else {
+            console.error('No Swagger spec or paths found.');
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching Swagger spec:', error);
+        },
+      });
+    }
+  }
+
   onAddResponse(): void {
     // Prompt the user to enter a new response code
     const newResponseCode = prompt(
@@ -347,6 +402,10 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
     } else {
       alert('Please enter a valid numeric response code.');
     }
+  }
+
+  toggleDeleteResponses(): void {
+    this.showDeleteButtons = !this.showDeleteButtons;
   }
 
   // Utility function to check if a string is valid JSON
