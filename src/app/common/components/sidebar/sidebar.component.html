@@ -1,33 +1,71 @@
 <mat-sidenav-container class="sidenav-container">
-    <!-- Sidenav -->
-    <mat-sidenav mode="side" opened class="sidenav">
-        <mat-toolbar color="primary">API Overview</mat-toolbar>
+  <!-- Sidenav -->
+  <mat-sidenav mode="side" opened class="sidenav">
+    <mat-toolbar color="primary">API Overview</mat-toolbar>
 
-        <!-- Display API paths dynamically -->
-        <mat-accordion>
-            <mat-expansion-panel *ngFor="let path of apiPaths | keyvalue">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>{{ path.key }}</mat-panel-title> <!-- Display the API path -->
-                </mat-expansion-panel-header>
+    <!-- Paths Section -->
+    <mat-accordion>
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Paths
+          </mat-panel-title>
+        </mat-expansion-panel-header>
 
-                <!-- Loop through and display HTTP methods (e.g., POST, GET, DELETE, etc.) -->
-                <mat-list>
-                    <mat-list-item *ngFor="let method of path.value">
-                        <a [routerLink]="['/api', path.key, method.method]" class="method-link">
-                            <div class="method-details">
-                                <p>{{ method.summary || 'No summary available' }}</p> <!-- Display summary first -->
-                                <span class="method-type">{{ method.method.toUpperCase() }}</span> <!-- Display method type -->
-                            </div>
-                        </a>
-                    </mat-list-item>
-                </mat-list>
-            </mat-expansion-panel>
-        </mat-accordion>
-    </mat-sidenav>
+        <mat-list>
+          <mat-list-item *ngFor="let path of apiPaths | keyvalue">
+            <span>{{ path.key }}</span>
 
-    <!-- Sidenav content -->
-    <mat-sidenav-content>
-        <router-outlet></router-outlet>
-        <app-api-document-upload-button></app-api-document-upload-button>
-    </mat-sidenav-content>
+            <!-- Nested methods display using mat-list -->
+            <mat-list>
+              <mat-list-item *ngFor="let method of path.value">
+                <a
+                  [routerLink]="['/api', path.key, method.method]"
+                  class="method-link"
+                  routerLinkActive="active-path-method active-model"
+                >
+                  <div class="method-details">
+                    <p class="method-summary">
+                      {{ method.summary || "No summary available" }}
+                    </p>
+                    <span class="method-type">{{
+                      method.method.toUpperCase()
+                    }}</span>
+                  </div>
+                </a>
+              </mat-list-item>
+            </mat-list>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Models
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <mat-list>
+          <mat-list-item *ngFor="let model of apiModels">
+            <a
+              [routerLink]="['/api/models', model.name]"
+              class="method-link"
+              routerLinkActive="active-model"
+            >
+              {{ model.name }}
+            </a>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </mat-sidenav>
+
+  <!-- Sidenav content -->
+  <mat-sidenav-content>
+    <router-outlet></router-outlet>
+    <app-api-document-upload-button></app-api-document-upload-button>
+  </mat-sidenav-content>
 </mat-sidenav-container>

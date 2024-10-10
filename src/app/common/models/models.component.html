@@ -1,0 +1,15 @@
+<mat-nav-list>
+    <mat-list-item>
+        <mat-icon matListIcon>folder</mat-icon>
+        <span>Models</span>
+        <mat-nav-list>
+            <!-- Display API models dynamically like Permissions, DeviceTypes, etc. -->
+            <mat-list-item *ngFor="let model of apiModels">
+                <mat-icon matListIcon>widgets</mat-icon>
+                <a matLine [routerLink]="['/api/models', model.name]" routerLinkActive="active-model">
+                    {{ model.name }}
+                </a>
+            </mat-list-item>
+        </mat-nav-list>
+    </mat-list-item>
+</mat-nav-list>

@@ -1,0 +1,18 @@
+.active-model {
+    background-color: #e0f7fa;
+    font-weight: bold;
+    border-left: 3px solid #007bff;
+}
+
+mat-list-item a {
+    text-decoration: none;
+    color: black;
+}
+
+mat-list-item a.active-model {
+    color: #007bff;
+}
+
+mat-list-item mat-icon {
+    margin-right: 8px;
+}

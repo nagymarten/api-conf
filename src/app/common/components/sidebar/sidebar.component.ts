@@ -27,10 +27,10 @@ import { ApiDataService } from '../../../services/api-data.service';
   styleUrls: ['./sidebar.component.css'],
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  apiPaths: { [key: string]: any } = {}; // Object to store API paths and methods
+  apiPaths: { [key: string]: any } = {};
+  apiModels: any[] = [];
   swaggerSubscription!: Subscription;
 
-  // Define valid HTTP methods (e.g., POST, GET, PUT, etc.)
   validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
 
   constructor(private apiDataService: ApiDataService) {}
@@ -40,7 +40,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          this.apiPaths = this.buildApiPaths(swaggerSpec); // Process the Swagger spec
+          this.apiPaths = this.buildApiPaths(swaggerSpec); // Process the API paths
+          this.apiModels = this.getModelsFromSwagger(swaggerSpec); // Process the models
         }
       },
       error: (error) => {
@@ -73,6 +74,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
 
     return apiPaths;
+  }
+
+  // Function to extract models (schemas) from the Swagger spec
+  getModelsFromSwagger(swaggerSpec: any): any[] {
+    return Object.keys(swaggerSpec.components.schemas).map((key) => ({
+      name: key,
+    }));
   }
 
   ngOnDestroy(): void {
