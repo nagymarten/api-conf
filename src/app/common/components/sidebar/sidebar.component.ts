@@ -27,8 +27,12 @@ import { ApiDataService } from '../../../services/api-data.service';
   styleUrls: ['./sidebar.component.css'],
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  apiPaths: { [key: string]: any } = {};
-  apiModels: any[] = [];
+  paths: { [key: string]: any } = {};
+  models: any[] = [];
+  requestBodies: any[] = [];
+  responses: any[] = [];
+  parameters: any[] = [];
+  examples: any[] = [];
   swaggerSubscription!: Subscription;
 
   validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
@@ -40,8 +44,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          this.apiPaths = this.buildApiPaths(swaggerSpec); // Process the API paths
-          this.apiModels = this.getModelsFromSwagger(swaggerSpec); // Process the models
+          this.paths = this.getPaths(swaggerSpec);
+          this.models = this.getModels(swaggerSpec);
+          this.requestBodies = this.getRequestBodies(swaggerSpec);
+          this.responses = this.getResponses(swaggerSpec);
+          this.parameters = this.getParameters(swaggerSpec);
+          this.examples = this.getExamples(swaggerSpec);
         }
       },
       error: (error) => {
@@ -51,7 +59,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   // Function to build the API paths with methods only (filter out parameters)
-  buildApiPaths(swaggerSpec: any): { [key: string]: any } {
+  getPaths(swaggerSpec: any): { [key: string]: any } {
     const apiPaths: { [key: string]: any } = {};
 
     // Loop over each API path
@@ -77,14 +85,47 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   // Function to extract models (schemas) from the Swagger spec
-  getModelsFromSwagger(swaggerSpec: any): any[] {
+  getModels(swaggerSpec: any): any[] {
     return Object.keys(swaggerSpec.components.schemas).map((key) => ({
       name: key,
     }));
   }
 
+  getRequestBodies(swaggerSpec: any) {
+    return this.requestBodies;
+  }
+
+  getResponses(swaggerSpec: any) {
+    const responsesArray: any[] = [];
+
+    if (swaggerSpec.components && swaggerSpec.components.responses) {
+      Object.keys(swaggerSpec.components.responses).forEach((responseKey) => {
+        const response = swaggerSpec.components.responses[responseKey];
+        const contentTypes = response.content
+          ? Object.keys(response.content)
+          : [];
+
+        responsesArray.push({
+          name: responseKey,
+          description: response.description,
+          contentTypes: contentTypes,
+          examples: response.content?.['application/json']?.examples || null,
+        });
+      });
+    }
+
+    return responsesArray;
+  }
+
+  getParameters(swaggerSpec: any) {
+    return this.parameters;
+  }
+
+  getExamples(swaggerSpec: any) {
+    return this.examples;
+  }
+
   ngOnDestroy(): void {
-    // Clean up the subscription when the component is destroyed
     if (this.swaggerSubscription) {
       this.swaggerSubscription.unsubscribe();
     }

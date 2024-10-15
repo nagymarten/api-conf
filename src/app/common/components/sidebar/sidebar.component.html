@@ -14,7 +14,7 @@
         </mat-expansion-panel-header>
 
         <mat-list>
-          <mat-list-item *ngFor="let path of apiPaths | keyvalue">
+          <mat-list-item *ngFor="let path of paths | keyvalue">
             <span>{{ path.key }}</span>
 
             <!-- Nested methods display using mat-list -->
@@ -49,13 +49,81 @@
         </mat-expansion-panel-header>
 
         <mat-list>
-          <mat-list-item *ngFor="let model of apiModels">
+          <mat-list-item *ngFor="let model of models">
             <a
               [routerLink]="['/api/models', model.name]"
               class="method-link"
               routerLinkActive="active-model"
             >
               {{ model.name }}
+            </a>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Request Bodies
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+      
+        <mat-list>
+          <mat-list-item *ngFor="let requests of requestBodies">
+            <a [routerLink]="['/request-bodies', requests.name]" class="method-link" routerLinkActive="active-model">
+              {{ requests.name }}
+            </a>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Responses
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+      
+        <mat-list>
+          <mat-list-item *ngFor="let response of responses">
+            <a [routerLink]="['/responses', response.name]" class="method-link" routerLinkActive="active-model">
+              {{ response.name }}
+            </a>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Parameters
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+      
+        <mat-list>
+          <mat-list-item *ngFor="let parameter of parameters">
+            <a [routerLink]="['/parameters', parameter.name]" class="method-link" routerLinkActive="active-model">
+              {{ parameter.name }}
+            </a>
+          </mat-list-item>
+        </mat-list>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>folder</mat-icon>
+            Examples
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+      
+        <mat-list>
+          <mat-list-item *ngFor="let example of examples">
+            <a [routerLink]="['/examples', example.name]" class="method-link" routerLinkActive="active-model">
+              {{ example.name }}
             </a>
           </mat-list-item>
         </mat-list>

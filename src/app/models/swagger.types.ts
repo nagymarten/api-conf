@@ -44,3 +44,8 @@ export interface ResponseDetails {
     };
   };
 }
+
+export interface ExtendedSwaggerSpec extends Swagger.Spec {
+  openapi?: string;
+  servers?: Array<{ url: string; description?: string }>;
+}

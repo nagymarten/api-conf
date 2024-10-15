@@ -38,7 +38,7 @@ export class ModelsComponent implements OnInit, OnDestroy {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          this.apiModels = this.getModelsFromSwagger(swaggerSpec); // Extract models dynamically
+          this.apiModels = this.getModels(swaggerSpec);
         }
       },
       error: (error) => {
@@ -47,7 +47,7 @@ export class ModelsComponent implements OnInit, OnDestroy {
     });
   }
 
-  getModelsFromSwagger(swaggerSpec: any): any[] {
+  getModels(swaggerSpec: any): any[] {
     return Object.keys(swaggerSpec.components.schemas).map((key) => ({
       name: key,
     }));

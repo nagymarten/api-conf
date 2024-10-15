@@ -20,6 +20,7 @@ export class ApiDataService {
   private paths: string = '';
   private security: string = '';
   private servers: string = '';
+  private responses: string = '';
 
   constructor() {}
 
@@ -61,6 +62,7 @@ export class ApiDataService {
     this.paths = JSON.stringify(swaggerSpec.paths, null, 2);
     this.security = JSON.stringify(swaggerSpec.security || '', null, 2);
     this.servers = this.getServers();
+    this.responses = JSON.stringify(swaggerSpec.responses || '', null, 2);
   }
 
   getSwaggerSpec(): Observable<ExtendedSwaggerSpec | null> {
@@ -108,6 +110,10 @@ export class ApiDataService {
     }
   }
 
+  getResponses(): string{
+    return this.responses;
+  }
+
   setOpenApiVersion(openApiVersion: string): void {
     this.openApiVersion = openApiVersion;
   }
@@ -134,6 +140,9 @@ export class ApiDataService {
 
   setServers(servers: string): void {
     this.servers = servers;
+  }
+  setResponses(responses: string): void{
+    this.responses = responses;
   }
 }
 
