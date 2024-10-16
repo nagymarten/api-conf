@@ -1,15 +1,30 @@
-<mat-nav-list>
-    <mat-list-item>
-        <mat-icon matListIcon>folder</mat-icon>
-        <span>Models</span>
-        <mat-nav-list>
-            <!-- Display API models dynamically like Permissions, DeviceTypes, etc. -->
-            <mat-list-item *ngFor="let model of apiModels">
-                <mat-icon matListIcon>widgets</mat-icon>
-                <a matLine [routerLink]="['/api/models', model.name]" routerLinkActive="active-model">
-                    {{ model.name }}
-                </a>
-            </mat-list-item>
-        </mat-nav-list>
-    </mat-list-item>
-</mat-nav-list>
+<div *ngIf="apiSchemas.length > 0">
+  <h2>Select a Schema</h2>
+  <div>
+    <label for="schemaSelect">Schemas:</label>
+    <select id="schemaSelect" (change)="onSelectSchema($event)">
+      <option *ngFor="let schema of apiSchemas" [value]="schema.name">
+        {{ schema.name }}
+      </option>
+    </select>
+  </div>
+
+  <div *ngIf="selectedSchemaData">
+    <h3>Schema Details</h3>
+    <h4>Description:</h4>
+    <p>{{ selectedSchemaData.description || 'No description available' }}</p>
+
+    <h4>Properties:</h4>
+    <ul *ngIf="selectedSchemaData.properties">
+      <li *ngFor="let propKey of objectKeys(selectedSchemaData.properties)">
+        <strong>{{ propKey }}</strong>: {{ selectedSchemaData.properties[propKey].type }}
+      </li>
+    </ul>
+
+    <p *ngIf="!selectedSchemaData.properties">No properties available</p>
+  </div>
+</div>
+
+<div *ngIf="apiSchemas.length === 0">
+  <p>No schemas available.</p>
+</div>

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import * as Swagger from 'swagger-schema-official';
 import * as yaml from 'js-yaml';
+import { Parameter, Schema, Security } from 'swagger-schema-official';
 
 @Injectable({
   providedIn: 'root',
@@ -96,8 +97,8 @@ export class ApiDataService {
 
   getServers(): string {
     const swaggerSpec = this.swaggerSpecSubject.getValue();
-    if (swaggerSpec?.openapi && (swaggerSpec as any).servers) {
-      return JSON.stringify((swaggerSpec as any).servers, null, 2);
+    if (swaggerSpec?.openapi && swaggerSpec.servers) {
+      return JSON.stringify(swaggerSpec.servers, null, 2);
     } else if (swaggerSpec?.swagger === '2.0') {
       const host = swaggerSpec.host || 'localhost';
       const basePath = swaggerSpec.basePath || '/';
@@ -110,7 +111,7 @@ export class ApiDataService {
     }
   }
 
-  getResponses(): string{
+  getResponses(): string {
     return this.responses;
   }
 
@@ -141,12 +142,20 @@ export class ApiDataService {
   setServers(servers: string): void {
     this.servers = servers;
   }
-  setResponses(responses: string): void{
+
+  setResponses(responses: string): void {
     this.responses = responses;
   }
 }
 
+// Extending the Swagger Spec to include OpenAPI 3.0 components
 interface ExtendedSwaggerSpec extends Swagger.Spec {
-  openapi?: string;
-  servers?: Array<{ url: string; description?: string }>;
+  openapi?: string; // OpenAPI 3.x.x
+  servers?: Array<{ url: string; description?: string }>; // OpenAPI 3.x.x
+  components?: {
+    schemas?: { [schemaName: string]: Schema };
+    responses?: { [responseName: string]: Response };
+    parameters?: { [parameterName: string]: Parameter };
+    securitySchemes?: { [securitySchemeName: string]: Security };
+  }; // OpenAPI 3.x.x components section
 }

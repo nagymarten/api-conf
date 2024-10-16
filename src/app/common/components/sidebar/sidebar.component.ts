@@ -84,7 +84,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return apiPaths;
   }
 
-  // Function to extract models (schemas) from the Swagger spec
   getModels(swaggerSpec: any): any[] {
     return Object.keys(swaggerSpec.components.schemas).map((key) => ({
       name: key,

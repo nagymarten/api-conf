@@ -1,11 +1,13 @@
 import { Routes , RouterModule } from '@angular/router';
-import { PathComponent } from './common/path/path.component';
 import { SidebarComponent } from './common/components/sidebar/sidebar.component';
-import { ApiDetailComponent } from './common/components/api-detail/api-detail.component';
+import { PathsComponent } from './common/pahts/paths.component';
 import { RequestBodiesComponent } from './common/request-bodies/request-bodies.component';
+import { ModelsComponent } from './common/models/models.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '', pathMatch: 'full' },
-  { path: 'api', component: SidebarComponent },
-  { path: 'api/:path/:method', component: ApiDetailComponent },
+  { path: 'path', component: SidebarComponent },
+  { path: 'path/:path/:method', component: PathsComponent },
+  { path: 'models', component: ModelsComponent },
+  { path: 'models/:model', component: ModelsComponent },
 ];

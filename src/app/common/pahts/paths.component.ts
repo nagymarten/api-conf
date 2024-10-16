@@ -1,26 +1,26 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiDataService } from '../../../services/api-data.service';
+import { ApiDataService } from '../../services/api-data.service';
 import {
   ExtendedOperation,
   ExtendedSwaggerSpec,
   HttpMethod,
   Paths,
   ResponseDetails,
-} from '../../../models/swagger.types';
+} from '../../models/swagger.types';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Router, RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-api-detail',
+  selector: 'paths',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './api-detail.component.html',
-  styleUrls: ['./api-detail.component.css'],
+  templateUrl: './paths.component.html',
+  styleUrls: ['./paths.component.css'],
 })
-export class ApiDetailComponent implements OnInit, OnDestroy {
+export class PathsComponent implements OnInit, OnDestroy {
   apiPath: string = '';
   method: string = '';
   methodDetailsForm!: FormGroup;
@@ -66,6 +66,7 @@ export class ApiDetailComponent implements OnInit, OnDestroy {
   setActiveTab(tab: string): void {
     this.activeTab = tab;
   }
+
 
   fetchMethodDetails(): void {
     this.apiDataService.getSwaggerSpec().subscribe({

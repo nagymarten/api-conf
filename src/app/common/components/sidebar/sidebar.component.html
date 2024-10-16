@@ -16,12 +16,10 @@
         <mat-list>
           <mat-list-item *ngFor="let path of paths | keyvalue">
             <span>{{ path.key }}</span>
-
-            <!-- Nested methods display using mat-list -->
             <mat-list>
               <mat-list-item *ngFor="let method of path.value">
                 <a
-                  [routerLink]="['/api', path.key, method.method]"
+                  [routerLink]="['/path', path.key, method.method]"
                   class="method-link"
                   routerLinkActive="active-path-method active-model"
                 >
@@ -51,9 +49,9 @@
         <mat-list>
           <mat-list-item *ngFor="let model of models">
             <a
-              [routerLink]="['/api/models', model.name]"
+              [routerLink]="['/models', model.name]"
               class="method-link"
-              routerLinkActive="active-model"
+              routerLinkActive="active-model active-path-method"
             >
               {{ model.name }}
             </a>
@@ -68,10 +66,14 @@
             Request Bodies
           </mat-panel-title>
         </mat-expansion-panel-header>
-      
+
         <mat-list>
           <mat-list-item *ngFor="let requests of requestBodies">
-            <a [routerLink]="['/request-bodies', requests.name]" class="method-link" routerLinkActive="active-model">
+            <a
+              [routerLink]="['/request-bodies', requests.name]"
+              class="method-link"
+              routerLinkActive="active-model"
+            >
               {{ requests.name }}
             </a>
           </mat-list-item>
@@ -85,10 +87,14 @@
             Responses
           </mat-panel-title>
         </mat-expansion-panel-header>
-      
+
         <mat-list>
           <mat-list-item *ngFor="let response of responses">
-            <a [routerLink]="['/responses', response.name]" class="method-link" routerLinkActive="active-model">
+            <a
+              [routerLink]="['/responses', response.name]"
+              class="method-link"
+              routerLinkActive="active-model"
+            >
               {{ response.name }}
             </a>
           </mat-list-item>
@@ -102,10 +108,14 @@
             Parameters
           </mat-panel-title>
         </mat-expansion-panel-header>
-      
+
         <mat-list>
           <mat-list-item *ngFor="let parameter of parameters">
-            <a [routerLink]="['/parameters', parameter.name]" class="method-link" routerLinkActive="active-model">
+            <a
+              [routerLink]="['/parameters', parameter.name]"
+              class="method-link"
+              routerLinkActive="active-model"
+            >
               {{ parameter.name }}
             </a>
           </mat-list-item>
@@ -119,10 +129,14 @@
             Examples
           </mat-panel-title>
         </mat-expansion-panel-header>
-      
+
         <mat-list>
           <mat-list-item *ngFor="let example of examples">
-            <a [routerLink]="['/examples', example.name]" class="method-link" routerLinkActive="active-model">
+            <a
+              [routerLink]="['/examples', example.name]"
+              class="method-link"
+              routerLinkActive="active-model"
+            >
               {{ example.name }}
             </a>
           </mat-list-item>
