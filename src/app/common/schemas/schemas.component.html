@@ -1,0 +1,31 @@
+<div *ngIf="apiSchemas.length > 0">
+  <!-- Add formGroup directive here -->
+  <form [formGroup]="schemaDetailsForm" (ngSubmit)="onUpdateSchema()">
+    <div class="schema-details">
+      <h1>
+        <input formControlName="title" placeholder="Schema Title" />
+        {{ selectedSchemaName | uppercase }}
+      </h1>
+
+      <p *ngIf="schemaDetailsForm.get('description')?.value">
+        <textarea
+          formControlName="description"
+          placeholder="Description"
+        ></textarea>
+      </p>
+
+      <div class="property-section">
+        <h3>Properties (Optional, JSON)</h3>
+        <textarea
+          formControlName="properties"
+          rows="8"
+          placeholder="Enter schema properties as JSON (optional)"
+        ></textarea>
+      </div>
+
+      <button type="submit" [disabled]="!schemaDetailsForm.valid">
+        Update Schema
+      </button>
+    </div>
+  </form>
+</div>

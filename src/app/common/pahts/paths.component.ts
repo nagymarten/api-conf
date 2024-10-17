@@ -29,7 +29,7 @@ export class PathsComponent implements OnInit, OnDestroy {
   activeResponseCode: number = 200;
   responsesArray: any[] = [];
   showDeleteButtons: boolean = false;
-  hoveredResponseCode: string | null = null; 
+  hoveredResponseCode: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -37,12 +37,6 @@ export class PathsComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private router: Router
   ) {}
-
-  ngOnDestroy(): void {
-    if (this.swaggerSubscription) {
-      this.swaggerSubscription.unsubscribe();
-    }
-  }
 
   ngOnInit(): void {
     // Initialize the form with empty controls
@@ -66,7 +60,6 @@ export class PathsComponent implements OnInit, OnDestroy {
   setActiveTab(tab: string): void {
     this.activeTab = tab;
   }
-
 
   fetchMethodDetails(): void {
     this.apiDataService.getSwaggerSpec().subscribe({
@@ -150,7 +143,7 @@ export class PathsComponent implements OnInit, OnDestroy {
     }
   }
 
-  onUpdateDocument() {
+  onUpdatePath() {
     this.apiDataService
       .getSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
@@ -416,6 +409,12 @@ export class PathsComponent implements OnInit, OnDestroy {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.swaggerSubscription) {
+      this.swaggerSubscription.unsubscribe();
     }
   }
 }
