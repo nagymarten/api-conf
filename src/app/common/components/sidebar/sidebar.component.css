@@ -52,25 +52,19 @@
 .method-details {
   display: flex;
   justify-content: space-between;
-  /* Push the summary to the left and method type to the right */
   align-items: center;
-  /* Vertically center the items */
   width: 100%;
   padding: 5px 0;
   border-bottom: 1px dashed #ccc;
-  /* Optional: Add dashed lines like in the provided screenshot */
-  background: none;
-  /* Ensure no background */
-  border-radius: 0;
-  /* Remove any border radius */
 }
 
 /* Style for the method summary (text) */
 .method-summary {
   font-size: 14px;
   color: #000;
-  flex: 1;
-  padding-right: 10px;
+  flex-grow: 1;
+  padding-right: 5px;
+  /* Reduce padding to make more space for the method type */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -80,15 +74,12 @@
 .method-type {
   font-weight: bold;
   text-transform: uppercase;
-  /* Make sure method types are always in uppercase */
   color: #3f51b5;
-  /* Primary color for method types */
-  font-size: 14px;
+  font-size: 16px;
   white-space: nowrap;
-  /* Prevent line breaking */
-  min-width: 40px;
-  /* Ensure fixed width for alignment */
-  text-align: right;
+  width: 55px;
+  flex-shrink: 0;
+  /* Prevent shrinking of this element */
 }
 
 /* Add some padding to the content area */
