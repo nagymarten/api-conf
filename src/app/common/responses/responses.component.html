@@ -1,1 +1,33 @@
-<p>responses works!</p>
+<div *ngIf="apiResponse.length > 0">
+
+    <div *ngIf="response">
+        <h1>{{ response }}</h1> <!-- Response name as title -->
+    </div>
+
+    <!-- Display the selected response details -->
+    <div *ngIf="selectedResponseData">
+        <h3>Response Details</h3>
+
+        <div *ngIf="selectedResponseData.description">
+            <strong>Description:</strong> {{ selectedResponseData.description }}
+        </div>
+
+        <div *ngIf="selectedResponseData.headers">
+            <h4>Headers:</h4>
+            <ul>
+                <li *ngFor="let header of objectKeys(selectedResponseData.headers)">
+                    <strong>{{ header }}</strong>:
+                    {{ selectedResponseData.headers[header].description }}
+                    <span *ngIf="selectedResponseData.headers[header].schema?.type">
+                        (Type: {{ selectedResponseData.headers[header].schema.type }})
+                    </span>
+                </li>
+            </ul>
+        </div>
+
+        <div *ngIf="selectedResponseData.content">
+            <h4>Content:</h4>
+            <pre>{{ selectedResponseData.content | json }}</pre>
+        </div>
+    </div>
+</div>
