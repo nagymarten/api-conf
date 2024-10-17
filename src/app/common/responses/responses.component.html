@@ -1,33 +1,45 @@
 <div *ngIf="apiResponse.length > 0">
+  <!-- Display the selected response title -->
+  <div *ngIf="response">
+    <h1>{{ response }}</h1>
+  </div>
 
-    <div *ngIf="response">
-        <h1>{{ response }}</h1> <!-- Response name as title -->
-    </div>
-
-    <!-- Display the selected response details -->
+  <!-- Editable form for response details -->
+  <form [formGroup]="responseDetailsForm" (ngSubmit)="onUpdateResponse()">
     <div *ngIf="selectedResponseData">
-        <h3>Response Details</h3>
+      <h3>Response Details</h3>
 
-        <div *ngIf="selectedResponseData.description">
-            <strong>Description:</strong> {{ selectedResponseData.description }}
-        </div>
+      <!-- Description field -->
+      <div>
+        <strong>Description:</strong>
+        <textarea
+          formControlName="description"
+          placeholder="Enter response description"
+        ></textarea>
+      </div>
 
-        <div *ngIf="selectedResponseData.headers">
-            <h4>Headers:</h4>
-            <ul>
-                <li *ngFor="let header of objectKeys(selectedResponseData.headers)">
-                    <strong>{{ header }}</strong>:
-                    {{ selectedResponseData.headers[header].description }}
-                    <span *ngIf="selectedResponseData.headers[header].schema?.type">
-                        (Type: {{ selectedResponseData.headers[header].schema.type }})
-                    </span>
-                </li>
-            </ul>
-        </div>
+      <!-- Headers field -->
+      <div *ngIf="selectedResponseData.headers">
+        <h4>Headers (JSON):</h4>
+        <textarea
+          formControlName="headers"
+          placeholder="Enter headers as JSON"
+        ></textarea>
+      </div>
 
-        <div *ngIf="selectedResponseData.content">
-            <h4>Content:</h4>
-            <pre>{{ selectedResponseData.content | json }}</pre>
-        </div>
+      <!-- Content field -->
+      <div *ngIf="selectedResponseData.content">
+        <h4>Content (JSON):</h4>
+        <textarea
+          formControlName="content"
+          placeholder="Enter content as JSON"
+        ></textarea>
+      </div>
     </div>
+
+    <!-- Update button -->
+    <button type="submit" [disabled]="!responseDetailsForm.valid">
+      Update Response
+    </button>
+  </form>
 </div>

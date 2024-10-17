@@ -1,12 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ApiDataService } from '../../services/api-data.service';
 import { ExtendedSwaggerSpec } from '../../models/swagger.types';
-import { AgGridModule } from 'ag-grid-angular';
-import { MatGridListModule } from '@angular/material/grid-list';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -18,17 +16,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    AgGridModule,
-    MatGridListModule,
     MatInputModule,
     MatButtonModule,
     MatCheckboxModule,
     MatFormFieldModule,
   ],
   templateUrl: './responses.component.html',
-  styleUrl: './responses.component.css',
+  styleUrls: ['./responses.component.css'],
 })
-export class ResponsesComponent {
+export class ResponsesComponent implements OnInit, OnDestroy {
   responses: string = '';
   response: string = '';
   apiResponse: any[] = [];
@@ -45,8 +41,9 @@ export class ResponsesComponent {
   ngOnInit(): void {
     // Initialize the form
     this.responseDetailsForm = this.fb.group({
-      selectedSchema: [''],
-      schemaContent: [''],
+      description: [''],
+      headers: [''],
+      content: [''],
     });
 
     // Subscribe to route params
@@ -56,6 +53,7 @@ export class ResponsesComponent {
       this.fetchResponseDetails();
     });
   }
+
   fetchResponseDetails() {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
@@ -103,13 +101,67 @@ export class ResponsesComponent {
       // Store the selected response data
       this.selectedResponseData = selectedResponse.details;
 
-      // Optionally update the form
+      // Patch the form with the response details
       this.responseDetailsForm.patchValue({
-        selectedResponse: responseName,
-        responseContent: JSON.stringify(selectedResponse.details, null, 2),
+        description: selectedResponse.details?.description || '',
+        headers: JSON.stringify(
+          selectedResponse.details?.headers || {},
+          null,
+          2
+        ),
+        content: JSON.stringify(
+          selectedResponse.details?.content || {},
+          null,
+          2
+        ),
       });
 
       console.log('Selected Response:', selectedResponse);
+    }
+  }
+
+  onUpdateResponse(): void {
+    if (this.selectedResponseData) {
+      const formData = this.responseDetailsForm.value;
+
+      // Update the selected response details
+      this.selectedResponseData.description = formData.description;
+
+      // Parse and update headers and content
+      if (formData.headers && this.isValidJson(formData.headers)) {
+        this.selectedResponseData.headers = JSON.parse(formData.headers);
+      }
+      if (formData.content && this.isValidJson(formData.content)) {
+        this.selectedResponseData.content = JSON.parse(formData.content);
+      }
+
+      // Update the Swagger spec in the service
+      this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+        if (swaggerSpec && swaggerSpec.components?.responses) {
+          swaggerSpec.components.responses[this.response] =
+            this.selectedResponseData;
+
+          // Sync the updated Swagger spec back to the service
+          this.apiDataService.setResponses(
+            JSON.stringify(swaggerSpec.components.responses, null, 2)
+          );
+
+          console.log(
+            'Updated Response in Swagger Spec:',
+            swaggerSpec.components.responses
+          );
+        }
+      });
+    }
+  }
+
+  // Utility function to validate if the JSON string is valid
+  isValidJson(jsonString: string): boolean {
+    try {
+      JSON.parse(jsonString);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
