@@ -1,13 +1,4 @@
 <div *ngIf="apiSchemas.length > 0">
-  <h2>Select a Schema</h2>
-  <div>
-    <label for="schemaSelect">Schemas:</label>
-    <select id="schemaSelect" (change)="onSelectSchema($event)">
-      <option *ngFor="let schema of apiSchemas" [value]="schema.name">
-        {{ schema.name }}
-      </option>
-    </select>
-  </div>
 
   <div *ngIf="selectedSchemaData">
     <h3>Schema Details</h3>
