@@ -78,6 +78,9 @@
             type="button"
             class="status-code"
             [ngClass]="{
+              'status-success': response.code.startsWith('2'),
+              'status-redirect': response.code.startsWith('3'),
+              'status-client-error': response.code.startsWith('4'),
               'delete-mode': showDeleteButtons,
               'highlight-response': activeResponseCode == response.code
             }"

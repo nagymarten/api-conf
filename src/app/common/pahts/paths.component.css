@@ -77,21 +77,44 @@ button:hover {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  background-color: #007bff;
   color: white;
   transition: background-color 0.3s, transform 0.3s;
   margin-right: 5px;
 }
 
-.status-code:hover {
-  background-color: #0056b3;
+.status-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-success:hover {
+  background-color: #90dba2;
+  color: white;
+}
+
+.status-redirect {
+  background-color: #ff9800;
+  /* Orange */
+  color: white;
+}
+.status-redirect:hover {
+  background-color: #ffb648;
+  /* Orange */
+  color: white;
+}
+
+.status-client-error {
+  background-color: #dc3545;
+  color: white;
+}
+.status-client-error:hover {
+  background-color: #ff0019;
+  color: white;
 }
 
 .status-code.delete-mode:hover {
   background-color: #c82333;
-  /* Red background on hover */
   color: white;
-  /* Keep the content, but change the style */
 }
 
 .add-delete-response-container {
@@ -100,15 +123,20 @@ button:hover {
   margin-left: auto;
 }
 
-.add-response{
-padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+.add-response {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
+
+.add-response:hover {
+  background-color: #0056b3;
+}
+
 .delete-responses-toggle {
   padding: 10px 20px;
   background-color: #c82333;
@@ -119,9 +147,12 @@ padding: 10px 20px;
   transition: background-color 0.3s;
 }
 
-.add-response:hover,
-.delete-responses-toggle:hover {
+.add-response:hover {
   background-color: #0056b3;
+}
+
+.delete-responses-toggle:hover {
+  background-color: #94111e;
 }
 
 .response-section {
@@ -157,6 +188,37 @@ pre {
 }
 
 .highlight-response {
-    background-color: rgb(13, 0, 128);
-    color: white;
+  color: white;
+  animation: pulse 2.5s ease-in-out infinite;
+  /* Smooth and slower pulse animation */
+  border-radius: 15px;
+  /* Rounded corners */
+  padding: 12px 25px;
+  /* Larger button */
+  transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+    box-shadow 0.5s ease;
+  /* Smoother scale and shadow transition */
+}
+
+.highlight-response:hover {
+  transform: scale(1.05);
+  /* Slightly enlarge the button on hover with a smoother effect */
+}
+
+/* Define the keyframes for the pulse effect */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.2);
+    /* Start with a subtle shadow */
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+    /* Stronger glow at 50% */
+  }
+
+  100% {
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.2);
+    /* Return to subtle shadow */
+  }
 }

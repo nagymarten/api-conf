@@ -27,9 +27,18 @@
                     <p class="method-summary">
                       {{ method.summary || "No summary available" }}
                     </p>
-                    <span class="method-type">{{
-                      method.method.toUpperCase()
-                    }}</span>
+                    <span
+                      class="method-type"
+                      [ngClass]="{
+                        'method-post': method.method.toLowerCase() === 'post',
+                        'method-get': method.method.toLowerCase() === 'get',
+                        'method-delete':
+                          method.method.toLowerCase() === 'delete',
+                        'method-put': method.method.toLowerCase() === 'put',
+                        'method-patch': method.method.toLowerCase() === 'patch'
+                      }"
+                      >{{ method.method.toUpperCase() }}</span
+                    >
                   </div>
                 </a>
               </mat-list-item>
