@@ -8,7 +8,6 @@
 
       <!-- Description section -->
       <div class="description-section">
-        <!-- Description (Read-only when not editing) -->
         <p
           *ngIf="!schemaDetailsForm.get('isEditingDescription')?.value"
           (click)="startEditingDescription()"
@@ -55,34 +54,58 @@
       <div *ngIf="activeTab === 'schema'" class="api-details">
         <div class="properties-section">
           <h3>Properties</h3>
+          <span class="property-count">
+            Object({{ objectKeys(selectedSchema.properties).length }})
+          </span>
+          <button class="" (click)="onAddProperty()" type="button">+</button>
 
           <table class="properties-table">
             <tbody>
-              <tr
+              <ng-container
                 *ngFor="let property of objectKeys(selectedSchema.properties)"
               >
-                <td class="property-name">{{ property }}</td>
-                <td class="property-type">
-                  {{ selectedSchema.properties[property].type }}
-                </td>
-                <td class="property-actions">
-                  <button mat-icon-button class="icon-button info-icon">
-                    <mat-icon>info</mat-icon>
-                  </button>
+                <!-- Property Row -->
+                <tr>
+                  <td class="property-name">{{ property }}</td>
+                  <td class="property-type">
+                    {{ selectedSchema.properties[property].type }}
+                    <span *ngIf="selectedSchema.properties[property].format">
+                      &lt;{{ selectedSchema.properties[property].format }}&gt;
+                    </span>
+                  </td>
+                  <td class="property-actions">
+                    <button mat-icon-button class="icon-button info-icon">
+                      <mat-icon>info</mat-icon>
+                    </button>
 
-                  <button mat-icon-button class="icon-button book-icon">
-                    <mat-icon>menu_book</mat-icon>
-                  </button>
+                    <button
+                      mat-icon-button
+                      class="icon-button book-icon"
+                      type="button"
+                      (click)="toggleDescription($event, property)"
+                    >
+                      <mat-icon>menu_book</mat-icon>
+                    </button>
 
-                  <button
-                    mat-icon-button
-                    class="icon-button trash-icon"
-                    (click)="onDeleteProperty(property)"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </td>
-              </tr>
+                    <button
+                      mat-icon-button
+                      class="icon-button trash-icon"
+                      (click)="onDeleteProperty(property)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="descriptionProperty === property">
+                  <td colspan="3" class="property-description">
+                    {{
+                      selectedSchema.properties[property]?.description ||
+                        "No description available."
+                    }}
+                  </td>
+                </tr>
+              </ng-container>
             </tbody>
           </table>
         </div>

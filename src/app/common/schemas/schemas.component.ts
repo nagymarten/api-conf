@@ -13,7 +13,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { ExtendedSwaggerSpec, SchemaDetails } from '../../models/swagger.types';
 import { MatIconModule } from '@angular/material/icon';
 
-
 @Component({
   selector: 'app-models',
   standalone: true,
@@ -41,6 +40,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedSchema: any;
   selectedSchemaName: string = '';
   activeTab: string = 'schema';
+  descriptionProperty: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -118,6 +118,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   }
 
+  onAddProperty() {
+    throw new Error('Method not implemented.');
+  }
+
   onDeleteProperty(_t44: string) {
     throw new Error('Method not implemented.');
   }
@@ -171,6 +175,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.error('No Swagger spec or schemas found.');
         }
       });
+  }
+
+  toggleDescription(event: Event, property: string): void {
+    event.preventDefault(); // Prevent form submission
+
+    if (this.descriptionProperty === property) {
+      this.descriptionProperty = null; // Hide description if already open
+    } else {
+      this.descriptionProperty = property; // Show description for the clicked property
+    }
   }
 
   setActiveTab(tab: string): void {
