@@ -53,3 +53,19 @@ export interface ResponseDetails {
     };
   };
 }
+
+export interface SchemaProperty {
+  type: string;
+  description?: string; // This is optional, in case the description is not always present
+}
+
+export interface SchemaDetails {
+  title: string;
+  description: string;
+  properties: Record<string, SchemaProperty>; // Define properties as an object where keys are strings
+}
+
+export interface PropertyWithKey {
+  key: string;
+  value: SchemaProperty;
+}

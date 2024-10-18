@@ -90,6 +90,7 @@ button:hover {
 .status-success:hover {
   background-color: #90dba2;
   color: white;
+  transform: scale(1.25);
 }
 
 .status-redirect {
@@ -101,6 +102,7 @@ button:hover {
   background-color: #ffb648;
   /* Orange */
   color: white;
+  transform: scale(1.25);
 }
 
 .status-client-error {
@@ -110,6 +112,7 @@ button:hover {
 .status-client-error:hover {
   background-color: #ff0019;
   color: white;
+  transform: scale(1.25);
 }
 
 .status-code.delete-mode:hover {
@@ -201,7 +204,7 @@ pre {
 }
 
 .highlight-response:hover {
-  transform: scale(1.05);
+  transform: scale(1.25);
   /* Slightly enlarge the button on hover with a smoother effect */
 }
 

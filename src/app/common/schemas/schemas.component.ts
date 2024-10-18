@@ -10,7 +10,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ExtendedSwaggerSpec } from '../../models/swagger.types';
+import { ExtendedSwaggerSpec, SchemaDetails } from '../../models/swagger.types';
+import { MatIconModule } from '@angular/material/icon';
+
 
 @Component({
   selector: 'app-models',
@@ -24,6 +26,7 @@ import { ExtendedSwaggerSpec } from '../../models/swagger.types';
     MatButtonModule,
     MatCheckboxModule,
     MatFormFieldModule,
+    MatIconModule,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -37,6 +40,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedSchemaData: any = null;
   selectedSchema: any;
   selectedSchemaName: string = '';
+  activeTab: string = 'schema';
 
   constructor(
     private route: ActivatedRoute,
@@ -48,7 +52,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.schemaDetailsForm = this.fb.group({
       title: [''],
       description: [''],
-      properties: [''],
+      properties: [''], // This is no longer needed, since properties will be shown in a table
+      isEditingDescription: [false], // Flag for description editing state
     });
 
     this.route.params.subscribe((params) => {
@@ -99,17 +104,30 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const selectedSchema = this.apiSchemas.find((s) => s.name === schemaName);
 
     if (selectedSchema) {
-      this.selectedSchema = selectedSchema.details;
+      this.selectedSchema = selectedSchema.details as SchemaDetails;
       this.selectedSchemaName = selectedSchema.name;
 
       this.schemaDetailsForm.patchValue({
         title: this.selectedSchema.title || '',
         description: this.selectedSchema.description || '',
         properties: JSON.stringify(this.selectedSchema.properties, null, 2),
+        isEditingDescription: false,
       });
 
       console.log('Selected Schema:', selectedSchema);
     }
+  }
+
+  onDeleteProperty(_t44: string) {
+    throw new Error('Method not implemented.');
+  }
+
+  startEditingDescription(): void {
+    this.schemaDetailsForm.patchValue({ isEditingDescription: true });
+  }
+
+  stopEditingDescription(): void {
+    this.schemaDetailsForm.patchValue({ isEditingDescription: false });
   }
 
   onUpdateSchema(): void {
@@ -121,42 +139,22 @@ export class SchemasComponent implements OnInit, OnDestroy {
           swaggerSpec.components &&
           swaggerSpec.components.schemas
         ) {
-          // Get the current schema object based on the selected schema name
           const schemaName = this.selectedSchemaName;
           const schemaObject = swaggerSpec.components.schemas[schemaName];
 
           if (schemaObject) {
             const formData = this.schemaDetailsForm.value;
 
-            // Update schema title and description
             schemaObject.title = formData.title || schemaObject.title;
             schemaObject.description =
               formData.description || schemaObject.description;
 
-            // Check if properties exist in the formData before processing
-            if (formData.properties && formData.properties.trim() !== '') {
-              if (this.isValidJson(formData.properties)) {
-                schemaObject.properties = JSON.parse(formData.properties);
-              } else {
-                console.error('Invalid JSON in properties.');
-                return;
-              }
-            } else {
-              // If there are no properties, clear them or leave them unchanged
-              console.log(
-                'No properties provided. Skipping properties update.'
-              );
-            }
-
-            // Update the Swagger spec with the modified schema
             swaggerSpec.components.schemas[schemaName] = schemaObject;
 
-            // Sync the updated schemas back into the service
             this.apiDataService.setSchemes(
               JSON.stringify(swaggerSpec.components.schemas, null, 2)
             );
 
-            // Log the updated Swagger file from the service
             this.apiDataService
               .getSwaggerSpec()
               .subscribe((updatedSpec: ExtendedSwaggerSpec | null) => {
@@ -175,13 +173,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
       });
   }
 
-  isValidJson(jsonString: string): boolean {
-    try {
-      JSON.parse(jsonString);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  setActiveTab(tab: string): void {
+    this.activeTab = tab;
   }
 
   ngOnDestroy(): void {
