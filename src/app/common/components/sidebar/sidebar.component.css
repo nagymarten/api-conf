@@ -171,3 +171,11 @@
   background: none;
   border-radius: 0;
 }
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  /* Adds space between buttons */
+  margin-top: 20px;
+  /* Adds some margin above the buttons */
+}

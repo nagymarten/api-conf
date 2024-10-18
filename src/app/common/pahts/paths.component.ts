@@ -300,7 +300,7 @@ export class PathsComponent implements OnInit, OnDestroy {
       if (!existingResponse) {
         // Create a new response entry
         const newResponse: ResponseDetails = {
-          description: 'New response description', // Ensure description is always a string
+          description: 'New response description',
           headers: {},
           content: {
             'application/json': {
@@ -309,7 +309,6 @@ export class PathsComponent implements OnInit, OnDestroy {
           },
         };
 
-        // Add the new response to the responsesArray
         this.responsesArray.push({
           code: newResponseCode,
           description: newResponse.description,
@@ -322,11 +321,10 @@ export class PathsComponent implements OnInit, OnDestroy {
             ) || 'No body content',
         });
 
-        // Update the Swagger spec with the new response code
         this.apiDataService.getSwaggerSpec().subscribe({
           next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
             if (swaggerSpec && swaggerSpec.paths) {
-              const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
+              const apiPathObject = swaggerSpec.paths[this.apiPath];
 
               if (apiPathObject) {
                 const method = this.method.toLowerCase() as HttpMethod;
@@ -357,13 +355,10 @@ export class PathsComponent implements OnInit, OnDestroy {
                     };
                   }
 
-                  // Assign the new response to the Swagger response object
                   methodDetails.responses[newResponseCode] = newSwaggerResponse;
 
-                  // Update the paths in the Swagger spec
                   swaggerSpec.paths[this.apiPath][method] = methodDetails;
 
-                  // Call the service to update the Swagger spec and notify subscribers
                   this.apiDataService.setPaths(
                     JSON.stringify(swaggerSpec.paths, null, 2)
                   );
@@ -402,7 +397,6 @@ export class PathsComponent implements OnInit, OnDestroy {
     this.showDeleteButtons = !this.showDeleteButtons;
   }
 
-  // Utility function to check if a string is valid JSON
   private isValidJson(jsonString: string): boolean {
     try {
       JSON.parse(jsonString);

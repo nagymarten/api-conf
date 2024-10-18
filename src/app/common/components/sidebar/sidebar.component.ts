@@ -9,6 +9,7 @@ import { RouterModule } from '@angular/router';
 import { ApiDocumentUploadButtonComponent } from '../api-document-upload-button/api-document-upload-button.component';
 import { Subscription } from 'rxjs';
 import { ApiDataService } from '../../../services/api-data.service';
+import { DownloadYamlButtonComponent } from '../download-yaml-button/download-yaml-button.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -22,6 +23,7 @@ import { ApiDataService } from '../../../services/api-data.service';
     MatIconModule,
     MatToolbarModule,
     ApiDocumentUploadButtonComponent,
+    DownloadYamlButtonComponent
   ],
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css'],
