@@ -137,3 +137,12 @@ button:hover {
 .trash-icon mat-icon {
   color: #dc3545;
 }
+
+.nested-property-name {
+  padding-left: 20px;
+  font-style: italic;
+}
+
+.nested-property-type {
+  color: #6c63ff;
+}

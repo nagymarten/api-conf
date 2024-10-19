@@ -41,6 +41,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedSchemaName: string = '';
   activeTab: string = 'schema';
   descriptionProperty: string | null = null;
+  additionalItems: any[] = []; // This will store enums, allOf, oneOf, etc.
 
   constructor(
     private route: ActivatedRoute,
@@ -52,8 +53,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.schemaDetailsForm = this.fb.group({
       title: [''],
       description: [''],
-      properties: [''], // This is no longer needed, since properties will be shown in a table
-      isEditingDescription: [false], // Flag for description editing state
+      properties: [''],
+      isEditingDescription: [false],
     });
 
     this.route.params.subscribe((params) => {
@@ -107,15 +108,121 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchema = selectedSchema.details as SchemaDetails;
       this.selectedSchemaName = selectedSchema.name;
 
+      // If the schema has an `allOf`, resolve it
+      if (this.selectedSchema.allOf) {
+        const resolvedProperties = this.resolveAllOf(this.selectedSchema.allOf);
+        this.selectedSchema.properties = {
+          ...this.selectedSchema.properties,
+          ...resolvedProperties,
+        };
+      }
+
+      // Process other references and properties
+      this.resolveSchemaReferences(this.selectedSchema.properties);
+
+      console.log('Selected Schema:', this.selectedSchema);
+
       this.schemaDetailsForm.patchValue({
         title: this.selectedSchema.title || '',
         description: this.selectedSchema.description || '',
         properties: JSON.stringify(this.selectedSchema.properties, null, 2),
         isEditingDescription: false,
       });
-
-      console.log('Selected Schema:', selectedSchema);
     }
+  }
+
+  processSchemaDetails(schema: any): void {
+    if (schema.properties) {
+      // If the schema has properties, resolve references as usual
+      this.resolveSchemaReferences(schema.properties);
+    } else {
+      // If there are no properties, check for other schema structures
+      this.additionalItems = []; // Reset additionalItems
+
+      if (schema.enum) {
+        this.additionalItems.push({ type: 'enum', values: schema.enum });
+      }
+
+      if (schema.allOf) {
+        this.additionalItems.push({ type: 'allOf', values: schema.allOf });
+      }
+
+      if (schema.oneOf) {
+        this.additionalItems.push({ type: 'oneOf', values: schema.oneOf });
+      }
+
+      if (schema.anyOf) {
+        this.additionalItems.push({ type: 'anyOf', values: schema.anyOf });
+      }
+
+      console.log('Additional Schema Items:', this.additionalItems);
+    }
+  }
+
+  resolveAllOf(allOfArray: any[]): any {
+    const combinedProperties = {};
+
+    for (const item of allOfArray) {
+      if (item.properties) {
+        // If item contains properties, add them to the combined properties
+        Object.assign(combinedProperties, item.properties);
+      } else if (item.$ref) {
+        // If item contains a $ref, resolve it and add its properties
+        const refProperties = this.getRefProperties(item.$ref);
+        Object.assign(combinedProperties, refProperties);
+      }
+    }
+
+    return combinedProperties;
+  }
+
+  resolveSchemaReferences(properties: any): void {
+    // Loop through each property and check for $ref
+    for (const key of Object.keys(properties)) {
+      const property = properties[key];
+
+      if (property.$ref) {
+        // Find the referenced schema and get its properties
+        const refProperties = this.getRefProperties(property.$ref);
+
+        // Log to check the $ref being resolved
+        console.log(`Resolving $ref for property "${key}":`, property.$ref);
+        console.log(`Referenced Properties for "${key}":`, refProperties);
+
+        if (refProperties) {
+          // Replace the $ref with the actual properties of the referenced schema
+          properties[key] = { ...refProperties, ...property };
+        }
+      }
+    }
+
+    // Log final properties after all references have been resolved
+    console.log('Resolved Properties:', properties);
+  }
+
+  getRefProperties(ref: string): any {
+    // Extract the schema name from $ref
+    const refSchemaName = this.extractSchemaNameFromRef(ref);
+
+    // Log schema name being resolved
+    console.log('Extracted schema name from $ref:', refSchemaName);
+
+    // Find the referenced schema in the apiSchemas array
+    const referencedSchema = this.apiSchemas.find(
+      (s) => s.name === refSchemaName
+    );
+
+    // Log the referenced schema and its properties
+    console.log('Referenced Schema:', referencedSchema);
+
+    // Return the properties of the referenced schema, or null if not found
+    return referencedSchema ? referencedSchema.details.properties : null;
+  }
+
+  extractSchemaNameFromRef(ref: string): string {
+    // Extract the schema name from $ref, assuming the format '#/components/schemas/SchemaName'
+    const refParts = ref.split('/');
+    return refParts[refParts.length - 1]; // Return the last part, which is the schema name
   }
 
   onAddProperty() {
@@ -178,12 +285,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   toggleDescription(event: Event, property: string): void {
-    event.preventDefault(); // Prevent form submission
+    event.preventDefault();
 
     if (this.descriptionProperty === property) {
-      this.descriptionProperty = null; // Hide description if already open
+      this.descriptionProperty = null;
     } else {
-      this.descriptionProperty = property; // Show description for the clicked property
+      this.descriptionProperty = property;
     }
   }
 
