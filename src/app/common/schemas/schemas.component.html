@@ -55,7 +55,7 @@
         <div class="properties-section">
           <h3>Schema type</h3>
 
-          <!-- Check if properties exist -->
+          <!-- If properties exist -->
           <div *ngIf="selectedSchema.properties">
             <span class="property-count">
               Object({{ objectKeys(selectedSchema.properties).length }})
@@ -110,8 +110,18 @@
             </table>
           </div>
 
-          <!-- If no properties, check for allOf, oneOf, anyOf -->
-          <div *ngIf="!selectedSchema.properties">
+          <!-- Display enum values if available -->
+          <div *ngIf="selectedSchema.enum">
+            <h4>Enum Values:</h4>
+            <ul>
+              <li *ngFor="let enumValue of selectedSchema.enum">
+                {{ enumValue }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- If no properties or enum, check for other schema items (allOf, oneOf, anyOf) -->
+          <div *ngIf="!selectedSchema.properties && !selectedSchema.enum">
             <div *ngFor="let item of additionalItems">
               <h4>{{ item.type }}:</h4>
               <ul>
