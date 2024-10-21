@@ -89,6 +89,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   objectKeys(obj: any): string[] {
+    if (!obj) {
+      return []; // Return an empty array if the object is null or undefined
+    }
     return Object.keys(obj);
   }
 
@@ -110,14 +113,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       console.log('Selected Schema:', this.selectedSchema);
 
-      if (this.selectedSchema.allOf) {
-        const resolvedProperties = this.resolveAllOf(this.selectedSchema.allOf);
-        this.selectedSchema.properties = {
-          ...this.selectedSchema.properties,
-          ...resolvedProperties,
-        };
-      }
+      // Recursively resolve all $ref in properties and allOf
+      this.resolveAllSchemaReferences(this.selectedSchema);
 
+      // If there's an enum, display it
       if (this.selectedSchema.enum) {
         this.schemaDetailsForm.patchValue({
           title: this.selectedSchema.title || '',
@@ -127,9 +126,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
         });
 
         this.displayEnum(this.selectedSchema.enum);
-      }
-      // If the schema has properties, handle it
-      else if (this.selectedSchema.properties) {
+      } else if (this.selectedSchema.properties) {
+        // Patch the resolved properties to the form
         this.schemaDetailsForm.patchValue({
           title: this.selectedSchema.title || '',
           description: this.selectedSchema.description || '',
@@ -140,10 +138,37 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Method to handle displaying enum values
   displayEnum(enumValues: string[]): void {
     console.log('Enum values:', enumValues);
-    // Logic to display enum values in your UI
+  }
+
+  getRefProperties(ref: string): any {
+    // Extract the schema name from the $ref
+    const refSchemaName = this.extractSchemaNameFromRef(ref);
+
+    // Find the referenced schema in the apiSchemas array
+    const referencedSchema = this.apiSchemas.find(
+      (s) => s.name === refSchemaName
+    );
+
+    // Return the referenced schema's details if found, and resolve any nested references
+    if (referencedSchema) {
+      const refDetails = { ...referencedSchema.details }; // Copy to avoid modifying the original object
+
+      // Recursively resolve all references within the referenced schema
+      this.resolveAllSchemaReferences(refDetails);
+
+      return {
+        properties: refDetails.properties || null,
+        enum: refDetails.enum || null,
+      };
+    }
+    return null;
+  }
+
+  extractSchemaNameFromRef(ref: string): string {
+    const refParts = ref.split('/');
+    return refParts[refParts.length - 1]; // Return the last part as the schema name
   }
 
   processSchemaDetails(schema: any): void {
@@ -172,6 +197,59 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   }
 
+  resolveAllSchemaReferences(schema: any): void {
+    // Resolve references in allOf
+    if (schema.allOf) {
+      schema.properties = schema.properties || {};
+      schema.allOf.forEach((subSchema: any) => {
+        if (subSchema.$ref) {
+          // Resolve $ref inside allOf
+          const refResult = this.getRefProperties(subSchema.$ref);
+          if (refResult) {
+            if (refResult.properties) {
+              // Merge referenced properties directly into schema properties
+              Object.assign(schema.properties, refResult.properties);
+            }
+            if (refResult.enum) {
+              // Handle enum in reference
+              schema.enum = refResult.enum;
+            }
+          }
+        } else if (subSchema.properties) {
+          // Merge properties from non-$ref allOf schemas
+          Object.assign(schema.properties, subSchema.properties);
+        }
+      });
+    }
+
+    // Resolve references in properties
+    if (schema.properties) {
+      for (const key of Object.keys(schema.properties)) {
+        const property = schema.properties[key];
+
+        if (property.$ref) {
+          const refResult = this.getRefProperties(property.$ref);
+          if (refResult) {
+            if (refResult.properties) {
+              // Replace the $ref entirely with the referenced properties
+              schema.properties[key] = {
+                ...refResult, // Replace the current property with the referenced properties
+                ...property, // Include any existing metadata of the original property
+              };
+            }
+            if (refResult.enum) {
+              // Handle enum in the reference
+              schema.properties[key].enum = refResult.enum;
+            }
+          }
+        } else if (property.type === 'object' && property.properties) {
+          // Recursively resolve properties within nested objects
+          this.resolveAllSchemaReferences(property);
+        }
+      }
+    }
+  }
+
   resolveAllOf(allOfArray: any[]): any {
     const combinedProperties = {};
 
@@ -181,8 +259,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       } else if (item.$ref) {
         const refProperties = this.getRefProperties(item.$ref);
         Object.assign(combinedProperties, refProperties);
-      } else if (item.enum) {
-        Object.assign(combinedProperties, item.enum);
       }
     }
 
@@ -193,38 +269,41 @@ export class SchemasComponent implements OnInit, OnDestroy {
     for (const key of Object.keys(properties)) {
       const property = properties[key];
 
+      // If the property has a $ref, resolve it
       if (property.$ref) {
         const refProperties = this.getRefProperties(property.$ref);
 
-        console.log(`Resolving $ref for property "${key}":`, property.$ref);
-        console.log(`Referenced Properties for "${key}":`, refProperties);
-
         if (refProperties) {
-          properties[key] = { ...refProperties, ...property };
+          if (refProperties.enum) {
+            // If it's an enum, just set the enum values
+            properties[key].enum = refProperties.enum;
+          } else {
+            // Otherwise, merge the referenced schema properties
+            properties[key] = { ...refProperties, ...property };
+          }
         }
       }
+
+      if (property.properties) {
+        this.resolveSchemaReferences(property.properties);
+      }
+    }
+  }
+
+  isLastEnumValue(enumValue: string, property: string): boolean {
+    const propertyEnum = this.selectedSchema?.properties?.[property]?.enum;
+
+    console.log('Checking if last enum value:', {
+      enumValue,
+      property,
+      propertyEnum,
+    });
+
+    if (!propertyEnum) {
+      return false;
     }
 
-    console.log('Resolved Properties:', properties);
-  }
-
-  getRefProperties(ref: string): any {
-    const refSchemaName = this.extractSchemaNameFromRef(ref);
-
-    console.log('Extracted schema name from $ref:', refSchemaName);
-
-    const referencedSchema = this.apiSchemas.find(
-      (s) => s.name === refSchemaName
-    );
-
-    console.log('Referenced Schema:', referencedSchema);
-
-    return referencedSchema ? referencedSchema.details.properties : null;
-  }
-
-  extractSchemaNameFromRef(ref: string): string {
-    const refParts = ref.split('/');
-    return refParts[refParts.length - 1]; // Return the last part, which is the schema name
+    return propertyEnum.indexOf(enumValue) === propertyEnum.length - 1;
   }
 
   onAddProperty() {
