@@ -146,3 +146,32 @@ button:hover {
 .nested-property-type {
   color: #6c63ff;
 }
+p-treeTable {
+  width: 100%;
+}
+
+p-treeTable th,
+p-treeTable td {
+  padding: 10px;
+  text-align: left;
+}
+
+.p-treeTable-header,
+.p-treeTable-body {
+  font-size: 14px;
+}
+
+p-treeTable {
+  width: 100%;
+}
+
+p-treeTable th,
+p-treeTable td {
+  padding: 10px;
+  text-align: left;
+}
+
+.p-treeTable-header,
+.p-treeTable-body {
+  font-size: 14px;
+}

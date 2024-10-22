@@ -67,6 +67,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     // Loop over each API path
     Object.keys(swaggerSpec.paths).forEach((pathKey) => {
       const methods = Object.keys(swaggerSpec.paths[pathKey])
+        .sort()
         .filter((methodKey) => this.validHttpMethods.includes(methodKey)) // Only include valid HTTP methods
         .map((methodKey) => {
           const methodDetails = swaggerSpec.paths[pathKey][methodKey];
@@ -94,7 +95,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }));
   }
 
-  getRequestBodies(swaggerSpec: any) {
+  getRequestBodies(_swaggerSpec: any) {
     return this.requestBodies;
   }
 
@@ -120,11 +121,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return responsesArray;
   }
 
-  getParameters(swaggerSpec: any) {
+  getParameters(_swaggerSpec: any) {
     return this.parameters;
   }
 
-  getExamples(swaggerSpec: any) {
+  getExamples(_swaggerSpec: any) {
     return this.examples;
   }
 

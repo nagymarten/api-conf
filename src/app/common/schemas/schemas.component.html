@@ -55,120 +55,54 @@
         <div class="properties-section">
           <h3>Schema type</h3>
 
-          <!-- Check if properties exist -->
           <div *ngIf="selectedSchema.properties">
             <span class="property-count">
               Object({{ objectKeys(selectedSchema.properties).length }})
             </span>
+            <div *ngIf="selectedSchema.allOf">
+              <span class="property-count">
+                allOf({{ selectedSchema.allOf.length }})
+              </span>
+              <div *ngFor="let item of additionalItems">
+                <h4>{{ item.type }}:</h4>
+                <ul>
+                  <li *ngFor="let value of item.values">{{ value }}</li>
+                </ul>
+              </div>
+            </div>
             <button class="" (click)="onAddProperty()" type="button">+</button>
 
-            <table class="properties-table">
-              <tbody>
-                <ng-container
-                  *ngFor="let property of objectKeys(selectedSchema.properties)"
-                >
-                  <tr>
-                    <td class="property-name">{{ property }}</td>
-                    <td class="property-type">
-                      <ng-container
-                        *ngIf="
-                          selectedSchema.properties[property].enum;
-                          else propertyType
-                        "
-                      >
-                        <ul>
-                          <li
-                            *ngFor="
-                              let enumValue of selectedSchema.properties[
-                                property
-                              ].enum
-                            "
-                          >
-                            {{ enumValue
-                            }}{{
-                              isLastEnumValue(enumValue, property)
-                                ? ""
-                                : ", "
-                            }}
-                          </li>
-                        </ul>
-                      </ng-container>
-                      <ng-template #propertyType>
-                        {{ selectedSchema.properties[property].type }}
-                        <span
-                          *ngIf="selectedSchema.properties[property].format"
-                        >
-                          &lt;{{
-                            selectedSchema.properties[property].format
-                          }}&gt;
-                        </span>
+            <p-treeTable [value]="jsonTree" [columns]="cols" [scrollable]="true" [tableStyle]="{ 'min-width': '50rem' }">
+              <ng-template pTemplate="header" let-columns>
+                <tr>
+                  <th *ngFor="let col of columns">
+                    {{ col.header }}
+                  </th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-rowNode let-rowData="rowData" let-columns="columns">
+                <tr [ttRow]="rowNode">
+                  <td *ngFor="let col of columns; let i = index" ttEditableColumn [ttEditableColumnDisabled]="i == 0"
+                    [ngClass]="{ 'p-toggler-column': i === 0 }">
+                    <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
+                    <p-treeTableCellEditor>
+                      <ng-template pTemplate="input">
+                        <input pInputText type="text" [(ngModel)]="rowData[col.field]" />
                       </ng-template>
-                    </td>
-                  </tr>
-
-                  <!-- Handling nested properties with enums -->
-                  <ng-container
-                    *ngFor="
-                      let subProperty of objectKeys(
-                        selectedSchema.properties[property].properties
-                      )
-                    "
-                  >
-                    <tr>
-                      <td class="property-name">{{ subProperty }}</td>
-                      <td class="property-type">
-                        <ul
-                          *ngIf="
-                            selectedSchema.properties[property].properties[
-                              subProperty
-                            ].enum
-                          "
-                        >
-                          <li
-                            *ngFor="
-                              let subEnum of selectedSchema.properties[property]
-                                .properties[subProperty].enum
-                            "
-                          >
-                            <span>
-                              {{ subEnum
-                              }}{{
-                                isLastEnumValue(subEnum, property)
-                                  ? ""
-                                  : ", "
-                              }}
-                            </span>
-                          </li>
-                        </ul>
-                      </td>
-                    </tr>
-                  </ng-container>
-                </ng-container>
-              </tbody>
-            </table>
+                      <ng-template pTemplate="output">
+                        {{ rowData[col.field] }}
+                      </ng-template>
+                    </p-treeTableCellEditor>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-treeTable>
           </div>
 
-          <!-- If schema has enum -->
+          <!-- If schema has enum at the top level -->
           <div *ngIf="selectedSchema.enum">
-            <h4>Enum Values:</h4>
-            <ul>
-              <li *ngFor="let enumValue of selectedSchema.enum">
-                {{ enumValue }}
-              </li>
-            </ul>
-          </div>
-
-          <!-- If schema has allOf instead of properties -->
-          <div *ngIf="selectedSchema.allOf">
-            <span class="property-count">
-              allOf({{ selectedSchema.allOf.length }})
-            </span>
-            <div *ngFor="let item of additionalItems">
-              <h4>{{ item.type }}:</h4>
-              <ul>
-                <li *ngFor="let value of item.values">{{ value }}</li>
-              </ul>
-            </div>
+            <h4>Enum Reference:</h4>
+            <a href="#">{{ selectedSchemaName }}</a>
           </div>
 
           <!-- Fallback for any other case -->

@@ -12,13 +12,21 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ExtendedSwaggerSpec, SchemaDetails } from '../../models/swagger.types';
 import { MatIconModule } from '@angular/material/icon';
-
+import { TreeTableModule } from 'primeng/treetable';
+import { TreeNode } from 'primeng/api';
+import { FormsModule } from '@angular/forms';
+import { NodeService } from '../../services/node.service';
+interface Column {
+  field: string;
+  header: string;
+}
 @Component({
   selector: 'app-models',
   standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     AgGridModule,
     MatGridListModule,
     MatInputModule,
@@ -26,9 +34,11 @@ import { MatIconModule } from '@angular/material/icon';
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
+    TreeTableModule,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
+  providers: [NodeService],
 })
 export class SchemasComponent implements OnInit, OnDestroy {
   schemas: string = '';
@@ -41,12 +51,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedSchemaName: string = '';
   activeTab: string = 'schema';
   descriptionProperty: string | null = null;
-  additionalItems: any[] = []; // This will store enums, allOf, oneOf, etc.
+  additionalItems: any[] = [];
+  files!: TreeNode[];
+  cols!: Column[];
+  jsonTree: TreeNode[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private apiDataService: ApiDataService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private nodeService: NodeService
   ) {}
 
   ngOnInit(): void {
@@ -62,6 +76,183 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.schema = params['schema'];
       this.fetchModelDetails();
     });
+
+    this.nodeService.getFilesystem().then((files) => (this.files = files));
+    this.cols = [
+      { field: 'name', header: 'Name' },
+      { field: 'type', header: 'Type' },
+    ];
+  }
+
+  schemaToTreeNode(schema: any): TreeNode[] {
+    const nodes: TreeNode[] = [];
+
+    const rootNode: TreeNode = {
+      label: schema.title || 'Schema',
+      data: {
+        name: schema.title,
+        description: schema.description,
+        type: schema.type,
+      },
+      children: [],
+      expanded: true,
+    };
+
+    if (schema.allOf) {
+      Object.keys(schema.allOf).forEach((propertyKey) => {
+        const property = schema.allOf[propertyKey];
+
+        const childNode: TreeNode = {
+          label: propertyKey,
+          data: {
+            name: propertyKey,
+            description: property.description || '',
+            type: property.type || '',
+            format: property.format || '',
+          },
+          children: [],
+        };
+
+        // Check if property has allOf, enum, oneOf, or anyOf
+        if (property.allOf) {
+          childNode.data.type = 'allOf';
+          childNode.children = this.schemaToTreeNode({
+            properties: this.mergeAllOfProperties(property.allOf),
+          });
+        } else if (property.enum) {
+          childNode.data.type = 'enum';
+          childNode.children = property.enum.map((enumValue: string) => ({
+            label: enumValue,
+            data: {
+              name: enumValue,
+              type: 'enum value',
+            },
+            children: [],
+          }));
+        } else if (property.oneOf) {
+          childNode.data.type = 'oneOf';
+          childNode.children = property.oneOf.map(
+            (item: any, index: number) => ({
+              label: `Option ${index + 1}`,
+              data: {
+                name: `Option ${index + 1}`,
+                type: item.type || 'Unknown',
+              },
+              children:
+                this.schemaToTreeNode(item).length > 0
+                  ? this.schemaToTreeNode(item)
+                  : [],
+            })
+          );
+        } else if (property.anyOf) {
+          childNode.data.type = 'anyOf';
+          childNode.children = property.anyOf.map(
+            (item: any, index: number) => ({
+              label: `Option ${index + 1}`,
+              data: {
+                name: `Option ${index + 1}`,
+                type: item.type || 'Unknown',
+              },
+              children:
+                this.schemaToTreeNode(item).length > 0
+                  ? this.schemaToTreeNode(item)
+                  : [],
+            })
+          );
+        }
+
+        // If the property is an object, recursively add children
+        if (property.type === 'object' && property.properties) {
+          childNode.children = this.schemaToTreeNode(property);
+        }
+
+        rootNode.children?.push(childNode);
+      });
+    } else if (schema.properties) {
+      Object.keys(schema.properties).forEach((propertyKey) => {
+        const property = schema.properties[propertyKey];
+
+        const childNode: TreeNode = {
+          label: propertyKey,
+          data: {
+            name: propertyKey,
+            description: property.description || '',
+            type: property.type || '',
+            format: property.format || '',
+          },
+          children: [],
+        };
+
+        // Check if property has allOf, enum, oneOf, or anyOf
+        if (property.allOf) {
+          childNode.data.type = 'allOf';
+          childNode.children = this.schemaToTreeNode({
+            properties: this.mergeAllOfProperties(property.allOf),
+          });
+        } else if (property.enum) {
+          childNode.data.type = 'enum';
+          childNode.children = property.enum.map((enumValue: string) => ({
+            label: enumValue,
+            data: {
+              name: enumValue,
+              type: 'enum value',
+            },
+            children: [],
+          }));
+        } else if (property.oneOf) {
+          childNode.data.type = 'oneOf';
+          childNode.children = property.oneOf.map(
+            (item: any, index: number) => ({
+              label: `Option ${index + 1}`,
+              data: {
+                name: `Option ${index + 1}`,
+                type: item.type || 'Unknown',
+              },
+              children:
+                this.schemaToTreeNode(item).length > 0
+                  ? this.schemaToTreeNode(item)
+                  : [],
+            })
+          );
+        } else if (property.anyOf) {
+          childNode.data.type = 'anyOf';
+          childNode.children = property.anyOf.map(
+            (item: any, index: number) => ({
+              label: `Option ${index + 1}`,
+              data: {
+                name: `Option ${index + 1}`,
+                type: item.type || 'Unknown',
+              },
+              children:
+                this.schemaToTreeNode(item).length > 0
+                  ? this.schemaToTreeNode(item)
+                  : [],
+            })
+          );
+        }
+
+        // If the property is an object, recursively add children
+        if (property.type === 'object' && property.properties) {
+          childNode.children = this.schemaToTreeNode(property);
+        }
+
+        rootNode.children?.push(childNode);
+      });
+    }
+
+    nodes.push(rootNode);
+    return nodes;
+  }
+
+  // Helper function to merge properties in allOf arrays
+  mergeAllOfProperties(allOfArray: any[]): any {
+    const mergedProperties: any = {};
+    allOfArray.forEach((item) => {
+      if (item.properties) {
+        Object.assign(mergedProperties, item.properties);
+      }
+    });
+    return mergedProperties;
   }
 
   fetchModelDetails(): void {
@@ -86,6 +277,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
         console.error('Error fetching Swagger spec:', error);
       },
     });
+    this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
+    console.log(this.jsonTree);
   }
 
   objectKeys(obj: any): string[] {
@@ -113,21 +306,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       console.log('Selected Schema:', this.selectedSchema);
 
-      // Recursively resolve all $ref in properties and allOf
-      this.resolveAllSchemaReferences(this.selectedSchema);
-
-      // If there's an enum, display it
-      if (this.selectedSchema.enum) {
-        this.schemaDetailsForm.patchValue({
-          title: this.selectedSchema.title || '',
-          description: this.selectedSchema.description || '',
-          properties: '',
-          isEditingDescription: false,
-        });
-
-        this.displayEnum(this.selectedSchema.enum);
-      } else if (this.selectedSchema.properties) {
-        // Patch the resolved properties to the form
+      if (this.selectedSchema.properties) {
         this.schemaDetailsForm.patchValue({
           title: this.selectedSchema.title || '',
           description: this.selectedSchema.description || '',
@@ -138,172 +317,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   }
 
-  displayEnum(enumValues: string[]): void {
-    console.log('Enum values:', enumValues);
-  }
-
-  getRefProperties(ref: string): any {
-    // Extract the schema name from the $ref
-    const refSchemaName = this.extractSchemaNameFromRef(ref);
-
-    // Find the referenced schema in the apiSchemas array
-    const referencedSchema = this.apiSchemas.find(
-      (s) => s.name === refSchemaName
-    );
-
-    // Return the referenced schema's details if found, and resolve any nested references
-    if (referencedSchema) {
-      const refDetails = { ...referencedSchema.details }; // Copy to avoid modifying the original object
-
-      // Recursively resolve all references within the referenced schema
-      this.resolveAllSchemaReferences(refDetails);
-
-      return {
-        properties: refDetails.properties || null,
-        enum: refDetails.enum || null,
-      };
-    }
-    return null;
-  }
-
   extractSchemaNameFromRef(ref: string): string {
     const refParts = ref.split('/');
     return refParts[refParts.length - 1]; // Return the last part as the schema name
-  }
-
-  processSchemaDetails(schema: any): void {
-    if (schema.properties) {
-      this.resolveSchemaReferences(schema.properties);
-    } else {
-      this.additionalItems = [];
-
-      if (schema.enum) {
-        this.additionalItems.push({ type: 'enum', values: schema.enum });
-      }
-
-      if (schema.allOf) {
-        this.additionalItems.push({ type: 'allOf', values: schema.allOf });
-      }
-
-      if (schema.oneOf) {
-        this.additionalItems.push({ type: 'oneOf', values: schema.oneOf });
-      }
-
-      if (schema.anyOf) {
-        this.additionalItems.push({ type: 'anyOf', values: schema.anyOf });
-      }
-
-      console.log('Additional Schema Items:', this.additionalItems);
-    }
-  }
-
-  resolveAllSchemaReferences(schema: any): void {
-    // Resolve references in allOf
-    if (schema.allOf) {
-      schema.properties = schema.properties || {};
-      schema.allOf.forEach((subSchema: any) => {
-        if (subSchema.$ref) {
-          // Resolve $ref inside allOf
-          const refResult = this.getRefProperties(subSchema.$ref);
-          if (refResult) {
-            if (refResult.properties) {
-              // Merge referenced properties directly into schema properties
-              Object.assign(schema.properties, refResult.properties);
-            }
-            if (refResult.enum) {
-              // Handle enum in reference
-              schema.enum = refResult.enum;
-            }
-          }
-        } else if (subSchema.properties) {
-          // Merge properties from non-$ref allOf schemas
-          Object.assign(schema.properties, subSchema.properties);
-        }
-      });
-    }
-
-    // Resolve references in properties
-    if (schema.properties) {
-      for (const key of Object.keys(schema.properties)) {
-        const property = schema.properties[key];
-
-        if (property.$ref) {
-          const refResult = this.getRefProperties(property.$ref);
-          if (refResult) {
-            if (refResult.properties) {
-              // Replace the $ref entirely with the referenced properties
-              schema.properties[key] = {
-                ...refResult, // Replace the current property with the referenced properties
-                ...property, // Include any existing metadata of the original property
-              };
-            }
-            if (refResult.enum) {
-              // Handle enum in the reference
-              schema.properties[key].enum = refResult.enum;
-            }
-          }
-        } else if (property.type === 'object' && property.properties) {
-          // Recursively resolve properties within nested objects
-          this.resolveAllSchemaReferences(property);
-        }
-      }
-    }
-  }
-
-  resolveAllOf(allOfArray: any[]): any {
-    const combinedProperties = {};
-
-    for (const item of allOfArray) {
-      if (item.properties) {
-        Object.assign(combinedProperties, item.properties);
-      } else if (item.$ref) {
-        const refProperties = this.getRefProperties(item.$ref);
-        Object.assign(combinedProperties, refProperties);
-      }
-    }
-
-    return combinedProperties;
-  }
-
-  resolveSchemaReferences(properties: any): void {
-    for (const key of Object.keys(properties)) {
-      const property = properties[key];
-
-      // If the property has a $ref, resolve it
-      if (property.$ref) {
-        const refProperties = this.getRefProperties(property.$ref);
-
-        if (refProperties) {
-          if (refProperties.enum) {
-            // If it's an enum, just set the enum values
-            properties[key].enum = refProperties.enum;
-          } else {
-            // Otherwise, merge the referenced schema properties
-            properties[key] = { ...refProperties, ...property };
-          }
-        }
-      }
-
-      if (property.properties) {
-        this.resolveSchemaReferences(property.properties);
-      }
-    }
-  }
-
-  isLastEnumValue(enumValue: string, property: string): boolean {
-    const propertyEnum = this.selectedSchema?.properties?.[property]?.enum;
-
-    console.log('Checking if last enum value:', {
-      enumValue,
-      property,
-      propertyEnum,
-    });
-
-    if (!propertyEnum) {
-      return false;
-    }
-
-    return propertyEnum.indexOf(enumValue) === propertyEnum.length - 1;
   }
 
   onAddProperty() {
@@ -363,16 +379,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.error('No Swagger spec or schemas found.');
         }
       });
-  }
-
-  toggleDescription(event: Event, property: string): void {
-    event.preventDefault();
-
-    if (this.descriptionProperty === property) {
-      this.descriptionProperty = null;
-    } else {
-      this.descriptionProperty = property;
-    }
   }
 
   setActiveTab(tab: string): void {

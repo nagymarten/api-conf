@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { ApiDataService } from '../../../services/api-data.service';
 import * as yaml from 'js-yaml';
 

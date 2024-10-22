@@ -9,7 +9,7 @@ import { Parameter, Schema, Security } from 'swagger-schema-official';
 })
 export class ApiDataService {
   private swaggerSpecSubject = new BehaviorSubject<ExtendedSwaggerSpec | null>(
-    null
+    this.getSwaggerSpecFromStorage() // Initialize with the stored spec, if any
   );
   swaggerSpec$: Observable<ExtendedSwaggerSpec | null> =
     this.swaggerSpecSubject.asObservable();
@@ -20,7 +20,7 @@ export class ApiDataService {
   private schemes: string = '';
   private paths: string = '';
   private security: string = '';
-  private servers: string = '';
+  // private servers: string = '';
   private responses: string = '';
 
   constructor() {}
@@ -36,6 +36,7 @@ export class ApiDataService {
           const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
           this.swaggerSpecSubject.next(swaggerSpec);
           this.setApiData(swaggerSpec);
+          this.saveSwaggerSpecToStorage(swaggerSpec); // Save to localStorage
         } catch (error) {
           console.error('Error parsing the file as YAML:', error);
           this.swaggerSpecSubject.error(error);
@@ -62,7 +63,7 @@ export class ApiDataService {
     this.schemes = JSON.stringify(swaggerSpec.schemes || '', null, 2);
     this.paths = JSON.stringify(swaggerSpec.paths, null, 2);
     this.security = JSON.stringify(swaggerSpec.security || '', null, 2);
-    this.servers = this.getServers();
+    // this.servers = this.getServers();
     this.responses = JSON.stringify(swaggerSpec.responses || '', null, 2);
   }
 
@@ -115,6 +116,7 @@ export class ApiDataService {
     return this.responses;
   }
 
+  // Methods to set data
   setOpenApiVersion(openApiVersion: string): void {
     this.openApiVersion = openApiVersion;
   }
@@ -139,12 +141,36 @@ export class ApiDataService {
     this.security = security;
   }
 
-  setServers(servers: string): void {
-    this.servers = servers;
-  }
+  // setServers(servers: string): void {
+  //   this.servers = servers;
+  // }
 
   setResponses(responses: string): void {
     this.responses = responses;
+  }
+
+  // Store the Swagger spec in localStorage
+  private saveSwaggerSpecToStorage(swaggerSpec: ExtendedSwaggerSpec): void {
+    localStorage.setItem('swaggerSpec', JSON.stringify(swaggerSpec));
+  }
+
+  // Retrieve the Swagger spec from localStorage
+  private getSwaggerSpecFromStorage(): ExtendedSwaggerSpec | null {
+    const swaggerSpecString = localStorage.getItem('swaggerSpec');
+    if (swaggerSpecString) {
+      try {
+        return JSON.parse(swaggerSpecString);
+      } catch (error) {
+        console.error('Error parsing stored Swagger spec:', error);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Clear the Swagger spec from localStorage
+  clearSwaggerSpecStorage(): void {
+    localStorage.removeItem('swaggerSpec');
   }
 }
 

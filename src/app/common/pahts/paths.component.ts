@@ -11,7 +11,7 @@ import {
 } from '../../models/swagger.types';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'paths',
@@ -34,9 +34,7 @@ export class PathsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private apiDataService: ApiDataService,
-    private fb: FormBuilder,
-    private router: Router
-  ) {}
+    private fb: FormBuilder  ) {}
 
   ngOnInit(): void {
     // Initialize the form with empty controls
