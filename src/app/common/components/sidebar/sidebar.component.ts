@@ -23,7 +23,7 @@ import { DownloadYamlButtonComponent } from '../download-yaml-button/download-ya
     MatIconModule,
     MatToolbarModule,
     ApiDocumentUploadButtonComponent,
-    DownloadYamlButtonComponent
+    DownloadYamlButtonComponent,
   ],
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css'],
@@ -87,9 +87,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   getModels(swaggerSpec: any): any[] {
-    return Object.keys(swaggerSpec.components.schemas).map((key) => ({
-      name: key,
-    }));
+    return Object.keys(swaggerSpec.components.schemas)
+      .sort()
+      .map((key) => ({
+        name: key,
+      }));
   }
 
   getRequestBodies(swaggerSpec: any) {
