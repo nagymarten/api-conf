@@ -113,7 +113,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           children: [],
         };
 
-        // Check if property has allOf, enum, oneOf, or anyOf
         if (property.allOf) {
           childNode.data.type = 'allOf';
           childNode.children = this.schemaToTreeNode({
@@ -214,24 +213,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   : [],
             })
           );
-        } else if (property.anyOf) {
-          childNode.data.type = 'anyOf';
-          childNode.children = property.anyOf.map(
-            (item: any, index: number) => ({
-              label: `Option ${index + 1}`,
-              data: {
-                name: `Option ${index + 1}`,
-                type: item.type || 'Unknown',
-              },
-              children:
-                this.schemaToTreeNode(item).length > 0
-                  ? this.schemaToTreeNode(item)
-                  : [],
-            })
-          );
         }
 
-        // If the property is an object, recursively add children
         if (property.type === 'object' && property.properties) {
           childNode.children = this.schemaToTreeNode(property);
         }

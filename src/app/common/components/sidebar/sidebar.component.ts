@@ -10,6 +10,7 @@ import { ApiDocumentUploadButtonComponent } from '../api-document-upload-button/
 import { Subscription } from 'rxjs';
 import { ApiDataService } from '../../../services/api-data.service';
 import { DownloadYamlButtonComponent } from '../download-yaml-button/download-yaml-button.component';
+import { DeleteDocumentButtonComponent } from '../delete-document-button/delete-document-button.component';
 
 @Component({
   selector: 'app-sidebar',
@@ -24,6 +25,7 @@ import { DownloadYamlButtonComponent } from '../download-yaml-button/download-ya
     MatToolbarModule,
     ApiDocumentUploadButtonComponent,
     DownloadYamlButtonComponent,
+    DeleteDocumentButtonComponent
   ],
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css'],
