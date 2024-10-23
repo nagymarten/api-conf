@@ -2,11 +2,16 @@
   <form [formGroup]="schemaDetailsForm" (ngSubmit)="onUpdateSchema()">
     <div class="schema-details">
       <h1>
-        <input formControlName="title" placeholder="Schema Title" />
-        {{ selectedSchemaName | uppercase }}
+        <input *ngIf="schemaDetailsForm.get('isEditingTitle')?.value" formControlName="title" (blur)="stopEditingTitle()"
+          placeholder="Schema Title" class="title-editor" />
+        <span *ngIf="!schemaDetailsForm.get('isEditingTitle')?.value" (click)="startEditingTitle()" class="title-text">
+          {{
+          schemaDetailsForm.get("title")?.value ||
+          "Click to add a title"
+          }}
+        </span>
       </h1>
 
-      <!-- Description section -->
       <div class="description-section">
         <p
           *ngIf="!schemaDetailsForm.get('isEditingDescription')?.value"
