@@ -133,13 +133,11 @@
             </p-treeTable>
           </div>
 
-          <!-- If schema has enum at the top level -->
           <div *ngIf="selectedSchema.enum">
             <h4>Enum Reference:</h4>
             <a href="#">{{ selectedSchemaName }}</a>
           </div>
 
-          <!-- Fallback for any other case -->
           <div
             *ngIf="
               !selectedSchema.properties &&
@@ -154,7 +152,7 @@
 
       <div *ngIf="activeTab === 'examples'" class="api-details">
         <h3>Schema Examples</h3>
-        <div *ngIf="selectedSchema?.examples?.length">
+        <div *ngIf="selectedSchema?.examples?.length; else noExamples">
           <div class="card">
             <p-tabMenu
               [model]="responseExamples"
@@ -172,6 +170,10 @@
             ></textarea>
           </div>
         </div>
+
+        <ng-template #noExamples>
+          <p>No examples available for this schema.</p>
+        </ng-template>
       </div>
       <div *ngIf="activeTab === 'extensions'" class="api-details">
         extensions
