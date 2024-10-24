@@ -154,14 +154,23 @@
 
       <div *ngIf="activeTab === 'examples'" class="api-details">
         <h3>Schema Examples</h3>
-        <div *ngIf="selectedSchema?.examples?.length;">
-          <textarea
-            formControlName="examples"
-            rows="10"
-            class="examples-textarea"
-            placeholder="Edit examples here"
-          >
-          </textarea>
+        <div *ngIf="selectedSchema?.examples?.length">
+          <div class="card">
+            <p-tabMenu
+              [model]="responseExamples"
+              [(activeItem)]="activeItem"
+            ></p-tabMenu>
+          </div>
+
+          <div class="card flex justify-content-center">
+            <textarea
+              rows="5"
+              cols="30"
+              pInputTextarea
+              [autoResize]="true"
+              formControlName="examples"
+            ></textarea>
+          </div>
         </div>
       </div>
       <div *ngIf="activeTab === 'extensions'" class="api-details">

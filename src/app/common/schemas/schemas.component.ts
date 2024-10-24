@@ -13,13 +13,18 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { ExtendedSwaggerSpec, SchemaDetails } from '../../models/swagger.types';
 import { MatIconModule } from '@angular/material/icon';
 import { TreeTableModule } from 'primeng/treetable';
-import { TreeNode } from 'primeng/api';
+import { MenuItem, TreeNode } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { NodeService } from '../../services/node.service';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TabMenuModule } from 'primeng/tabmenu';
+import { ButtonModule } from 'primeng/button';
+
 interface Column {
   field: string;
   header: string;
 }
+
 @Component({
   selector: 'app-models',
   standalone: true,
@@ -35,6 +40,9 @@ interface Column {
     MatFormFieldModule,
     MatIconModule,
     TreeTableModule,
+    InputTextareaModule,
+    TabMenuModule,
+    ButtonModule,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -54,6 +62,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
   files!: TreeNode[];
   cols!: Column[];
   jsonTree: TreeNode[] = [];
+  examples: any[] = [];
+  responseExamples: MenuItem[] = []; // Initialize as an empty array
+  activeItem!: MenuItem; // Remove undefined check by using non-null assertion
 
   constructor(
     private route: ActivatedRoute,
@@ -96,8 +107,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       data: {
         name: this.selectedSchemaName || 'Untitled schema',
         description: schema.description,
-        type: 
-          schema.allOf
+        type: schema.allOf
           ? 'allOf'
           : schema.properties
           ? 'object'
@@ -196,7 +206,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 children: [],
                 parent: rootNode,
               };
-              
+
               // Create childNode for the referenced schema, without adding another layer
               const referencedChildren = this.schemaToTreeNode(
                 referencedSchema,
@@ -295,20 +305,55 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchema = selectedSchema.details as SchemaDetails;
       this.selectedSchemaName = selectedSchema.name;
 
-      console.log('Selected Schema:', this.selectedSchema);
+      // Check if the selected schema has examples and populate responseExamples if it does
+      if (this.selectedSchema.examples && this.selectedSchema.examples.length) {
+        this.responseExamples = this.selectedSchema.examples.map(
+          (_example: any, index: number) => ({
+            label: `Example ${index + 1}`, // Generate label like 'Example 1', 'Example 2', etc.
+            command: () => this.onExampleSelect(index), // Handle example selection
+          })
+        );
 
-      if (this.selectedSchema.properties) {
+        // Set the first example as active and populate the textarea with its content
+        this.activeItem = this.responseExamples[0];
+        this.schemaDetailsForm.patchValue({
+          examples: JSON.stringify(this.selectedSchema.examples[0], null, 2),
+        });
+      } else {
+        // If no examples exist, clear responseExamples and textarea
+        this.responseExamples = [];
+        this.schemaDetailsForm.patchValue({
+          examples: '',
+        });
+      }
+
+      // Handle setting other schema details like enum and properties
+      if (this.selectedSchema.enum) {
+        this.schemaDetailsForm.patchValue({
+          title: this.selectedSchemaName,
+          description: this.selectedSchema.description || '',
+          enum: JSON.stringify(this.selectedSchema.enum, null, 2),
+          isEditingDescription: false,
+        });
+      } else if (this.selectedSchema.properties) {
         this.schemaDetailsForm.patchValue({
           title: this.selectedSchema.title || '',
           description: this.selectedSchema.description || '',
           properties: JSON.stringify(this.selectedSchema.properties, null, 2),
-          examples: this.selectedSchema.examples
-            ? JSON.stringify(this.selectedSchema.examples, null, 2)
-            : '',
           isEditingDescription: false,
         });
       }
     }
+  }
+
+  onExampleSelect(index: number): void {
+    this.schemaDetailsForm.patchValue({
+      examples: JSON.stringify(this.selectedSchema.examples[index], null, 2),
+    });
+  }
+
+  onActiveItemChange(event: MenuItem) {
+    this.activeItem = event;
   }
 
   onAddProperty() {
