@@ -46,7 +46,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   apiSchemas: any[] = [];
   schemaDetailsForm!: FormGroup;
   swaggerSubscription!: Subscription;
-  selectedSchemaData: any = null;
   selectedSchema: any;
   selectedSchemaName: string = '';
   activeTab: string = 'schema';
@@ -68,6 +67,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       title: [''],
       description: [''],
       properties: [''],
+      examples: [''],
       isEditingTitle: [false],
       isEditingDescription: [false],
     });
@@ -92,11 +92,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const nodes: TreeNode[] = [];
 
     const rootNode: TreeNode = {
-      label: this.selectedSchemaName || 'No schema',
+      label: schema.title || 'No schema',
       data: {
-        name: schema.title || 'Untitled schema',
+        name: this.selectedSchemaName || 'Untitled schema',
         description: schema.description,
-        type: schema.type,
+        type: 
+          schema.allOf
+          ? 'allOf'
+          : schema.properties
+          ? 'object'
+          : schema.type || '',
       },
       children: [],
       expanded: true,
@@ -104,40 +109,63 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (schema.allOf) {
       schema.allOf.forEach((subSchema: any) => {
+        let childNode: TreeNode;
+
+        // Handle subSchema when it has $ref
         if (subSchema.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
 
+          // Check if it is already resolved to avoid circular references
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
 
             const referencedSchema = this.getSchemaByRef(subSchema.$ref);
             if (referencedSchema) {
+              // Create childNode for referenced schema
+              childNode = {
+                label: refSchemaName,
+                data: {
+                  name: refSchemaName,
+                  description: referencedSchema.description || '',
+                  type: referencedSchema.allOf
+                    ? 'allOf'
+                    : referencedSchema.properties
+                    ? 'object'
+                    : referencedSchema.enum
+                    ? 'enum'
+                    : referencedSchema.type || '',
+                },
+                children: [],
+                parent: rootNode,
+              };
+
               const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 resolvedRefs
               );
-              resolvedChildren.forEach((child) =>
-                rootNode.children?.push(child)
-              );
+              childNode.children = resolvedChildren[0]?.children || [];
+
+              rootNode.children?.push(childNode);
             }
           }
         }
-        if (subSchema.properties) {
-          rootNode.children = this.schemaToTreeNode(subSchema, resolvedRefs);
-        }
       });
-    }
-
-    if (schema.properties) {
+    } else if (schema.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
-        const childNode: TreeNode = {
+        let childNode: TreeNode = {
           label: propertyKey,
           data: {
             name: propertyKey,
             description: property.description || '',
-            type: property.type || '',
+            type: property.allOf
+              ? 'allOf'
+              : property.properties
+              ? 'object'
+              : property.enum
+              ? 'enum'
+              : property.type || '',
           },
           children: [],
           parent: rootNode,
@@ -146,26 +174,51 @@ export class SchemasComponent implements OnInit, OnDestroy {
         if (property.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
 
+          // Check if it is already resolved to avoid circular references
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
 
             const referencedSchema = this.getSchemaByRef(property.$ref);
             if (referencedSchema) {
-              childNode.children = this.schemaToTreeNode(
+              childNode = {
+                label: refSchemaName,
+                data: {
+                  name: refSchemaName,
+                  description: referencedSchema.description || '',
+                  type: referencedSchema.allOf
+                    ? 'allOf'
+                    : referencedSchema.properties
+                    ? 'object'
+                    : referencedSchema.enum
+                    ? 'enum'
+                    : referencedSchema.type || '',
+                },
+                children: [],
+                parent: rootNode,
+              };
+              
+              // Create childNode for the referenced schema, without adding another layer
+              const referencedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 resolvedRefs
               );
+
+              // Directly assign the children of the referenced schema
+              childNode.children = referencedChildren[0]?.children || [];
             }
           }
-        } else if (property.allOf) {
-          childNode.children = this.schemaToTreeNode(
-            { properties: this.mergeAllOfProperties(property.allOf) },
-            resolvedRefs
-          );
         }
-
         rootNode.children?.push(childNode);
       });
+    } else if (schema.enum) {
+      rootNode.children = schema.enum.map((enumValue: string) => ({
+        label: enumValue,
+        data: {
+          name: enumValue,
+          type: '',
+        },
+        children: [],
+      }));
     }
 
     nodes.push(rootNode);
@@ -249,6 +302,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
           title: this.selectedSchema.title || '',
           description: this.selectedSchema.description || '',
           properties: JSON.stringify(this.selectedSchema.properties, null, 2),
+          examples: this.selectedSchema.examples
+            ? JSON.stringify(this.selectedSchema.examples, null, 2)
+            : '',
           isEditingDescription: false,
         });
       }
