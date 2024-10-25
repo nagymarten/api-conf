@@ -101,20 +101,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   ): TreeNode[] {
     const nodes: TreeNode[] = [];
 
-    // const rootNode: TreeNode = {
-    //   label: schema.title || 'No schema',
-    //   data: {
-    //     name: this.selectedSchemaName || 'Untitled schema',
-    //     description: schema.description,
-    //     type: schema.allOf
-    //       ? 'allOf'
-    //       : schema.properties
-    //       ? 'object'
-    //       : schema.type || '',
-    //   },
-    //   children: [],
-    //   expanded: true,
-    // };
     const rootNode: TreeNode = {
       label: schema.title || 'No schema',
       data: {
@@ -127,6 +113,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           : schema.type || '',
         description: schema.description,
         type: '',
+        showAddButton: true,
       },
       children: [],
       expanded: true,
@@ -145,26 +132,27 @@ export class SchemasComponent implements OnInit, OnDestroy {
             const referencedSchema = this.getSchemaByRef(subSchema.$ref);
             console.log(referencedSchema);
             if (referencedSchema) {
-             childNode = {
-               label: refSchemaName,
-               data: {
-                 name: refSchemaName,
-                 description: referencedSchema.description || '',
-                 type: referencedSchema.allOf
-                   ? 'allOf {' +
-                     this.objectKeys(referencedSchema.allOf).length +
-                     '}'
-                   : referencedSchema.properties
-                   ? 'object {' +
-                     this.objectKeys(referencedSchema.properties).length +
-                     '}'
-                   : referencedSchema.enum
-                   ? 'enum {' + referencedSchema.enum.length + '}'
-                   : schema.type || '',
-               },
-               children: [],
-               parent: rootNode,
-             };
+              childNode = {
+                label: refSchemaName,
+                data: {
+                  name: refSchemaName,
+                  description: referencedSchema.description || '',
+                  type: referencedSchema.allOf
+                    ? 'allOf {' +
+                      this.objectKeys(referencedSchema.allOf).length +
+                      '}' +
+                      '<button>'
+                    : referencedSchema.properties
+                    ? 'object {' +
+                      this.objectKeys(referencedSchema.properties).length +
+                      '}'
+                    : referencedSchema.enum
+                    ? 'enum {' + referencedSchema.enum.length + '}'
+                    : schema.type || '',
+                },
+                children: [],
+                parent: rootNode,
+              };
 
               const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
@@ -262,6 +250,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return mergedProperties;
   }
 
+  onAddChild(): void {
+    console.log("asd")
+  }
   extractSchemaNameFromRef(ref: string): string {
     const refParts = ref.split('/');
     return refParts[refParts.length - 1];

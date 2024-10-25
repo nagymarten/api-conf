@@ -97,18 +97,16 @@
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
-                    <p-treeTableCellEditor>
-                      <ng-template pTemplate="input">
-                        <input
-                          pInputText
-                          type="text"
-                          [(ngModel)]="rowData[col.field]"
-                        />
-                      </ng-template>
-                      <ng-template pTemplate="output">
-                        {{ rowData[col.field] }}
-                      </ng-template>
-                    </p-treeTableCellEditor>
+
+                    {{ rowData[col.field] }}
+
+                    <button
+                      *ngIf="rowData.showAddButton&& col.field === 'name'"
+                      pButton
+                      icon="pi pi-plus"
+                      class="p-ml-2"
+                      (click)="onAddChild()"
+                    >+</button>
                   </td>
                 </tr>
               </ng-template>
