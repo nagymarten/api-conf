@@ -69,25 +69,7 @@
 
       <div *ngIf="activeTab === 'schema'" class="api-details">
         <div class="properties-section">
-          <h3>Schema type</h3>
-
           <div *ngIf="selectedSchema">
-            <span class="property-count">
-              Object({{ objectKeys(selectedSchema.properties).length }})
-            </span>
-            <div *ngIf="selectedSchema.allOf">
-              <span class="property-count">
-                allOf({{ objectKeys(selectedSchema.allOf).length }})
-              </span>
-              <div *ngFor="let item of additionalItems">
-                <h4>{{ item.type }}:</h4>
-                <ul>
-                  <li *ngFor="let value of item.values">{{ value }}</li>
-                </ul>
-              </div>
-            </div>
-            <button class="" (click)="onAddProperty()" type="button">+</button>
-
             <p-treeTable
               [value]="jsonTree"
               [columns]="cols"
