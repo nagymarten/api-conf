@@ -99,20 +99,15 @@
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
                     {{ rowData[col.field] }}
-
-                    <button
-                      *ngIf="rowData.showAddButton&& col.field === 'name'"
-                      pButton
-                      icon="pi pi-plus"
-                      class="p-ml-2"
-                      (click)="onAddChild()"
-                    >+</button>
+                    <app-add-scheme-button
+                      [rowData]="rowData"
+                      [col]="col"
+                    ></app-add-scheme-button>
                   </td>
                 </tr>
               </ng-template>
             </p-treeTable>
           </div>
-
           <div *ngIf="selectedSchema.enum">
             <h4>Enum Reference:</h4>
             <a href="#">{{ selectedSchemaName }}</a>

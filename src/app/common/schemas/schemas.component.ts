@@ -19,6 +19,7 @@ import { NodeService } from '../../services/node.service';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TabMenuModule } from 'primeng/tabmenu';
 import { ButtonModule } from 'primeng/button';
+import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
 
 interface Column {
   field: string;
@@ -43,6 +44,7 @@ interface Column {
     InputTextareaModule,
     TabMenuModule,
     ButtonModule,
+    AddSchemeButtonComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -62,8 +64,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   cols!: Column[];
   jsonTree: TreeNode[] = [];
   examples: any[] = [];
-  responseExamples: MenuItem[] = []; // Initialize as an empty array
-  activeItem!: MenuItem; // Remove undefined check by using non-null assertion
+  responseExamples: MenuItem[] = [];
+  activeItem!: MenuItem;
 
   constructor(
     private route: ActivatedRoute,
@@ -128,9 +130,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
-            console.log(subSchema);
             const referencedSchema = this.getSchemaByRef(subSchema.$ref);
-            console.log(referencedSchema);
             if (referencedSchema) {
               childNode = {
                 label: refSchemaName,
@@ -191,7 +191,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(property.$ref);
-            console.log(referencedSchema);
             if (referencedSchema) {
               childNode = {
                 label: refSchemaName,
@@ -240,6 +239,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return nodes;
   }
 
+  addProperty(): void {
+    console.log('mukodj');
+  }
+
   mergeAllOfProperties(allOfArray: any[]): any {
     const mergedProperties: any = {};
     allOfArray.forEach((item) => {
@@ -250,9 +253,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return mergedProperties;
   }
 
-  onAddChild(): void {
-    console.log("asd")
-  }
   extractSchemaNameFromRef(ref: string): string {
     const refParts = ref.split('/');
     return refParts[refParts.length - 1];
@@ -287,7 +287,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       },
     });
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
-    console.log(this.jsonTree);
   }
 
   objectKeys(obj: any): string[] {
@@ -313,6 +312,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchema = selectedSchema.details as SchemaDetails;
       this.selectedSchemaName = selectedSchema.name;
 
+      this.schemaDetailsForm.patchValue({
+        title: this.selectedSchemaName || 'Untitled schema',
+        description: this.selectedSchema.description || '',
+      });
+
       if (this.selectedSchema.examples && this.selectedSchema.examples.length) {
         this.responseExamples = this.selectedSchema.examples.map(
           (_example: any, index: number) => ({
@@ -334,15 +338,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       if (this.selectedSchema.enum) {
         this.schemaDetailsForm.patchValue({
-          title: this.selectedSchemaName,
-          description: this.selectedSchema.description || '',
           enum: JSON.stringify(this.selectedSchema.enum, null, 2),
           isEditingDescription: false,
         });
       } else if (this.selectedSchema.properties) {
         this.schemaDetailsForm.patchValue({
-          title: this.selectedSchema.title || '',
-          description: this.selectedSchema.description || '',
           properties: JSON.stringify(this.selectedSchema.properties, null, 2),
           isEditingDescription: false,
         });
@@ -360,10 +360,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.activeItem = event;
   }
 
-  onAddProperty() {
-    throw new Error('Method not implemented.');
-  }
-
   onDeleteProperty(_t44: string) {
     throw new Error('Method not implemented.');
   }
@@ -372,7 +368,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.schemaDetailsForm.patchValue({ isEditingTitle: true });
   }
 
-  // Method to stop editing the title
   stopEditingTitle(): void {
     this.schemaDetailsForm.patchValue({ isEditingTitle: false });
   }
