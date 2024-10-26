@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, ViewChild, OnInit } from '@angular/core';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ChipsModule } from 'primeng/chips';
@@ -39,53 +39,25 @@ interface Type {
   templateUrl: './add-scheme-button.component.html',
   styleUrl: './add-scheme-button.component.css',
 })
-export class AddSchemeButtonComponent implements OnInit {
+export class AddSchemeButtonComponent {
   @Input() rowData: any;
   @Input() col: any;
   @Input() apiSchemas: any;
 
-  @ViewChild('op') op!: OverlayPanel;
+  @Output() addScheme = new EventEmitter<Event>();
 
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
   types: Type[] | undefined;
   selectedType: Type | undefined;
+  combineTypes: Type[] | undefined;
 
   showAddPropertyForm: boolean = false;
   scrollHeight!: string;
+  selectedCombineType!: string;
 
-  ngOnInit() {
-    this.responseExamples = [
-      { label: 'Type', icon: 'pi pi-fw pi-tag' },
-      { label: 'Components', icon: 'pi pi-fw pi-cog' },
-      { label: 'Combine Schemas', icon: 'pi pi-fw pi-th-large' },
-    ];
-    this.types = [
-      { name: 'object' },
-      { name: 'array' },
-      { name: 'integer' },
-      { name: 'number' },
-      { name: 'string' },
-      { name: 'boolean' },
-      { name: 'enum' },
-      { name: 'dictionary' },
-    ];
-    this.activeItem = this.responseExamples[0];
-    const itemHeight = 50;
-    const maxHeight = 200; // max scrollable height
-    const calculatedHeight = this.apiSchemas.length * itemHeight;
-
-    this.scrollHeight =
-      calculatedHeight > maxHeight ? `${maxHeight}px` : `${calculatedHeight}px`;
-  }
-
-  testClick(event: Event) {
+  onAddSchemeClick(event: Event) {
     console.log('Button clicked');
-    this.op.toggle(event);
-    console.log(this.apiSchemas);
-  }
-  onSchemeSelect(scheme: any) {
-    console.log('Item clicked:', scheme);
-
+    this.addScheme.emit(event);
   }
 }

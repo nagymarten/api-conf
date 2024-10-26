@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiDataService } from '../../services/api-data.service';
 import { Subscription } from 'rxjs';
@@ -20,6 +20,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TabMenuModule } from 'primeng/tabmenu';
 import { ButtonModule } from 'primeng/button';
 import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
+import { SchemeTypeOverlayPanelComponent } from '../components/scheme-type-overlay-panel/scheme-type-overlay-panel.component';
 
 interface Column {
   field: string;
@@ -45,12 +46,16 @@ interface Column {
     TabMenuModule,
     ButtonModule,
     AddSchemeButtonComponent,
+    SchemeTypeOverlayPanelComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
   providers: [NodeService],
 })
 export class SchemasComponent implements OnInit, OnDestroy {
+  @ViewChild(SchemeTypeOverlayPanelComponent)
+  childComponent!: SchemeTypeOverlayPanelComponent;
+
   schemas: string = '';
   schema: string = '';
   apiSchemas: any[] = [];
@@ -102,16 +107,21 @@ export class SchemasComponent implements OnInit, OnDestroy {
     resolvedRefs: Set<string> = new Set()
   ): TreeNode[] {
     const nodes: TreeNode[] = [];
+    const formatTypeWithCount = (type: string, count: number) =>
+      `${type} {${count}}`;
 
     const rootNode: TreeNode = {
       label: schema.title || 'No schema',
       data: {
         name: schema.allOf
-          ? 'allOf {' + this.objectKeys(schema.allOf).length + '}'
+          ? formatTypeWithCount('allOf', this.objectKeys(schema.allOf).length)
           : schema.properties
-          ? 'object {' + this.objectKeys(schema.properties).length + '}'
+          ? formatTypeWithCount(
+              'object',
+              this.objectKeys(schema.properties).length
+            )
           : schema.enum
-          ? 'enum {' + schema.enum.length + '}'
+          ? formatTypeWithCount('enum', schema.enum.length)
           : schema.type || '',
         description: schema.description,
         type: '',
@@ -138,17 +148,18 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   name: refSchemaName,
                   description: referencedSchema.description || '',
                   type: referencedSchema.allOf
-                    ? 'allOf {' +
-                      this.objectKeys(referencedSchema.allOf).length +
-                      '}' +
-                      '<button>'
+                    ? formatTypeWithCount(
+                        'allOf',
+                        this.objectKeys(referencedSchema.allOf).length
+                      )
                     : referencedSchema.properties
-                    ? 'object {' +
-                      this.objectKeys(referencedSchema.properties).length +
-                      '}'
+                    ? formatTypeWithCount(
+                        'object',
+                        this.objectKeys(referencedSchema.properties).length
+                      )
                     : referencedSchema.enum
-                    ? 'enum {' + referencedSchema.enum.length + '}'
-                    : schema.type || '',
+                    ? formatTypeWithCount('enum', referencedSchema.enum.length)
+                    : referencedSchema.type || '',
                 },
                 children: [],
                 parent: rootNode,
@@ -198,16 +209,18 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   name: refSchemaName,
                   description: referencedSchema.description || '',
                   type: referencedSchema.allOf
-                    ? 'allOf {' +
-                      this.objectKeys(referencedSchema.allOf).length +
-                      '}'
+                    ? formatTypeWithCount(
+                        'allOf',
+                        this.objectKeys(referencedSchema.allOf).length
+                      )
                     : referencedSchema.properties
-                    ? 'object {' +
-                      this.objectKeys(referencedSchema.properties).length +
-                      '}'
+                    ? formatTypeWithCount(
+                        'object',
+                        this.objectKeys(referencedSchema.properties).length
+                      )
                     : referencedSchema.enum
-                    ? 'enum {' + referencedSchema.enum.length + '}'
-                    : schema.type || '',
+                    ? formatTypeWithCount('enum', referencedSchema.enum.length)
+                    : referencedSchema.type || '',
                 },
                 children: [],
                 parent: rootNode,
@@ -239,8 +252,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return nodes;
   }
 
-  addProperty(): void {
-    console.log('mukodj');
+  handleAddScheme(_event: Event): void {
+    const newSchemaNode: TreeNode = {
+      label: 'New Schema',
+      data: {
+        name: 'New Schema',
+        description: 'This is a new schema added dynamically',
+        type: 'object',
+        showAddButton: true,
+      },
+      children: [],
+      expanded: true,
+    };
+
+    // Add new schema node to rootNode's children
+    this.jsonTree[0]?.children?.push(newSchemaNode);
+    this.jsonTree = [...this.jsonTree]; 
+
+    console.log('New schema added:', newSchemaNode);
   }
 
   mergeAllOfProperties(allOfArray: any[]): any {
@@ -251,6 +280,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     });
     return mergedProperties;
+  }
+
+  toggleChildOverlay(event: Event): void {
+    if (this.childComponent) {
+      this.childComponent.toggleOverlay(event);
+    }
   }
 
   extractSchemaNameFromRef(ref: string): string {
@@ -424,6 +459,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   setActiveTab(tab: string): void {
     this.activeTab = tab;
+  }
+
+  isSpecialType(type: string): boolean {
+    return [
+      'allOf',
+      'enum',
+      'object',
+      'array',
+      'integer',
+      'number',
+      'string',
+      'boolean',
+      'dictionary',
+    ].some((specialType) => type.startsWith(specialType));
   }
 
   ngOnDestroy(): void {

@@ -83,6 +83,7 @@
                   </th>
                 </tr>
               </ng-template>
+
               <ng-template
                 pTemplate="body"
                 let-rowNode
@@ -92,18 +93,69 @@
                 <tr [ttRow]="rowNode">
                   <td
                     *ngFor="let col of columns; let i = index"
-                    ttEditableColumn
-                    [ttEditableColumnDisabled]="i == 0"
+                    [ttEditableColumn]="
+                      col.field === 'name' && rowNode !== jsonTree[0]
+                    "
+                    [ttEditableColumnDisabled]="rowNode === jsonTree[0]"
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
-                    {{ rowData[col.field] }}
-                    <app-add-scheme-button
-                      [rowData]="rowData"
-                      [col]="col"
-                      [apiSchemas]="apiSchemas"
-                    ></app-add-scheme-button>
+                    <!-- Display editable cell only for non-root nodes and "Name" column -->
+                    <ng-container
+                      *ngIf="col.field === 'name' && rowNode !== jsonTree[0]"
+                    >
+                      <p-treeTableCellEditor>
+                        <!-- Input Template for Editing -->
+                        <ng-template pTemplate="input">
+                          <input
+                            pInputText
+                            type="text"
+                            [(ngModel)]="rowData[col.field]"
+                            [ngModelOptions]="{ standalone: true }"
+                          />
+                        </ng-template>
+
+                        <!-- Output Template for Displaying -->
+                        <ng-template pTemplate="output">
+                          {{ rowData[col.field] }}
+                        </ng-template>
+                      </p-treeTableCellEditor>
+                    </ng-container>
+
+                    <!-- Non-editable cell for rootNode -->
+                    <ng-container
+                      *ngIf="rowNode === jsonTree[0] || col.field !== 'name'"
+                    >
+                      <ng-container
+                        *ngIf="col.field === 'name' && rowNode === jsonTree[0]"
+                      >
+                        {{ rowData[col.field] }}
+                      </ng-container>
+
+                      <!-- Special Type Display for non-name fields -->
+                      <ng-container *ngIf="col.field !== 'name'">
+                        <ng-container *ngIf="isSpecialType(rowData[col.field])">
+                          <p-button
+                            label="{{ rowData[col.field] }}"
+                            [outlined]="true"
+                            (click)="toggleChildOverlay($event)"
+                            class="no-border-button"
+                          ></p-button>
+                          <app-scheme-type-overlay-panel
+                            #overlayPanel
+                            [rowData]="rowData"
+                            [col]="col"
+                            [apiSchemas]="apiSchemas"
+                          ></app-scheme-type-overlay-panel>
+                        </ng-container>
+                        <ng-container
+                          *ngIf="!isSpecialType(rowData[col.field])"
+                        >
+                          {{ rowData[col.field] }}
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
                   </td>
                 </tr>
               </ng-template>

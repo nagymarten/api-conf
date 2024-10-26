@@ -175,3 +175,7 @@ p-treeTable td {
 .p-treeTable-body {
   font-size: 14px;
 }
+
+.no-border-button .p-button {
+  border: none !important;
+}

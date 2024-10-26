@@ -2,68 +2,7 @@
   *ngIf="rowData.showAddButton && col.field === 'name'"
   pButton
   class="p-ml-2"
-  (click)="testClick($event)"
+  (click)="onAddSchemeClick($event)"
   icon="pi pi-plus-circle"
   type="button"
 ></button>
-
-<p-overlayPanel #op>
-  <div class="flex flex-column gap-3 w-25rem">
-    <div>
-      <p-tabMenu
-        [model]="responseExamples"
-        [(activeItem)]="activeItem"
-      ></p-tabMenu>
-    </div>
-    <p-divider />
-
-    <div *ngIf="activeItem?.label === 'Type'">
-      <div class="card flex justify-content-center">
-        <p-dropdown
-          [options]="types"
-          [(ngModel)]="selectedType"
-          optionLabel="name"
-          placeholder="Select type"
-          [showClear]="true"
-        />
-        <p-button icon="pi pi-times" pTooltip="Not nullable" />
-      </div>
-    </div>
-
-    <div *ngIf="activeItem?.label === 'Components'">
-      <div class="p-toolbar-group-start">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search"></i>
-          <input pInputText placeholder="Search" />
-        </span>
-        <p-divider />
-
-        <p-scroller
-          [items]="apiSchemas"
-          [itemSize]="50"
-          [scrollHeight]="scrollHeight"
-          class="border-1 surface-border"
-          [style]="{ width: '100%' }"
-        >
-          <ng-template pTemplate="item" let-item let-options="options">
-            <div
-              class="flex align-items-center p-2 clickable-item"
-              [ngClass]="{ 'surface-ground': options.odd }"
-              style="height: 50px; cursor: pointer"
-              (click)="onSchemeSelect(item)"
-            >
-              <p-button
-                label="{{ item.name }}"
-                [text]="true"
-                severity="secondary"
-                [style]="{ width: '100%' }"
-              />
-            </div>
-          </ng-template>
-        </p-scroller>
-      </div>
-    </div>
-
-    <div *ngIf="activeItem?.label === 'Combine Schemas'"></div>
-  </div>
-</p-overlayPanel>
