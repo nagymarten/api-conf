@@ -7,7 +7,7 @@ import { ChipsModule } from 'primeng/chips';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TabMenuModule } from 'primeng/tabmenu';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, TreeNode } from 'primeng/api';
 import { DropdownModule } from 'primeng/dropdown';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
@@ -42,7 +42,7 @@ interface Type {
 export class AddSchemeButtonComponent {
   @Input() rowData: any;
   @Input() col: any;
-  @Input() apiSchemas: any;
+  @Input() jsonTree!: TreeNode<any>[];
 
   @Output() addScheme = new EventEmitter<Event>();
 
@@ -51,13 +51,21 @@ export class AddSchemeButtonComponent {
   types: Type[] | undefined;
   selectedType: Type | undefined;
   combineTypes: Type[] | undefined;
+  private isEmitting = false;
 
   showAddPropertyForm: boolean = false;
   scrollHeight!: string;
   selectedCombineType!: string;
 
   onAddSchemeClick(event: Event) {
-    console.log('Button clicked');
+    if (this.isEmitting) return;
+
+    this.isEmitting = true;
     this.addScheme.emit(event);
+    console.log('Button clicked');
+
+    setTimeout(() => {
+      this.isEmitting = false;
+    }, 300); // Adjust debounce time as needed
   }
 }

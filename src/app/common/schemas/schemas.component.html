@@ -99,14 +99,18 @@
                     [ttEditableColumnDisabled]="rowNode === jsonTree[0]"
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
+                    <app-add-scheme-button
+                      [rowData]="rowData"
+                      [col]="col"
+                      [jsonTree]="jsonTree"
+                      (addScheme)="handleAddScheme($event)"
+                    ></app-add-scheme-button>
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
-                    <!-- Display editable cell only for non-root nodes and "Name" column -->
                     <ng-container
                       *ngIf="col.field === 'name' && rowNode !== jsonTree[0]"
                     >
                       <p-treeTableCellEditor>
-                        <!-- Input Template for Editing -->
                         <ng-template pTemplate="input">
                           <input
                             pInputText
@@ -116,14 +120,12 @@
                           />
                         </ng-template>
 
-                        <!-- Output Template for Displaying -->
                         <ng-template pTemplate="output">
                           {{ rowData[col.field] }}
                         </ng-template>
                       </p-treeTableCellEditor>
                     </ng-container>
 
-                    <!-- Non-editable cell for rootNode -->
                     <ng-container
                       *ngIf="rowNode === jsonTree[0] || col.field !== 'name'"
                     >
@@ -133,7 +135,6 @@
                         {{ rowData[col.field] }}
                       </ng-container>
 
-                      <!-- Special Type Display for non-name fields -->
                       <ng-container *ngIf="col.field !== 'name'">
                         <ng-container *ngIf="isSpecialType(rowData[col.field])">
                           <p-button

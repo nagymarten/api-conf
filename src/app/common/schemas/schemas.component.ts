@@ -55,6 +55,8 @@ interface Column {
 export class SchemasComponent implements OnInit, OnDestroy {
   @ViewChild(SchemeTypeOverlayPanelComponent)
   childComponent!: SchemeTypeOverlayPanelComponent;
+  @ViewChild(AddSchemeButtonComponent)
+  addSchemeButtonComponent!: AddSchemeButtonComponent;
 
   schemas: string = '';
   schema: string = '';
@@ -259,17 +261,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
         name: 'New Schema',
         description: 'This is a new schema added dynamically',
         type: 'object',
-        showAddButton: true,
+        showAddButton: false,
       },
       children: [],
       expanded: true,
     };
 
-    // Add new schema node to rootNode's children
     this.jsonTree[0]?.children?.push(newSchemaNode);
-    this.jsonTree = [...this.jsonTree]; 
-
-    console.log('New schema added:', newSchemaNode);
+    this.jsonTree = [...this.jsonTree];
+    if (this.addSchemeButtonComponent) {
+      this.addSchemeButtonComponent.onAddSchemeClick(_event);
+    }
   }
 
   mergeAllOfProperties(allOfArray: any[]): any {
