@@ -256,10 +256,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   handleAddScheme(_event: Event): void {
     const newSchemaNode: TreeNode = {
-      label: 'New Schema',
+      label: '',
       data: {
-        name: 'New Schema',
-        description: 'This is a new schema added dynamically',
+        name: '',
+        description: '',
         type: 'object',
         showAddButton: false,
       },
@@ -324,6 +324,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
       },
     });
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
+  }
+
+  getRootNode(node: TreeNode): TreeNode {
+    return node.parent ? this.getRootNode(node.parent) : node;
   }
 
   objectKeys(obj: any): string[] {

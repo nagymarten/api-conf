@@ -94,9 +94,9 @@
                   <td
                     *ngFor="let col of columns; let i = index"
                     [ttEditableColumn]="
-                      col.field === 'name' && rowNode !== jsonTree[0]
+                      col.field === 'name' && rowNode.parent
                     "
-                    [ttEditableColumnDisabled]="rowNode === jsonTree[0]"
+                    [ttEditableColumnDisabled]="!rowNode.parent "
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <app-add-scheme-button
@@ -108,7 +108,7 @@
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
                     <ng-container
-                      *ngIf="col.field === 'name' && rowNode !== jsonTree[0]"
+                      *ngIf="col.field === 'name' "
                     >
                       <p-treeTableCellEditor>
                         <ng-template pTemplate="input">
@@ -127,10 +127,10 @@
                     </ng-container>
 
                     <ng-container
-                      *ngIf="rowNode === jsonTree[0] || col.field !== 'name'"
+                      *ngIf="  col.field !== 'name'"
                     >
                       <ng-container
-                        *ngIf="col.field === 'name' && rowNode === jsonTree[0]"
+                        *ngIf="col.field === 'name'"
                       >
                         {{ rowData[col.field] }}
                       </ng-container>
