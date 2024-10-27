@@ -51,21 +51,13 @@ export class AddSchemeButtonComponent {
   types: Type[] | undefined;
   selectedType: Type | undefined;
   combineTypes: Type[] | undefined;
-  private isEmitting = false;
 
   showAddPropertyForm: boolean = false;
   scrollHeight!: string;
   selectedCombineType!: string;
 
   onAddSchemeClick(event: Event) {
-    if (this.isEmitting) return;
-
-    this.isEmitting = true;
     this.addScheme.emit(event);
     console.log('Button clicked');
-
-    setTimeout(() => {
-      this.isEmitting = false;
-    }, 300); // Adjust debounce time as needed
   }
 }

@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiDataService } from '../../services/api-data.service';
 import { Subscription } from 'rxjs';
@@ -21,6 +27,7 @@ import { TabMenuModule } from 'primeng/tabmenu';
 import { ButtonModule } from 'primeng/button';
 import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
 import { SchemeTypeOverlayPanelComponent } from '../components/scheme-type-overlay-panel/scheme-type-overlay-panel.component';
+import { InputTextModule } from 'primeng/inputtext';
 
 interface Column {
   field: string;
@@ -47,6 +54,7 @@ interface Column {
     ButtonModule,
     AddSchemeButtonComponent,
     SchemeTypeOverlayPanelComponent,
+    InputTextModule,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -55,8 +63,13 @@ interface Column {
 export class SchemasComponent implements OnInit, OnDestroy {
   @ViewChild(SchemeTypeOverlayPanelComponent)
   childComponent!: SchemeTypeOverlayPanelComponent;
+
   @ViewChild(AddSchemeButtonComponent)
   addSchemeButtonComponent!: AddSchemeButtonComponent;
+
+  @ViewChild('newSchemaInput') newSchemaInput!: ElementRef;
+
+  @ViewChild('myText') myTextInput!: ElementRef;
 
   schemas: string = '';
   schema: string = '';
@@ -73,6 +86,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   examples: any[] = [];
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
+  focusNewSchemaInput = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -102,6 +116,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
       { field: 'name', header: 'Name' },
       { field: 'type', header: 'Type' },
     ];
+  }
+  
+
+  getFocus() {
+    // Focus the input element
+    this.newSchemaInput.nativeElement.focus();
+  }
+
+  loseFocus() {
+    // Remove focus from the input element
+    this.newSchemaInput.nativeElement.blur();
   }
 
   schemaToTreeNode(
@@ -255,6 +280,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   handleAddScheme(_event: Event): void {
+    // Add the new schema node to the JSON tree
     const newSchemaNode: TreeNode = {
       label: '',
       data: {
@@ -269,9 +295,38 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     this.jsonTree[0]?.children?.push(newSchemaNode);
     this.jsonTree = [...this.jsonTree];
-    if (this.addSchemeButtonComponent) {
-      this.addSchemeButtonComponent.onAddSchemeClick(_event);
-    }
+    this.focusNewSchemaInput = true;
+
+    // Click the last editable cell before focusing on new schema input
+    setTimeout(() => {
+      // Find the last editable cell in p-treeTableCellEditor
+      const lastTreeTableCellEditors = document.querySelectorAll(
+        'p-treeTableCellEditor'
+      );
+
+      if (lastTreeTableCellEditors.length > 0) {
+        // Get the last editable cell and click it
+        const lastCell = lastTreeTableCellEditors[
+          lastTreeTableCellEditors.length - 1
+        ] as HTMLElement;
+        lastCell.click();
+        console.log('Last TreeTableCellEditor clicked:', lastCell);
+        setTimeout(() => {
+          if (this.newSchemaInput) {
+            this.newSchemaInput.nativeElement.focus();
+            console.log('Focusing on new schema input:', this.newSchemaInput);
+          } else {
+            console.warn('newSchemaInput is not found.');
+          }
+        }, 0);
+      } else {
+        console.warn('No TreeTableCellEditor elements found for clicking.');
+      }
+      // Focus on the new schema input
+
+      // Reset focus flag
+      this.focusNewSchemaInput = false;
+    }, 0);
   }
 
   mergeAllOfProperties(allOfArray: any[]): any {

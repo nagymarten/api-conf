@@ -93,10 +93,8 @@
                 <tr [ttRow]="rowNode">
                   <td
                     *ngFor="let col of columns; let i = index"
-                    [ttEditableColumn]="
-                      col.field === 'name' && rowNode.parent
-                    "
-                    [ttEditableColumnDisabled]="!rowNode.parent "
+                    [ttEditableColumn]="col.field === 'name' && rowNode.parent"
+                    [ttEditableColumnDisabled]="!rowNode.parent"
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <app-add-scheme-button
@@ -107,9 +105,7 @@
                     ></app-add-scheme-button>
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
-                    <ng-container
-                      *ngIf="col.field === 'name' "
-                    >
+                    <ng-container *ngIf="col.field === 'name'">
                       <p-treeTableCellEditor>
                         <ng-template pTemplate="input">
                           <input
@@ -117,44 +113,32 @@
                             type="text"
                             [(ngModel)]="rowData[col.field]"
                             [ngModelOptions]="{ standalone: true }"
+                            placeholder="Enter schema name"
                           />
                         </ng-template>
-
                         <ng-template pTemplate="output">
                           {{ rowData[col.field] }}
                         </ng-template>
                       </p-treeTableCellEditor>
                     </ng-container>
 
-                    <ng-container
-                      *ngIf="  col.field !== 'name'"
-                    >
-                      <ng-container
-                        *ngIf="col.field === 'name'"
-                      >
-                        {{ rowData[col.field] }}
+                    <ng-container *ngIf="col.field !== 'name'">
+                      <ng-container *ngIf="isSpecialType(rowData[col.field])">
+                        <p-button
+                          label="{{ rowData[col.field] }}"
+                          [outlined]="true"
+                          (click)="toggleChildOverlay($event)"
+                          class="no-border-button"
+                        ></p-button>
+                        <app-scheme-type-overlay-panel
+                          #overlayPanel
+                          [rowData]="rowData"
+                          [col]="col"
+                          [apiSchemas]="apiSchemas"
+                        ></app-scheme-type-overlay-panel>
                       </ng-container>
-
-                      <ng-container *ngIf="col.field !== 'name'">
-                        <ng-container *ngIf="isSpecialType(rowData[col.field])">
-                          <p-button
-                            label="{{ rowData[col.field] }}"
-                            [outlined]="true"
-                            (click)="toggleChildOverlay($event)"
-                            class="no-border-button"
-                          ></p-button>
-                          <app-scheme-type-overlay-panel
-                            #overlayPanel
-                            [rowData]="rowData"
-                            [col]="col"
-                            [apiSchemas]="apiSchemas"
-                          ></app-scheme-type-overlay-panel>
-                        </ng-container>
-                        <ng-container
-                          *ngIf="!isSpecialType(rowData[col.field])"
-                        >
-                          {{ rowData[col.field] }}
-                        </ng-container>
+                      <ng-container *ngIf="!isSpecialType(rowData[col.field])">
+                        {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
                   </td>
@@ -177,6 +161,9 @@
             <p>No properties available for this schema.</p>
           </div>
         </div>
+
+        <button type="button" (click)="getFocus()">Get focus</button>
+        <button type="button" (click)="loseFocus()">Lose focus</button>
       </div>
 
       <div *ngIf="activeTab === 'examples'" class="api-details">
