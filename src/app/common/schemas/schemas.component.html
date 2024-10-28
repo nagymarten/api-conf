@@ -94,7 +94,7 @@
                   <td
                     *ngFor="let col of columns; let i = index"
                     [ttEditableColumn]="col.field === 'name' && rowNode.parent"
-                    [ttEditableColumnDisabled]="!rowNode.parent"
+                    [ttEditableColumnDisabled]="!rowNode.parent || rowData.editDisabled"
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <app-add-scheme-button

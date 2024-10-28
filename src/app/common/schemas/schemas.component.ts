@@ -146,6 +146,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         description: schema.description,
         type: '',
         showAddButton: true,
+        editDisabled: false,
       },
       children: [],
       expanded: true,
@@ -153,16 +154,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (schema.allOf) {
       schema.allOf.forEach((subSchema: any) => {
-        let childNode: TreeNode;
-
         if (subSchema.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
 
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(subSchema.$ref);
+
             if (referencedSchema) {
-              childNode = {
+              const childNode: TreeNode = {
                 label: refSchemaName,
                 data: {
                   name: refSchemaName,
@@ -181,6 +181,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                     ? formatTypeWithCount('enum', referencedSchema.enum.length)
                     : referencedSchema.type || '',
                   showReferenceButton: true,
+                  editDisabled: false,
                 },
                 children: [],
                 parent: rootNode,
@@ -190,7 +191,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 referencedSchema,
                 resolvedRefs
               );
-              childNode.children = resolvedChildren[0]?.children || [];
+              childNode.children = childNode.children || [];
+
+              resolvedChildren[0]?.children?.forEach((child) => {
+                child.data.editDisabled = true;
+                childNode.children!.push(child);
+              });
 
               rootNode.children?.push(childNode);
             }
@@ -198,6 +204,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
     } else if (schema.properties) {
+      // Process properties if no allOf references
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
@@ -213,6 +220,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               : property.enum
               ? 'enum'
               : property.type || '',
+            editDisabled: false,
           },
           children: [],
           parent: rootNode,
@@ -220,9 +228,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
         if (property.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
+
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(property.$ref);
+
             if (referencedSchema) {
               childNode = {
                 label: refSchemaName,
@@ -243,28 +253,39 @@ export class SchemasComponent implements OnInit, OnDestroy {
                     ? formatTypeWithCount('enum', referencedSchema.enum.length)
                     : referencedSchema.type || '',
                   showReferenceButton: true,
+                  editDisabled: false,
                 },
                 children: [],
                 parent: rootNode,
               };
 
-              const referencedChildren = this.schemaToTreeNode(
+              const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 resolvedRefs
               );
+              childNode.children = childNode.children || [];
 
-              childNode.children = referencedChildren[0]?.children || [];
+              resolvedChildren[0]?.children?.forEach((child) => {
+                child.data.editDisabled= true;
+                childNode.children!.push(child);
+              });
+
+              rootNode.children?.push(childNode);
             }
           }
+        } else {
+          // Direct property children are added to root node
+          rootNode.children?.push(childNode);
         }
-        rootNode.children?.push(childNode);
       });
     } else if (schema.enum) {
+      // Handle enum values if present
       rootNode.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
         data: {
           name: enumValue,
           type: '',
+          editDisabled: false,
         },
         children: [],
       }));
@@ -273,6 +294,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     nodes.push(rootNode);
     return nodes;
   }
+
   handleGoRefScheme(schemaName: string) {
     this.router.navigate(['/schemas', schemaName]);
   }
