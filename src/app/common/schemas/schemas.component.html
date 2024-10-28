@@ -103,6 +103,11 @@
                       [jsonTree]="jsonTree"
                       (addScheme)="handleAddScheme($event)"
                     ></app-add-scheme-button>
+                    <app-ref-button
+                      [rowData]="rowData"
+                      [col]="col"
+                      (onGoRefSchemeClick)="handleGoRefScheme($event)"
+                    ></app-ref-button>
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
                     <ng-container *ngIf="col.field === 'name'">
@@ -161,9 +166,6 @@
             <p>No properties available for this schema.</p>
           </div>
         </div>
-
-        <button type="button" (click)="getFocus()">Get focus</button>
-        <button type="button" (click)="loseFocus()">Lose focus</button>
       </div>
 
       <div *ngIf="activeTab === 'examples'" class="api-details">

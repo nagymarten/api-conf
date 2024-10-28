@@ -28,6 +28,8 @@ import { ButtonModule } from 'primeng/button';
 import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
 import { SchemeTypeOverlayPanelComponent } from '../components/scheme-type-overlay-panel/scheme-type-overlay-panel.component';
 import { InputTextModule } from 'primeng/inputtext';
+import { RefButtonComponent } from '../components/ref-button/ref-button.component';
+import { Router } from '@angular/router';
 
 interface Column {
   field: string;
@@ -55,6 +57,7 @@ interface Column {
     AddSchemeButtonComponent,
     SchemeTypeOverlayPanelComponent,
     InputTextModule,
+    RefButtonComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -92,7 +95,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private apiDataService: ApiDataService,
     private fb: FormBuilder,
-    private nodeService: NodeService
+    private nodeService: NodeService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -116,17 +120,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       { field: 'name', header: 'Name' },
       { field: 'type', header: 'Type' },
     ];
-  }
-  
-
-  getFocus() {
-    // Focus the input element
-    this.newSchemaInput.nativeElement.focus();
-  }
-
-  loseFocus() {
-    // Remove focus from the input element
-    this.newSchemaInput.nativeElement.blur();
   }
 
   schemaToTreeNode(
@@ -187,6 +180,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                     : referencedSchema.enum
                     ? formatTypeWithCount('enum', referencedSchema.enum.length)
                     : referencedSchema.type || '',
+                  showReferenceButton: true,
                 },
                 children: [],
                 parent: rootNode,
@@ -248,6 +242,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                     : referencedSchema.enum
                     ? formatTypeWithCount('enum', referencedSchema.enum.length)
                     : referencedSchema.type || '',
+                  showReferenceButton: true,
                 },
                 children: [],
                 parent: rootNode,
@@ -278,9 +273,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
     nodes.push(rootNode);
     return nodes;
   }
+  handleGoRefScheme(schemaName: string) {
+    this.router.navigate(['/schemas', schemaName]);
+  }
 
   handleAddScheme(_event: Event): void {
-    // Add the new schema node to the JSON tree
     const newSchemaNode: TreeNode = {
       label: '',
       data: {
@@ -288,6 +285,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         description: '',
         type: 'object',
         showAddButton: false,
+        showReferenceButton: false,
       },
       children: [],
       expanded: true,
@@ -379,6 +377,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       },
     });
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
+    console.log(this.jsonTree);
   }
 
   getRootNode(node: TreeNode): TreeNode {
