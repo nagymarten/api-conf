@@ -1,0 +1,23 @@
+<h3>Schema Examples</h3>
+<div *ngIf="selectedSchema?.examples?.length; else noExamples">
+  <div class="card">
+    <p-tabMenu
+      [model]="responseExamples"
+      [(activeItem)]="activeItem"
+    ></p-tabMenu>
+  </div>
+
+  <div class="card flex justify-content-center">
+    <textarea
+      rows="5"
+      cols="30"
+      pInputTextarea
+      [autoResize]="true"
+      [formControl]="examplesControl"
+    ></textarea>
+  </div>
+</div>
+
+<ng-template #noExamples>
+  <p>No examples available for this schema.</p>
+</ng-template>

@@ -22,14 +22,13 @@ import { TreeTableModule } from 'primeng/treetable';
 import { MenuItem, TreeNode } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { NodeService } from '../../services/node.service';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { TabMenuModule } from 'primeng/tabmenu';
 import { ButtonModule } from 'primeng/button';
 import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
 import { SchemeTypeOverlayPanelComponent } from '../components/scheme-type-overlay-panel/scheme-type-overlay-panel.component';
 import { InputTextModule } from 'primeng/inputtext';
 import { RefButtonComponent } from '../components/ref-button/ref-button.component';
 import { Router } from '@angular/router';
+import { SchemaExamplesComponent } from './schema-examples/schema-examples.component';
 
 interface Column {
   field: string;
@@ -51,13 +50,12 @@ interface Column {
     MatFormFieldModule,
     MatIconModule,
     TreeTableModule,
-    InputTextareaModule,
-    TabMenuModule,
     ButtonModule,
     AddSchemeButtonComponent,
     SchemeTypeOverlayPanelComponent,
     InputTextModule,
     RefButtonComponent,
+    SchemaExamplesComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -86,7 +84,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   files!: TreeNode[];
   cols!: Column[];
   jsonTree: TreeNode[] = [];
-  examples: any[] = [];
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
   focusNewSchemaInput = false;
@@ -266,7 +263,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               childNode.children = childNode.children || [];
 
               resolvedChildren[0]?.children?.forEach((child) => {
-                child.data.editDisabled= true;
+                child.data.editDisabled = true;
                 childNode.children!.push(child);
               });
 
@@ -434,25 +431,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         description: this.selectedSchema.description || '',
       });
 
-      if (this.selectedSchema.examples && this.selectedSchema.examples.length) {
-        this.responseExamples = this.selectedSchema.examples.map(
-          (_example: any, index: number) => ({
-            label: `Example ${index + 1}`,
-            command: () => this.onExampleSelect(index),
-          })
-        );
-
-        this.activeItem = this.responseExamples[0];
-        this.schemaDetailsForm.patchValue({
-          examples: JSON.stringify(this.selectedSchema.examples[0], null, 2),
-        });
-      } else {
-        this.responseExamples = [];
-        this.schemaDetailsForm.patchValue({
-          examples: '',
-        });
-      }
-
       if (this.selectedSchema.enum) {
         this.schemaDetailsForm.patchValue({
           enum: JSON.stringify(this.selectedSchema.enum, null, 2),
@@ -467,9 +445,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   }
 
-  onExampleSelect(index: number): void {
+  onExampleChanged(exampleJSON: string): void {
     this.schemaDetailsForm.patchValue({
-      examples: JSON.stringify(this.selectedSchema.examples[index], null, 2),
+      examples: exampleJSON,
     });
   }
 
@@ -514,6 +492,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
             schemaObject.title = formData.title || schemaObject.title;
             schemaObject.description =
               formData.description || schemaObject.description;
+            
+              if (formData.examples) {
+              try {
+                schemaObject.examples = JSON.parse(formData.examples);
+              } catch (e) {
+                console.error('Invalid JSON format for examples:', e);
+              }
+            }
 
             swaggerSpec.components.schemas[schemaName] = schemaObject;
 

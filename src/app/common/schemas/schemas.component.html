@@ -94,7 +94,9 @@
                   <td
                     *ngFor="let col of columns; let i = index"
                     [ttEditableColumn]="col.field === 'name' && rowNode.parent"
-                    [ttEditableColumnDisabled]="!rowNode.parent || rowData.editDisabled"
+                    [ttEditableColumnDisabled]="
+                      !rowNode.parent || rowData.editDisabled
+                    "
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <app-add-scheme-button
@@ -169,29 +171,9 @@
       </div>
 
       <div *ngIf="activeTab === 'examples'" class="api-details">
-        <h3>Schema Examples</h3>
-        <div *ngIf="selectedSchema?.examples?.length; else noExamples">
-          <div class="card">
-            <p-tabMenu
-              [model]="responseExamples"
-              [(activeItem)]="activeItem"
-            ></p-tabMenu>
-          </div>
-
-          <div class="card flex justify-content-center">
-            <textarea
-              rows="5"
-              cols="30"
-              pInputTextarea
-              [autoResize]="true"
-              formControlName="examples"
-            ></textarea>
-          </div>
-        </div>
-
-        <ng-template #noExamples>
-          <p>No examples available for this schema.</p>
-        </ng-template>
+        <app-schema-examples
+          [selectedSchema]="selectedSchema"
+        ></app-schema-examples>
       </div>
       <div *ngIf="activeTab === 'extensions'" class="api-details">
         extensions
