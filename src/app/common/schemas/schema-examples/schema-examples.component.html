@@ -1,19 +1,47 @@
 <h3>Schema Examples</h3>
 <div *ngIf="selectedSchema?.examples?.length; else noExamples">
+  
+  <div class="button-row mt-3">
+    <p-button
+    label="Add example"
+    icon="pi pi-file-plus"
+    (click)="generateAndAddExample()"
+    class="p-button-outlined p-button-primary"
+    ></p-button>
+    
+    <div class="right-buttons">
+      <p-toast />
+      <p-button
+      icon="pi pi-copy"
+      (click)="copyExample()"
+      title="Copy Example"
+      class="p-button-text"
+      ></p-button>
+      <p-button
+      icon="pi pi-trash"
+      (click)="deleteExample()"
+      title="Delete Example"
+      class="p-button-text"
+      ></p-button>
+    </div>
+  </div>
   <div class="card">
     <p-tabMenu
       [model]="responseExamples"
       [(activeItem)]="activeItem"
     ></p-tabMenu>
   </div>
-
-  <div class="card flex justify-content-center">
+  
+  <!-- Textarea for Example Display and Editing -->
+  <div class="example-display mt-3">
     <textarea
-      rows="5"
-      cols="30"
+      rows="10"
+      cols="50"
       pInputTextarea
       [autoResize]="true"
       [formControl]="examplesControl"
+      placeholder="Edit example JSON here"
+      class="example-textarea"
     ></textarea>
   </div>
 </div>
