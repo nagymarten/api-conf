@@ -132,6 +132,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
       data: {
         name: schema?.allOf
           ? formatTypeWithCount('allOf', this.objectKeys(schema.allOf).length)
+          : schema?.oneOf
+          ? formatTypeWithCount('oneOf', this.objectKeys(schema.oneOf).length)
+          : schema?.anyOf
+          ? formatTypeWithCount('anyOf', this.objectKeys(schema.anyOf).length)
           : schema?.properties
           ? formatTypeWithCount(
               'object',
@@ -149,10 +153,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
       expanded: true,
     };
 
-    if (schema?.allOf) {
-      schema.allOf.forEach((subSchema: any) => {
+    const processSubSchemas = (subSchemas: any[], typeLabel: string) => {
+      subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
-          // Handle $ref within 'allOf'
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
 
           if (!resolvedRefs.has(refSchemaName)) {
@@ -167,7 +170,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   description: referencedSchema.description || '',
                   type: this.formatType(referencedSchema.type || ''),
                   showReferenceButton: true,
-                  editDisabled: false,
+                  editDisabled: true,
                 },
                 children: [],
                 parent: rootNode,
@@ -194,9 +197,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
           ).length;
 
           const subProp: TreeNode = {
-            label: formatTypeWithCount('object', typeCount),
+            label: formatTypeWithCount(typeLabel, typeCount),
             data: {
-              name: formatTypeWithCount('object', typeCount),
+              name: formatTypeWithCount(typeLabel, typeCount),
               description: subSchema?.description || '',
               type: this.formatType(subSchema.type),
               editDisabled: false,
@@ -246,8 +249,19 @@ export class SchemasComponent implements OnInit, OnDestroy {
           rootNode.children!.push(subProp);
         }
       });
+    };
+
+    if (schema?.allOf) {
+      processSubSchemas(schema.allOf, 'allOf');
+    }
+    if (schema?.oneOf) {
+      processSubSchemas(schema.oneOf, 'oneOf');
+    }
+    if (schema?.anyOf) {
+      processSubSchemas(schema.anyOf, 'anyOf');
     }
 
+    // Handle properties at the root level
     if (schema?.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];

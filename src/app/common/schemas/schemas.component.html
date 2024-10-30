@@ -99,17 +99,6 @@
                     "
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
-                    <app-add-scheme-button
-                      [rowData]="rowData"
-                      [col]="col"
-                      [jsonTree]="jsonTree"
-                      (addScheme)="handleAddScheme($event)"
-                    ></app-add-scheme-button>
-                    <app-ref-button
-                      [rowData]="rowData"
-                      [col]="col"
-                      (onGoRefSchemeClick)="handleGoRefScheme($event)"
-                    ></app-ref-button>
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
                     <ng-container *ngIf="col.field === 'name'">
@@ -149,6 +138,18 @@
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
+
+                    <app-add-scheme-button
+                      [rowData]="rowData"
+                      [col]="col"
+                      [jsonTree]="jsonTree"
+                      (addScheme)="handleAddScheme($event)"
+                    ></app-add-scheme-button>
+                    <app-ref-button
+                      [rowData]="rowData"
+                      [col]="col"
+                      (onGoRefSchemeClick)="handleGoRefScheme($event)"
+                    ></app-ref-button>
                   </td>
                 </tr>
               </ng-template>
