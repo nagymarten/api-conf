@@ -153,6 +153,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       expanded: true,
     };
 
+    const disableEditOnAllChildren = (node: TreeNode) => {
+      node.data.editDisabled = true;
+      node.children?.forEach(disableEditOnAllChildren);
+    };
+
     const processSubSchemas = (subSchemas: any[], typeLabel: string) => {
       subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
@@ -181,74 +186,149 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 resolvedRefs
               );
 
+              // Disable editing on all resolved children within the reference
               resolvedChildren.forEach((resolvedChild) => {
-                resolvedChild.data.editDisabled = true;
+                disableEditOnAllChildren(resolvedChild);
                 childNode.children!.push(resolvedChild);
               });
 
               rootNode.children!.push(childNode);
             }
           }
-        } else if (subSchema?.properties) {
-          const typeCount = Object.keys(subSchema.properties).filter(
-            (propertyKey) => {
-              return subSchema.properties[propertyKey]?.type;
-            }
-          ).length;
-
-          const subProp: TreeNode = {
-            label: formatTypeWithCount(typeLabel, typeCount),
-            data: {
-              name: formatTypeWithCount(typeLabel, typeCount),
-              description: subSchema?.description || '',
-              type: this.formatType(subSchema.type),
-              editDisabled: false,
-            },
-            children: [],
-            parent: rootNode,
-          };
-
-          Object.keys(subSchema.properties).forEach((propertyKey) => {
-            const property = subSchema.properties[propertyKey];
-
-            if (property?.type) {
-              const childNode: TreeNode = {
-                label: propertyKey,
-                data: {
-                  name: propertyKey,
-                  description: property?.description || '',
-                  type: this.formatType(property.type),
-                  editDisabled: false,
-                },
-                children: [],
-                parent: subProp,
-              };
-
-              if (property?.$ref) {
-                const refSchemaName = this.extractSchemaNameFromRef(
-                  property.$ref
-                );
-
-                if (!resolvedRefs.has(refSchemaName)) {
-                  resolvedRefs.add(refSchemaName);
-                  const referencedSchema = this.getSchemaByRef(property.$ref);
-
-                  if (referencedSchema) {
-                    const referencedChild = this.schemaToTreeNode(
-                      referencedSchema,
-                      resolvedRefs
-                    )[0];
-                    referencedChild.data.editDisabled = true;
-                    childNode.children!.push(referencedChild);
-                  }
-                }
-              }
-              subProp.children!.push(childNode);
-            }
-          });
-          rootNode.children!.push(subProp);
+        } else {
+          // Handle non-reference subschema nodes, ensuring any properties within `allOf` are non-editable
+          const subSchemaNode = { data: { editDisabled: true } };
+          processSchemaNode(subSchema, subSchemaNode, typeLabel);
+          rootNode.children!.push(subSchemaNode);
         }
       });
+    };
+
+    const processSchemaNode = (
+      schemaNode: any,
+      parentNode: TreeNode,
+      typeLabel: string
+    ) => {
+      if (schemaNode?.properties) {
+        const typeCount = Object.keys(schemaNode.properties).filter(
+          (propertyKey) => schemaNode.properties[propertyKey]?.type
+        ).length;
+
+        const subProp: TreeNode = {
+          label: formatTypeWithCount(typeLabel, typeCount),
+          data: {
+            name: formatTypeWithCount(typeLabel, typeCount),
+            description: schemaNode?.description || '',
+            type: this.formatType(schemaNode.type),
+            editDisabled: true,
+          },
+          children: [],
+          parent: parentNode,
+        };
+
+        Object.keys(schemaNode.properties).forEach((propertyKey) => {
+          const property = schemaNode.properties[propertyKey];
+
+          if (property?.type || property?.$ref || property?.enum) {
+            const childNode: TreeNode = {
+              label: propertyKey,
+              data: {
+                name: propertyKey,
+                description: property?.description || '',
+                type: this.formatType(property.type || ''),
+                editDisabled: true,
+              },
+              children: [],
+              parent: subProp,
+            };
+
+            if (property?.$ref) {
+              const refSchemaName = this.extractSchemaNameFromRef(
+                property.$ref
+              );
+
+              if (!resolvedRefs.has(refSchemaName)) {
+                resolvedRefs.add(refSchemaName);
+                const referencedSchema = this.getSchemaByRef(property.$ref);
+
+                if (referencedSchema) {
+                  const referencedChildren = this.schemaToTreeNode(
+                    referencedSchema,
+                    resolvedRefs
+                  );
+                  referencedChildren.forEach((referencedChild) => {
+                    referencedChild.data.editDisabled = true;
+                    childNode.children!.push(referencedChild);
+                  });
+                }
+              }
+              disableEditOnAllChildren(childNode);
+            } else if (property?.enum) {
+              childNode.children = property.enum.map((enumValue: string) => ({
+                label: enumValue,
+                data: {
+                  name: enumValue,
+                  type: '',
+                  editDisabled: true,
+                },
+                children: [],
+              }));
+            } else if (
+              property?.properties ||
+              property?.allOf ||
+              property?.oneOf ||
+              property?.anyOf
+            ) {
+              // Recursive call for nested schemas or composed schemas
+              processSchemaNode(property, childNode, typeLabel);
+            }
+
+            subProp.children!.push(childNode);
+          }
+        });
+
+        parentNode.children!.push(subProp);
+      } else if (schemaNode?.enum) {
+        // Handle standalone enum within schema
+        const enumNode: TreeNode = {
+          label: 'Enum Values',
+          data: {
+            name: 'Enum Values',
+            type: 'enum',
+            description: schemaNode.description || '',
+            editDisabled: true,
+          },
+          children: schemaNode.enum.map((enumValue: string) => ({
+            label: enumValue,
+            data: {
+              name: enumValue,
+              type: '',
+              editDisabled: true,
+            },
+            children: [],
+          })),
+          parent: parentNode,
+        };
+
+        parentNode.children!.push(enumNode);
+      } else if (schemaNode?.allOf || schemaNode?.oneOf || schemaNode?.anyOf) {
+        const combinedNode: TreeNode = {
+          label: typeLabel,
+          data: {
+            name: typeLabel,
+            type: '',
+            editDisabled: false,
+          },
+          children: [],
+          parent: parentNode,
+        };
+
+        processSubSchemas(
+          schemaNode.allOf || schemaNode.oneOf || schemaNode.anyOf,
+          typeLabel
+        );
+        parentNode.children!.push(combinedNode);
+      }
     };
 
     if (schema?.allOf) {
@@ -261,7 +341,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       processSubSchemas(schema.anyOf, 'anyOf');
     }
 
-    // Handle properties at the root level
     if (schema?.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
@@ -283,14 +362,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(property.$ref);
-
             if (referencedSchema) {
               const referencedChild = this.schemaToTreeNode(
                 referencedSchema,
                 resolvedRefs
               )[0];
-              referencedChild.data.editDisabled = true;
-              childNode.children!.push(referencedChild);
+
+              disableEditOnAllChildren(referencedChild);
+
+              rootNode.children!.push(referencedChild);
             }
           }
         } else {
@@ -305,7 +385,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         data: {
           name: enumValue,
           type: '',
-          editDisabled: false,
+          editDisabled: true,
         },
         children: [],
       }));
@@ -340,7 +420,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               referencedSchema,
               resolvedRefs
             )[0];
-            referencedChild.data.editDisabled = true;
+            disableEditOnAllChildren(referencedChild);
             additionalNode.children!.push(referencedChild);
           }
         }
