@@ -17,6 +17,7 @@
           placeholder="Select type"
           [showClear]="true"
           [style]="{ width: '70%' }"
+          (onChange)="onTypeSelect()"
         />
         <p-button icon="pi pi-times" pTooltip="Not nullable" />
       </div>
@@ -76,6 +77,7 @@
         placeholder="Select combine type"
         styleClass="combine-dropdown"
         [showClear]="true"
+        (onChange)="onCombineTypeChange()"
       ></p-dropdown>
     </div>
   </div>

@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, ViewChild, OnInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  ViewChild,
+  OnInit,
+  Output,
+  EventEmitter,
+} from '@angular/core';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
@@ -45,6 +52,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   @Input() apiSchemas: any;
 
   @ViewChild('op') op!: OverlayPanel;
+  @Output() updateRow = new EventEmitter<string>();
 
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
@@ -84,16 +92,25 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       calculatedHeight > maxHeight ? `${maxHeight}px` : `${calculatedHeight}px`;
   }
 
-  toggleOverlay(event: Event) {
-    console.log('Button clicked');
+  toggleOverlay(event: Event, rowData: any, _col: any) {
+    console.log('Row Data type:', rowData.type);
     this.op.toggle(event);
-    console.log(this.apiSchemas);
   }
+
+  onTypeSelect() {
+    console.log('Selected type:', this.selectedCombineType);
+  }
+
   onSchemeSelect(scheme: any) {
-    console.log('Item clicked:', scheme);
+    console.log('Selected scheme in overlay:', scheme);
   }
 
   onCombineTypeChange() {
     console.log('Selected combine type:', this.selectedCombineType);
+  }
+
+  updateRowData(scheme: any) {
+    console.log('Update row data:', scheme);
+    this.updateRow.emit(this.rowData);
   }
 }

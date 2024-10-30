@@ -134,7 +134,7 @@
                         <p-button
                           label="{{ rowData[col.field] }}"
                           [outlined]="true"
-                          (click)="toggleChildOverlay($event)"
+                          (click)="toggleChildOverlay($event, rowData, col)"
                           class="no-border-button"
                         ></p-button>
                         <app-scheme-type-overlay-panel
@@ -142,6 +142,7 @@
                           [rowData]="rowData"
                           [col]="col"
                           [apiSchemas]="apiSchemas"
+                          (updateRow)="updateButtonLabel($event, rowData, col)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container *ngIf="!isSpecialType(rowData[col.field])">

@@ -117,6 +117,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
       { field: 'name', header: 'Name' },
       { field: 'type', header: 'Type' },
     ];
+
+    console.log('Testing formatType with sample data:');
+    console.log(this.formatType(['string', 'boolean']));
   }
 
   schemaToTreeNode(
@@ -126,6 +129,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const nodes: TreeNode[] = [];
     const formatTypeWithCount = (type: string, count: number) =>
       `${type} {${count}}`;
+
+    console.log('Testing formatType with sample data:');
+    console.log(this.formatType(['string', 'boolean']));
 
     const rootNode: TreeNode = {
       label: schema.title || 'No schema',
@@ -139,7 +145,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             )
           : schema.enum
           ? formatTypeWithCount('enum', schema.enum.length)
-          : schema.type || '',
+          : this.formatType(schema.type),
         description: schema.description,
         type: '',
         showAddButton: true,
@@ -164,19 +170,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 data: {
                   name: refSchemaName,
                   description: referencedSchema.description || '',
-                  type: referencedSchema.allOf
-                    ? formatTypeWithCount(
-                        'allOf',
-                        this.objectKeys(referencedSchema.allOf).length
-                      )
-                    : referencedSchema.properties
-                    ? formatTypeWithCount(
-                        'object',
-                        this.objectKeys(referencedSchema.properties).length
-                      )
-                    : referencedSchema.enum
-                    ? formatTypeWithCount('enum', referencedSchema.enum.length)
-                    : referencedSchema.type || '',
+                  type: this.formatType(referencedSchema.type),
                   showReferenceButton: true,
                   editDisabled: false,
                 },
@@ -201,7 +195,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
     } else if (schema.properties) {
-      // Process properties if no allOf references
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
@@ -210,13 +203,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           data: {
             name: propertyKey,
             description: property.description || '',
-            type: property.allOf
-              ? 'allOf'
-              : property.properties
-              ? 'object'
-              : property.enum
-              ? 'enum'
-              : property.type || '',
+            type: this.formatType(property.type),
             editDisabled: false,
           },
           children: [],
@@ -236,19 +223,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 data: {
                   name: refSchemaName,
                   description: referencedSchema.description || '',
-                  type: referencedSchema.allOf
-                    ? formatTypeWithCount(
-                        'allOf',
-                        this.objectKeys(referencedSchema.allOf).length
-                      )
-                    : referencedSchema.properties
-                    ? formatTypeWithCount(
-                        'object',
-                        this.objectKeys(referencedSchema.properties).length
-                      )
-                    : referencedSchema.enum
-                    ? formatTypeWithCount('enum', referencedSchema.enum.length)
-                    : referencedSchema.type || '',
+                  type: this.formatType(referencedSchema.type),
                   showReferenceButton: true,
                   editDisabled: false,
                 },
@@ -271,12 +246,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
             }
           }
         } else {
-          // Direct property children are added to root node
           rootNode.children?.push(childNode);
         }
       });
     } else if (schema.enum) {
-      // Handle enum values if present
       rootNode.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
         data: {
@@ -291,6 +264,19 @@ export class SchemasComponent implements OnInit, OnDestroy {
     nodes.push(rootNode);
     return nodes;
   }
+
+  formatType = (type: any): string => {
+    // Log the type to see what is being passed in
+    console.log('Formatting type:', type);
+
+    if (Array.isArray(type)) {
+      console.log('Type is an array:', type);
+      return type.join(' | ');
+    } else {
+      console.log('Type is a single value:', type);
+      return type;
+    }
+  };
 
   handleGoRefScheme(schemaName: string) {
     this.router.navigate(['/schemas', schemaName]);
@@ -356,9 +342,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return mergedProperties;
   }
 
-  toggleChildOverlay(event: Event): void {
+  toggleChildOverlay(event: Event, rowData: any, col: any): void {
+    console.log('toggleChildOverlay: Overlay toggled for rowData:', rowData);
+    console.log('toggleChildOverlay: Column data:', col);
     if (this.childComponent) {
-      this.childComponent.toggleOverlay(event);
+      this.childComponent.toggleOverlay(event, rowData, col);
     }
   }
 
@@ -492,8 +480,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
             schemaObject.title = formData.title || schemaObject.title;
             schemaObject.description =
               formData.description || schemaObject.description;
-            
-              if (formData.examples) {
+
+            if (formData.examples) {
               try {
                 schemaObject.examples = JSON.parse(formData.examples);
               } catch (e) {
@@ -529,8 +517,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.activeTab = tab;
   }
 
-  isSpecialType(type: string): boolean {
-    return [
+  isSpecialType(type: string | string[] | { type: string }[]): boolean {
+    const specialTypes = [
       'allOf',
       'enum',
       'object',
@@ -540,7 +528,38 @@ export class SchemasComponent implements OnInit, OnDestroy {
       'string',
       'boolean',
       'dictionary',
-    ].some((specialType) => type.startsWith(specialType));
+    ];
+
+    if (Array.isArray(type) && type.every((t) => typeof t === 'string')) {
+      type.every((t) => typeof t === 'string' && specialTypes.includes(t));
+    }
+
+    if (
+      Array.isArray(type) &&
+      type.every((t) => typeof t === 'object' && 'type' in t)
+    ) {
+      return type.some((t) =>
+        specialTypes.includes((t as { type: string }).type)
+      );
+    }
+
+    if (typeof type === 'string') {
+      return specialTypes.some((specialType) => type.startsWith(specialType));
+    }
+
+    return false;
+  }
+
+  updateButtonLabel(selectedSchemeName: string, rowData: any, col: any): void {
+    // console.log('Selected Scheme Name:', selectedSchemeName);
+    // console.log('Row Data in updateButtonLabel:', rowData);
+    // console.log('Column Data in updateButtonLabel:', col);
+
+    rowData[col.field] = selectedSchemeName; // Update the rowData label
+    // console.log('Updated Row Data:', rowData);
+
+    this.jsonTree = [...this.jsonTree];
+    // console.log(this.jsonTree);
   }
 
   ngOnDestroy(): void {
