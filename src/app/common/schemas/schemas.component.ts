@@ -72,6 +72,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   @ViewChild('myText') myTextInput!: ElementRef;
 
+  VALID_TYPES = [
+    'string',
+    'number',
+    'boolean',
+    'object',
+    'array',
+    'integer',
+    'null',
+  ];
   schemas: string = '';
   schema: string = '';
   apiSchemas: any[] = [];
@@ -158,7 +167,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       node.children?.forEach(disableEditOnAllChildren);
     };
 
-    const processSubSchemas = (subSchemas: any[], typeLabel: string) => {
+    const linkReferences = (node: TreeNode) => {
+      node.data.showReferenceButton = true;
+      node.data.editDisabled = true;
+      node.data.showAddButton = false;
+    };
+
+    const processSubSchemas = (subSchemas: any[], _typeLabel: string) => {
       subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
@@ -186,7 +201,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 resolvedRefs
               );
 
-              // Disable editing on all resolved children within the reference
               resolvedChildren.forEach((resolvedChild) => {
                 disableEditOnAllChildren(resolvedChild);
                 childNode.children!.push(resolvedChild);
@@ -196,139 +210,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
             }
           }
         } else {
-          // Handle non-reference subschema nodes, ensuring any properties within `allOf` are non-editable
-          const subSchemaNode = { data: { editDisabled: true } };
-          processSchemaNode(subSchema, subSchemaNode, typeLabel);
-          rootNode.children!.push(subSchemaNode);
+          const resolvedSubchemas = this.schemaToTreeNode(
+            subSchema,
+            resolvedRefs
+          );
+          resolvedSubchemas.forEach((resolvedChild) => {
+            rootNode.children!.push(resolvedChild);
+          });
         }
       });
-    };
-
-    const processSchemaNode = (
-      schemaNode: any,
-      parentNode: TreeNode,
-      typeLabel: string
-    ) => {
-      if (schemaNode?.properties) {
-        const typeCount = Object.keys(schemaNode.properties).filter(
-          (propertyKey) => schemaNode.properties[propertyKey]?.type
-        ).length;
-
-        const subProp: TreeNode = {
-          label: formatTypeWithCount(typeLabel, typeCount),
-          data: {
-            name: formatTypeWithCount(typeLabel, typeCount),
-            description: schemaNode?.description || '',
-            type: this.formatType(schemaNode.type),
-            editDisabled: true,
-          },
-          children: [],
-          parent: parentNode,
-        };
-
-        Object.keys(schemaNode.properties).forEach((propertyKey) => {
-          const property = schemaNode.properties[propertyKey];
-
-          if (property?.type || property?.$ref || property?.enum) {
-            const childNode: TreeNode = {
-              label: propertyKey,
-              data: {
-                name: propertyKey,
-                description: property?.description || '',
-                type: this.formatType(property.type || ''),
-                editDisabled: true,
-              },
-              children: [],
-              parent: subProp,
-            };
-
-            if (property?.$ref) {
-              const refSchemaName = this.extractSchemaNameFromRef(
-                property.$ref
-              );
-
-              if (!resolvedRefs.has(refSchemaName)) {
-                resolvedRefs.add(refSchemaName);
-                const referencedSchema = this.getSchemaByRef(property.$ref);
-
-                if (referencedSchema) {
-                  const referencedChildren = this.schemaToTreeNode(
-                    referencedSchema,
-                    resolvedRefs
-                  );
-                  referencedChildren.forEach((referencedChild) => {
-                    referencedChild.data.editDisabled = true;
-                    childNode.children!.push(referencedChild);
-                  });
-                }
-              }
-              disableEditOnAllChildren(childNode);
-            } else if (property?.enum) {
-              childNode.children = property.enum.map((enumValue: string) => ({
-                label: enumValue,
-                data: {
-                  name: enumValue,
-                  type: '',
-                  editDisabled: true,
-                },
-                children: [],
-              }));
-            } else if (
-              property?.properties ||
-              property?.allOf ||
-              property?.oneOf ||
-              property?.anyOf
-            ) {
-              // Recursive call for nested schemas or composed schemas
-              processSchemaNode(property, childNode, typeLabel);
-            }
-
-            subProp.children!.push(childNode);
-          }
-        });
-
-        parentNode.children!.push(subProp);
-      } else if (schemaNode?.enum) {
-        // Handle standalone enum within schema
-        const enumNode: TreeNode = {
-          label: 'Enum Values',
-          data: {
-            name: 'Enum Values',
-            type: 'enum',
-            description: schemaNode.description || '',
-            editDisabled: true,
-          },
-          children: schemaNode.enum.map((enumValue: string) => ({
-            label: enumValue,
-            data: {
-              name: enumValue,
-              type: '',
-              editDisabled: true,
-            },
-            children: [],
-          })),
-          parent: parentNode,
-        };
-
-        parentNode.children!.push(enumNode);
-      } else if (schemaNode?.allOf || schemaNode?.oneOf || schemaNode?.anyOf) {
-        const combinedNode: TreeNode = {
-          label: typeLabel,
-          data: {
-            name: typeLabel,
-            type: '',
-            editDisabled: false,
-          },
-          children: [],
-          parent: parentNode,
-        };
-
-        processSubSchemas(
-          schemaNode.allOf || schemaNode.oneOf || schemaNode.anyOf,
-          typeLabel
-        );
-        parentNode.children!.push(combinedNode);
-      }
     };
 
     if (schema?.allOf) {
@@ -344,37 +234,40 @@ export class SchemasComponent implements OnInit, OnDestroy {
     if (schema?.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
-        const childNode: TreeNode = {
-          label: propertyKey,
-          data: {
-            name: propertyKey,
-            description: property?.description || '',
-            type: this.formatType(property?.type || ''),
-            editDisabled: false,
-          },
-          children: [],
-          parent: rootNode,
-        };
+        if (this.isValidType(property?.type)) {
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: this.formatType(property?.type),
+              showReferenceButton: property?.$ref ? true : false,
+              editDisabled: property?.$ref ? true : false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          if (property?.$ref) {
+            const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
 
-        if (property?.$ref) {
-          const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
+            if (!resolvedRefs.has(refSchemaName)) {
+              resolvedRefs.add(refSchemaName);
+              const referencedSchema = this.getSchemaByRef(property.$ref);
+              if (referencedSchema) {
+                const referencedChild = this.schemaToTreeNode(
+                  referencedSchema,
+                  resolvedRefs
+                )[0];
 
-          if (!resolvedRefs.has(refSchemaName)) {
-            resolvedRefs.add(refSchemaName);
-            const referencedSchema = this.getSchemaByRef(property.$ref);
-            if (referencedSchema) {
-              const referencedChild = this.schemaToTreeNode(
-                referencedSchema,
-                resolvedRefs
-              )[0];
+                disableEditOnAllChildren(referencedChild);
+                linkReferences(referencedChild);
 
-              disableEditOnAllChildren(referencedChild);
-
-              rootNode.children!.push(referencedChild);
+                rootNode.children!.push(referencedChild);
+              }
             }
+          } else {
+            rootNode.children?.push(childNode);
           }
-        } else {
-          rootNode.children?.push(childNode);
         }
       });
     }
@@ -390,61 +283,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
         children: [],
       }));
     }
-
-    if (schema?.additionalProperties) {
-      const additionalPropSchema = schema.additionalProperties;
-      const additionalNode: TreeNode = {
-        label: 'Additional Properties',
-        data: {
-          name: 'Additional Properties',
-          type: this.formatType(additionalPropSchema?.type || 'any'),
-          editDisabled: false,
-        },
-        children: [],
-        parent: rootNode,
-      };
-
-      if (additionalPropSchema?.$ref) {
-        const refSchemaName = this.extractSchemaNameFromRef(
-          additionalPropSchema.$ref
-        );
-
-        if (!resolvedRefs.has(refSchemaName)) {
-          resolvedRefs.add(refSchemaName);
-          const referencedSchema = this.getSchemaByRef(
-            additionalPropSchema.$ref
-          );
-
-          if (referencedSchema) {
-            const referencedChild = this.schemaToTreeNode(
-              referencedSchema,
-              resolvedRefs
-            )[0];
-            disableEditOnAllChildren(referencedChild);
-            additionalNode.children!.push(referencedChild);
-          }
-        }
-      }
-
-      rootNode.children!.push(additionalNode);
-    }
-
     nodes.push(rootNode);
     return nodes;
-  }
-
-  // Helper function for resolving $ref recursively
-  resolveRefSchema(refSchema: any, resolvedRefs: Set<string>): TreeNode[] {
-    const refSchemaName = this.extractSchemaNameFromRef(refSchema.$ref);
-    if (!resolvedRefs.has(refSchemaName)) {
-      resolvedRefs.add(refSchemaName);
-      const referencedSchema = this.getSchemaByRef(refSchema.$ref);
-
-      if (referencedSchema) {
-        return this.schemaToTreeNode(referencedSchema, resolvedRefs);
-      }
-    }
-    return []; // Return empty array if the reference cannot be resolved
   }
 
   formatType = (type: any): string => {
@@ -462,6 +302,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   handleGoRefScheme(schemaName: string) {
     this.router.navigate(['/schemas', schemaName]);
+  }
+  isValidType(type: string | undefined): boolean {
+    return type !== undefined && this.VALID_TYPES.includes(type);
   }
 
   handleAddScheme(_event: Event): void {
@@ -563,6 +406,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
         console.error('Error fetching Swagger spec:', error);
       },
     });
+
+    
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
     console.log(this.jsonTree);
   }
