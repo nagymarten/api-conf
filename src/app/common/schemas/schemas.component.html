@@ -120,11 +120,10 @@
                       </p-treeTableCellEditor>
                     </ng-container>
 
-
                     <ng-container
                       *ngIf="col.field !== 'name'"
                     >
-                      <ng-container *ngIf="isSpecialType(rowData[col.field])  && !rowData.isReferenceChild">
+                      <ng-container *ngIf="isSpecialType(rowData[col.field])  && !rowData.isReferenceChild && !rowData.isRootNode">
                         <p-button
                           label="{{ rowData[col.field] }}"
                           [outlined]="true"
@@ -203,6 +202,7 @@
                       [jsonTree]="jsonTree"
                       (addScheme)="handleAddScheme($event)"
                     ></app-add-scheme-button>
+
                     <app-ref-button
                       [rowData]="rowData"
                       [col]="col"
