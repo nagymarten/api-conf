@@ -136,10 +136,29 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const formatTypeWithCount = (type: string, count: number) =>
       `${type} {${count}}`;
 
+    const schemaName =
+      `${schema?.title || this.selectedSchemaName}: ` +
+      (schema?.allOf
+        ? formatTypeWithCount('allOf', this.objectKeys(schema.allOf).length)
+        : schema?.oneOf
+        ? formatTypeWithCount('oneOf', this.objectKeys(schema.oneOf).length)
+        : schema?.anyOf
+        ? formatTypeWithCount('anyOf', this.objectKeys(schema.anyOf).length)
+        : schema?.properties
+        ? formatTypeWithCount(
+            'object',
+            this.objectKeys(schema.properties).length
+          )
+        : schema?.enum
+        ? formatTypeWithCount('enum', schema.enum.length)
+        : this.formatType(schema?.type || ''));
+
     const rootNode: TreeNode = {
       label: schema?.title || 'No schema',
       data: {
-        name: schema?.allOf
+        name: schemaName,
+        description: schema?.description || '',
+        type: schema?.allOf
           ? formatTypeWithCount('allOf', this.objectKeys(schema.allOf).length)
           : schema?.oneOf
           ? formatTypeWithCount('oneOf', this.objectKeys(schema.oneOf).length)
@@ -153,10 +172,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
           : schema?.enum
           ? formatTypeWithCount('enum', schema.enum.length)
           : this.formatType(schema?.type || ''),
-        description: schema?.description || '',
-        type: '',
         showAddButton: true,
         editDisabled: false,
+        isReferenceChild: false,
       },
       children: [],
       expanded: true,
@@ -173,6 +191,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
       node.data.showAddButton = false;
     };
 
+    const referenceChildren = (node: TreeNode) => {
+      node.data.showReferenceButton = false;
+      node.data.editDisabled = true;
+      node.data.showAddButton = false;
+      node.data.isReferenceChild = true;
+      node.children?.forEach(referenceChildren);
+    };
+
     const processSubSchemas = (subSchemas: any[], _typeLabel: string) => {
       subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
@@ -183,30 +209,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
             const referencedSchema = this.getSchemaByRef(subSchema.$ref);
 
             if (referencedSchema) {
-              const childNode: TreeNode = {
-                label: refSchemaName,
-                data: {
-                  name: refSchemaName,
-                  description: referencedSchema.description || '',
-                  type: this.formatType(referencedSchema.type || ''),
-                  showReferenceButton: true,
-                  editDisabled: true,
-                },
-                children: [],
-                parent: rootNode,
-              };
-
               const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 resolvedRefs
-              );
+              )[0];
 
-              resolvedChildren.forEach((resolvedChild) => {
-                disableEditOnAllChildren(resolvedChild);
-                childNode.children!.push(resolvedChild);
-              });
+              disableEditOnAllChildren(resolvedChildren);
+              referenceChildren(resolvedChildren);
+              linkReferences(resolvedChildren);
 
-              rootNode.children!.push(childNode);
+              rootNode.children!.push(resolvedChildren);
             }
           }
         } else {
@@ -243,6 +255,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               type: this.formatType(property?.type),
               showReferenceButton: property?.$ref ? true : false,
               editDisabled: property?.$ref ? true : false,
+              isReferenceChild: property?.$ref ? true : false,
             },
             children: [],
             parent: rootNode,
@@ -254,15 +267,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
               resolvedRefs.add(refSchemaName);
               const referencedSchema = this.getSchemaByRef(property.$ref);
               if (referencedSchema) {
-                const referencedChild = this.schemaToTreeNode(
+                const referencedChildren = this.schemaToTreeNode(
                   referencedSchema,
                   resolvedRefs
                 )[0];
 
-                disableEditOnAllChildren(referencedChild);
-                linkReferences(referencedChild);
+                disableEditOnAllChildren(referencedChildren);
+                referenceChildren(referencedChildren);
+                linkReferences(referencedChildren);
 
-                rootNode.children!.push(referencedChild);
+                rootNode.children!.push(referencedChildren);
               }
             }
           } else {
@@ -300,9 +314,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
   };
 
-  handleGoRefScheme(schemaName: string) {
-    this.router.navigate(['/schemas', schemaName]);
+  cleanSchemaName(value: string): string {
+    value = value.split(':')[0];
+
+    value = value.replace(/\{\d+\}/g, '');
+
+    return value.trim();
   }
+
+  handleGoRefScheme(schemaName: string) {
+    const cleanedSchemaName = this.cleanSchemaName(schemaName);
+    console.log(`Navigating to schema: ${cleanedSchemaName}`);
+    this.router.navigate(['/schemas', cleanedSchemaName]);
+  }
+
   isValidType(type: string | undefined): boolean {
     return type !== undefined && this.VALID_TYPES.includes(type);
   }
@@ -407,7 +432,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       },
     });
 
-    
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema);
     console.log(this.jsonTree);
   }
