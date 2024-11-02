@@ -271,8 +271,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (schema?.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
+
         const property = schema.properties[propertyKey];
+       
+        if (!property) {
+          console.warn(`Property ${propertyKey} is null or undefined.`);
+          return;
+        }
+        
         console.log('Processing property:', propertyKey, property);
+       
         const childNode: TreeNode = {
           label: propertyKey,
           data: {
@@ -287,9 +295,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
           children: [],
           parent: rootNode,
         };
+
         if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         } else if (property.$ref) {
+          
           const childNode: TreeNode = {
             label: propertyKey,
             data: {
@@ -304,12 +314,18 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
+          
           console.log('Ref:', property.$ref);
+          
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
+          
           if (!resolvedRefs.has(refSchemaName)) {
+            
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(property.$ref);
+            
             if (referencedSchema) {
+              
               const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 null,
@@ -328,6 +344,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
     } else if (schema?.enum) {
+
       rootNode!.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
         data: {
