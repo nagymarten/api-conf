@@ -92,13 +92,22 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       calculatedHeight > maxHeight ? `${maxHeight}px` : `${calculatedHeight}px`;
   }
 
-  toggleOverlay(event: Event, rowData: any, _col: any) {
-    console.log('Row Data type:', rowData.type);
+  setRowData(rowData: any) {
+    this.rowData = rowData;
+  }
+
+  setCol(col: any) {
+    this.col = col;
+  }
+
+  toggleOverlay(event: Event, rowData: any, col: any) {
+    this.setRowData(rowData);
+    this.setCol(col);
     this.op.toggle(event);
   }
 
   onTypeSelect() {
-    console.log('Selected type:', this.selectedCombineType);
+    this.updateRowData(this.rowData);
   }
 
   onSchemeSelect(scheme: any) {
@@ -109,8 +118,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     console.log('Selected combine type:', this.selectedCombineType);
   }
 
-  updateRowData(scheme: any) {
-    console.log('Update row data:', scheme);
-    this.updateRow.emit(this.rowData);
+  updateRowData(rowData: any) {
+    rowData[this.col.field] = this.selectedType?.name || this.selectedType;
+    this.updateRow.emit(rowData);
   }
 }

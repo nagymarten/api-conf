@@ -96,6 +96,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
   focusNewSchemaInput = false;
+  selectedRowData: any;
+  selectedCol: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -271,16 +273,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (schema?.properties) {
       Object.keys(schema.properties).forEach((propertyKey) => {
-
         const property = schema.properties[propertyKey];
-       
+
         if (!property) {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
-        
-        console.log('Processing property:', propertyKey, property);
-       
+
         const childNode: TreeNode = {
           label: propertyKey,
           data: {
@@ -299,7 +298,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         } else if (property.$ref) {
-          
           const childNode: TreeNode = {
             label: propertyKey,
             data: {
@@ -314,18 +312,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
-          
+
           console.log('Ref:', property.$ref);
-          
+
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
-          
+
           if (!resolvedRefs.has(refSchemaName)) {
-            
             resolvedRefs.add(refSchemaName);
             const referencedSchema = this.getSchemaByRef(property.$ref);
-            
+
             if (referencedSchema) {
-              
               const resolvedChildren = this.schemaToTreeNode(
                 referencedSchema,
                 null,
@@ -344,7 +340,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
     } else if (schema?.enum) {
-
       rootNode!.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
         data: {
@@ -464,9 +459,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   toggleChildOverlay(event: Event, rowData: any, col: any): void {
-    if (this.childComponent) {
-      this.childComponent.toggleOverlay(event, rowData, col);
-    }
+    console.log('toggleChildOverlay');
+    console.log('Selected Row Data:', rowData);
+    console.log('Selected Column Data:', col);
+    this.childComponent.toggleOverlay(event, rowData, col);
   }
 
   extractSchemaNameFromRef(ref: string): string {
@@ -478,6 +474,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const schemaName = this.extractSchemaNameFromRef(ref);
     return this.apiSchemas.find((schema) => schema.name === schemaName)
       ?.details;
+  }
+
+  onRowUpdated(updatedRowData: any) {
+    console.log('Updated Row Data:', updatedRowData);
+    // Here, you can apply any additional logic or state updates as needed
+    // If you need to force a UI update, you can update your component's data binding here
   }
 
   fetchModelDetails(): void {
@@ -521,13 +523,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
-    console.log(this.isSpecialType('array {2}')); // true
-    console.log(this.isSpecialType(['string', 'null'])); // true
-    console.log(this.isSpecialType(['unknownType', 'array'])); // false
-    console.log(
-      this.isSpecialType([{ type: 'array {3}' }, { type: 'string' }])
-    ); // true
-
     console.log(this.jsonTree);
   }
 
@@ -680,7 +675,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return type.every(
         (t) => typeof t === 'string' && specialTypes.includes(t)
       );
-;
     }
 
     // If type is an array of objects with a `type` property, check if any cleaned type matches a special type
@@ -707,16 +701,18 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return value.trim();
   }
 
-  updateButtonLabel(selectedSchemeName: string, rowData: any, col: any): void {
-    // console.log('Selected Scheme Name:', selectedSchemeName);
-    // console.log('Row Data in updateButtonLabel:', rowData);
-    // console.log('Column Data in updateButtonLabel:', col);
+  updateButtonLabel(updatedRowData: any) {
+    // Find the index of the row that was updated
+    const rowIndex = this.apiSchemas.findIndex((row) => row === updatedRowData);
 
-    rowData[col.field] = selectedSchemeName; // Update the rowData label
-    // console.log('Updated Row Data:', rowData);
-
-    this.jsonTree = [...this.jsonTree];
-    // console.log(this.jsonTree);
+    // Update the row if it exists in the array
+    if (rowIndex !== -1) {
+      // Replace the existing row with the updated row
+      this.apiSchemas[rowIndex] = { ...updatedRowData };
+      console.log('Updated row data:', this.apiSchemas[rowIndex]);
+    } else {
+      console.warn('Row not found in the data array:', updatedRowData);
+    }
   }
 
   ngOnDestroy(): void {
