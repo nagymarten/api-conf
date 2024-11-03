@@ -278,7 +278,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           data: {
             name: propertyKey,
             description: property?.description || '',
-            type: property?.type || '',
+            type: this.formatPropertyType(property) || '',
             showReferenceButton: !!property?.$ref,
             editDisabled: !!property?.$ref,
             isReferenceChild: !!property?.$ref,
@@ -389,6 +389,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
 
     return this.VALID_TYPES.includes(type);
+  }
+
+  formatPropertyType(property: any): string {
+    // Check if property has type and format fields
+    if (property.type) {
+      return property.format
+        ? `${property.type}<${property.format}>`
+        : property.type;
+    }
+    // Default case if type is not defined
+    return 'unknown';
   }
 
   handleAddScheme(_event: Event): void {
@@ -675,8 +686,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
             schemaObject.title = formData.title || schemaObject.title;
             schemaObject.description =
               formData.description || schemaObject.description;
-            
-              try {
+
+            try {
               schemaObject.properties =
                 typeof formData.properties === 'string'
                   ? JSON.parse(formData.properties)
@@ -742,10 +753,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
       'null',
     ];
 
+    // Helper function to clean and handle type<format> format
+    const cleanType = (typeStr: string): string => {
+      // Extract base type if format is type<format>
+      const baseType = typeStr.split('<')[0].trim();
+      return baseType;
+    };
+
     // If type is an array of strings, check if every cleaned type is a special type
     if (Array.isArray(type) && type.every((t) => typeof t === 'string')) {
       return type.every(
-        (t) => typeof t === 'string' && specialTypes.includes(t)
+        (t) => typeof t === 'string' && specialTypes.includes(cleanType(t))
       );
     }
 
@@ -755,13 +773,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       type.every((t) => typeof t === 'object' && 'type' in t)
     ) {
       return type.some((t) =>
-        specialTypes.includes(this.cleanType((t as { type: string }).type))
+        specialTypes.includes(cleanType((t as { type: string }).type))
       );
     }
 
     // If type is a single string, clean it and check if it matches a special type
     if (typeof type === 'string') {
-      return specialTypes.includes(this.cleanType(type));
+      return specialTypes.includes(cleanType(type));
     }
 
     return false;
