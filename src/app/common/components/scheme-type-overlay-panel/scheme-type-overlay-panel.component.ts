@@ -56,7 +56,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
-  types: Type[] | undefined;
+  types: Type[] = [];
   selectedType: Type | undefined;
   combineTypes: Type[] | undefined;
 
@@ -81,17 +81,12 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       { name: 'enum' },
       { name: 'dictionary' },
     ];
+
     this.combineTypes = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
-
     this.activeItem = this.responseExamples[0];
-    const itemHeight = 50;
-    const maxHeight = 200;
-    const calculatedHeight = this.apiSchemas.length * itemHeight;
-
-    this.scrollHeight =
-      calculatedHeight > maxHeight ? `${maxHeight}px` : `${calculatedHeight}px`;
   }
 
+  // Set rowData and col
   setRowData(rowData: any) {
     this.rowData = rowData;
   }
@@ -103,6 +98,15 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   toggleOverlay(event: Event, rowData: any, col: any) {
     this.setRowData(rowData);
     this.setCol(col);
+
+    const originalType = { name: rowData[col.field] };
+    this.types = [
+      originalType,
+      ...this.types.filter((type) => type.name !== originalType.name),
+    ];
+
+    this.selectedType = originalType;
+
     this.op.toggle(event);
   }
 
@@ -119,7 +123,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   updateRowData(rowData: any) {
-    rowData[this.col.field] = this.selectedType?.name || this.selectedType;
+    rowData[this.col.field] =
+      this.selectedType?.name || rowData[this.col.field];
     this.updateRow.emit(rowData);
   }
 }

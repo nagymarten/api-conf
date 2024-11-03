@@ -108,11 +108,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Initialize base form fields
     this.schemaDetailsForm = this.fb.group({
       title: [''],
       description: [''],
-      properties: [''],
-      examples: [''],
       isEditingTitle: [false],
       isEditingDescription: [false],
     });
@@ -194,12 +193,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       node.data.editDisabled = true;
       node.children?.forEach(disableEditOnAllChildren);
     };
-
-    // const linkReferences = (node: TreeNode) => {
-    //   node.data.showReferenceButton = true;
-    //   node.data.editDisabled = true;
-    //   node.data.showAddButton = false;
-    // };
 
     const referenceChildren = (node: TreeNode) => {
       node.data.showReferenceButton = false;
@@ -459,9 +452,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   toggleChildOverlay(event: Event, rowData: any, col: any): void {
-    console.log('toggleChildOverlay');
-    console.log('Selected Row Data:', rowData);
-    console.log('Selected Column Data:', col);
+    // console.log('toggleChildOverlay');
+    // console.log('Selected Row Data:', rowData);
+    // console.log('Selected Column Data:', col);
     this.childComponent.toggleOverlay(event, rowData, col);
   }
 
@@ -526,6 +519,57 @@ export class SchemasComponent implements OnInit, OnDestroy {
     console.log(this.jsonTree);
   }
 
+  private initializeFormBasedOnSchema(
+    schema: any,
+    selectedSchemaName: string
+  ): void {
+    ['properties', 'allOf', 'oneOf', 'anyOf', 'enum'].forEach((control) => {
+      if (this.schemaDetailsForm.contains(control)) {
+        this.schemaDetailsForm.removeControl(control);
+      }
+    });
+
+    // Dynamically adjust form controls based on the schema's structure
+    if (schema.properties) {
+      this.schemaDetailsForm.addControl('properties', this.fb.control(''));
+      this.schemaDetailsForm.patchValue({
+        properties: JSON.stringify(schema.properties, null, 2),
+      });
+    }
+    if (schema.allOf) {
+      this.schemaDetailsForm.addControl('allOf', this.fb.control(''));
+      this.schemaDetailsForm.patchValue({
+        allOf: JSON.stringify(schema.allOf, null, 2),
+      });
+    }
+    if (schema.oneOf) {
+      this.schemaDetailsForm.addControl('oneOf', this.fb.control(''));
+      this.schemaDetailsForm.patchValue({
+        oneOf: JSON.stringify(schema.oneOf, null, 2),
+      });
+    }
+    if (schema.anyOf) {
+      this.schemaDetailsForm.addControl('anyOf', this.fb.control(''));
+      this.schemaDetailsForm.patchValue({
+        anyOf: JSON.stringify(schema.anyOf, null, 2),
+      });
+    }
+    if (schema.enum) {
+      this.schemaDetailsForm.addControl('enum', this.fb.control(''));
+      this.schemaDetailsForm.patchValue({
+        enum: JSON.stringify(schema.enum, null, 2),
+      });
+    }
+
+    // Only patch individual fields, setting title to selectedSchemaName
+    this.schemaDetailsForm.patchValue({
+      title: selectedSchemaName || '',
+      description: schema.description || '',
+      type: schema.type || '',
+      name: schema.name || '',
+    });
+  }
+
   getRootNode(node: TreeNode): TreeNode {
     return node.parent ? this.getRootNode(node.parent) : node;
   }
@@ -570,20 +614,25 @@ export class SchemasComponent implements OnInit, OnDestroy {
         });
       }
     }
+    this.initializeFormBasedOnSchema(
+      this.selectedSchema,
+      this.selectedSchemaName
+    );
+    console.log(this.schemaDetailsForm.value);
   }
 
-  onExampleChanged(exampleJSON: string): void {
-    this.schemaDetailsForm.patchValue({
-      examples: exampleJSON,
-    });
+  updateSchemaProperty(propertyKey: string, newValue: any): void {
+    if (this.selectedSchema && this.selectedSchema[propertyKey] !== undefined) {
+      this.selectedSchema[propertyKey] = newValue;
+      this.onUpdateSchema();
+    }
   }
 
-  onActiveItemChange(event: MenuItem) {
-    this.activeItem = event;
-  }
-
-  onDeleteProperty(_t44: string) {
-    throw new Error('Method not implemented.');
+  deleteSchemaProperty(propertyKey: string): void {
+    if (this.selectedSchema && this.selectedSchema[propertyKey]) {
+      delete this.selectedSchema[propertyKey];
+      this.onUpdateSchema();
+    }
   }
 
   startEditingTitle(): void {
@@ -602,6 +651,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   onUpdateSchema(): void {
+    console.log('Starting onUpdateSchema...');
+
     this.apiDataService
       .getSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
@@ -613,27 +664,48 @@ export class SchemasComponent implements OnInit, OnDestroy {
           const schemaName = this.selectedSchemaName;
           const schemaObject = swaggerSpec.components.schemas[schemaName];
 
+          console.log('Selected Schema Name:', schemaName);
+          console.log('Schema Object Before Update:', schemaObject);
+
           if (schemaObject) {
             const formData = this.schemaDetailsForm.value;
+
+            console.log('Form Data:', formData);
 
             schemaObject.title = formData.title || schemaObject.title;
             schemaObject.description =
               formData.description || schemaObject.description;
+            
+              try {
+              schemaObject.properties =
+                typeof formData.properties === 'string'
+                  ? JSON.parse(formData.properties)
+                  : formData.properties;
+            } catch (error) {
+              console.error('Invalid JSON format for properties:', error);
+              return;
+            }
 
+            // Handle examples field
             if (formData.examples) {
               try {
                 schemaObject.examples = JSON.parse(formData.examples);
+                console.log('Parsed Examples:', schemaObject.examples);
               } catch (e) {
                 console.error('Invalid JSON format for examples:', e);
               }
             }
 
+            // Assign the updated schema back
             swaggerSpec.components.schemas[schemaName] = schemaObject;
+            console.log('Schema Object After Update:', schemaObject);
 
+            // Save the updated schema
             this.apiDataService.setSchemes(
               JSON.stringify(swaggerSpec.components.schemas, null, 2)
             );
 
+            // Fetch and log the updated Swagger spec
             this.apiDataService
               .getSwaggerSpec()
               .subscribe((updatedSpec: ExtendedSwaggerSpec | null) => {
@@ -701,17 +773,77 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return value.trim();
   }
 
-  updateButtonLabel(updatedRowData: any) {
-    // Find the index of the row that was updated
-    const rowIndex = this.apiSchemas.findIndex((row) => row === updatedRowData);
+  updateButtonLabel(updatedNodeData: any) {
+    const findNode = (nodes: TreeNode[], name: string): TreeNode | null => {
+      for (let node of nodes) {
+        if (node.data.name === name) {
+          return node;
+        }
+        if (node.children && node.children.length > 0) {
+          const childNode = findNode(node.children, name);
+          if (childNode) {
+            return childNode;
+          }
+        }
+      }
+      return null;
+    };
 
-    // Update the row if it exists in the array
-    if (rowIndex !== -1) {
-      // Replace the existing row with the updated row
-      this.apiSchemas[rowIndex] = { ...updatedRowData };
-      console.log('Updated row data:', this.apiSchemas[rowIndex]);
+    // Locate the node in jsonTree based on unique name identifier
+    const nodeToUpdate = findNode(this.jsonTree, updatedNodeData.name);
+    console.log('Node to update:', nodeToUpdate);
+
+    if (nodeToUpdate) {
+      // Update the node's data
+      nodeToUpdate.data = { ...updatedNodeData };
+      console.log('Updated node data in jsonTree:', nodeToUpdate);
+      this.jsonTree = [...this.jsonTree];
+      console.log('Updated jsonTree:', this.jsonTree);
+
+      // Log the node's data before updating the form
+      console.log('Node data before patching form:', {
+        name: nodeToUpdate.data.name,
+        description: nodeToUpdate.data.description,
+        type: nodeToUpdate.data.type,
+      });
+
+      // Parse the existing properties JSON in the form
+      const allProperties = JSON.parse(
+        this.schemaDetailsForm.get('properties')?.value || '{}'
+      );
+
+      // Check if the specific property exists in allProperties
+      const propertyToUpdate = allProperties[nodeToUpdate.data.name];
+      console.log('Property to update:', propertyToUpdate);
+
+      if (propertyToUpdate) {
+        // Update only the specific fields of the matching property
+        propertyToUpdate.type = nodeToUpdate.data.type; // or any other update
+        console.log(
+          `Updated property ${nodeToUpdate.data.name}:`,
+          propertyToUpdate
+        );
+
+        // Update the form with the modified properties as JSON string
+        this.schemaDetailsForm.patchValue({
+          title: nodeToUpdate.data.title || '',
+          description: nodeToUpdate.data.description || '',
+          properties: JSON.stringify(allProperties, null, 2), // Convert back to JSON string with all properties
+          examples: JSON.stringify(nodeToUpdate.data.examples || [], null, 2),
+        });
+
+        console.log('Updated form values:', this.schemaDetailsForm.value);
+      } else {
+        console.warn('No matching property found in properties to update.');
+      }
+
+      // Persist the changes
+      this.onUpdateSchema();
     } else {
-      console.warn('Row not found in the data array:', updatedRowData);
+      console.warn(
+        'Node not found in jsonTree with name:',
+        updatedNodeData.name
+      );
     }
   }
 
