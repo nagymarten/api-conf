@@ -5,21 +5,506 @@
         [model]="responseExamples"
         [(activeItem)]="activeItem"
       ></p-tabMenu>
-    </div>
-    <p-divider />
+      <p-divider />
 
-    <div *ngIf="activeItem?.label === 'Type'">
-      <div class="card flex justify-content-center">
-        <p-dropdown
-          [options]="types"
-          [(ngModel)]="selectedType"
-          optionLabel="name"
-          placeholder="Select type"
-          [showClear]="true"
-          [style]="{ width: '70%' }"
-          (onChange)="onTypeSelect()"
-        />
-        <p-button icon="pi pi-times" pTooltip="Not nullable" />
+      <div *ngIf="activeItem?.label === 'Type'">
+        <div class="card flex-column">
+          <div class="type-selection-container">
+            <p-dropdown
+              [options]="types"
+              [(ngModel)]="selectedType"
+              optionLabel="name"
+              placeholder="Select type"
+              [showClear]="true"
+              [style]="{ width: '100%' }"
+            ></p-dropdown>
+            <p-button
+              icon="pi pi-times"
+              pTooltip="Not nullable"
+              class="not-nullable-button"
+            ></p-button>
+          </div>
+
+          <p-divider />
+
+          <ng-container *ngIf="selectedType?.name === 'object'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content">
+                <div class="object-properties-container">
+                  <div class="form-group">
+                    <label for="minProperties">minProperties</label>
+                    <input
+                      id="minProperties"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="minProperties"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maxProperties">maxProperties</label>
+                    <input
+                      id="maxProperties"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="maxProperties"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      id="deprecatedSwitch"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'array'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content">
+                <div class="array-properties-container">
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      id="behavior"
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="minItems">minItems</label>
+                    <input
+                      id="minItems"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="minItems"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maxItems">maxItems</label>
+                    <input
+                      id="maxItems"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="maxItems"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <label for="uniqe_items">uniqe items</label>
+                    <p-inputSwitch
+                      id="uniqe_items"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
+
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      id="deprecated"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'integer'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content">
+                <div class="properties-container">
+                  <div class="form-group">
+                    <label for="format">Format</label>
+                    <p-dropdown
+                      id="format"
+                      [options]="intFormats"
+                      [(ngModel)]="selectedFormat"
+                      placeholder="Select format"
+                      [style]="{ width: '100%' }"
+                      optionLabel="name"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="default">Default</label>
+                    <input
+                      id="default"
+                      type="text"
+                      pInputText
+                      placeholder="default"
+                      [(ngModel)]="default"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="example">Example</label>
+                    <input
+                      id="example"
+                      type="text"
+                      pInputText
+                      placeholder="example"
+                      [(ngModel)]="example"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <!-- Minimum, Maximum, and Multiple Of Fields -->
+                  <div class="form-group">
+                    <label for="minimum">Minimum</label>
+                    <input
+                      id="minimum"
+                      type="number"
+                      pInputText
+                      placeholder="0"
+                      [(ngModel)]="minimum"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maximum">Maximum</label>
+                    <input
+                      id="maximum"
+                      type="number"
+                      pInputText
+                      placeholder="100"
+                      [(ngModel)]="maximum"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="multipleOf">Multiple Of</label>
+                    <input
+                      id="multipleOf"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="multipleOf"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <label for="exclusiveMin">exclusiveMin</label>
+
+                    <p-inputSwitch
+                      id="exclusiveMin"
+                      [(ngModel)]="exclusiveMin"
+                    ></p-inputSwitch>
+                    <label for="exclusiveMax">exclusiveMax</label>
+
+                    <p-inputSwitch
+                      id="exclusiveMax"
+                      [(ngModel)]="exclusiveMax"
+                    ></p-inputSwitch>
+                    <label for="deprecated">deprecated</label>
+
+                    <p-inputSwitch
+                      id="deprecated"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'number'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content">
+                <div class="number-properties-container">
+                  <div class="form-group">
+                    <label for="format">Format</label>
+                    <p-dropdown
+                      id="format"
+                      [options]="numberFormats"
+                      [(ngModel)]="selectedNumberFormat"
+                      optionLabel="name"
+                      placeholder="Select a value"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      id="behavior"
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="default">Default</label>
+                    <input
+                      id="default"
+                      type="text"
+                      pInputText
+                      placeholder="default"
+                      [(ngModel)]="defaultNumber"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="example">Example</label>
+                    <input
+                      id="example"
+                      type="text"
+                      pInputText
+                      placeholder="example"
+                      [(ngModel)]="exampleNumber"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="minimum">Minimum</label>
+                    <input
+                      id="minimum"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="minimum"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maximum">Maximum</label>
+                    <input
+                      id="maximum"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="maximum"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="multipleOf">Multiple Of</label>
+                    <input
+                      id="multipleOf"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="multipleOf"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <div class="toggle-item">
+                      <label for="exclusiveMinSwitch">exclusiveMin</label>
+                      <p-inputSwitch
+                        id="exclusiveMinSwitch"
+                        [(ngModel)]="exclusiveMin"
+                      ></p-inputSwitch>
+                    </div>
+
+                    <div class="toggle-item">
+                      <label for="exclusiveMaxSwitch">exclusiveMax</label>
+                      <p-inputSwitch
+                        id="exclusiveMaxSwitch"
+                        [(ngModel)]="exclusiveMax"
+                      ></p-inputSwitch>
+                    </div>
+
+                    <div class="toggle-item">
+                      <label for="deprecatedSwitch">deprecated</label>
+                      <p-inputSwitch
+                        id="deprecatedSwitch"
+                        [(ngModel)]="deprecated"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'string'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content">
+                <div class="string-properties-container">
+                  <div class="form-group">
+                    <label for="format">Format</label>
+                    <p-dropdown
+                      [options]="stringFormats"
+                      [(ngModel)]="selectedStringFormat"
+                      optionLabel="name"
+                      placeholder="Select a value"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="default">Default</label>
+                    <input
+                      id="default"
+                      type="text"
+                      pInputText
+                      placeholder="default"
+                      [(ngModel)]="defaultString"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="example">Example</label>
+                    <input
+                      id="example"
+                      type="text"
+                      pInputText
+                      placeholder="example"
+                      [(ngModel)]="exampleString"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <!-- Pattern Field -->
+                  <div class="form-group">
+                    <label for="pattern">Pattern</label>
+                    <input
+                      id="pattern"
+                      type="text"
+                      pInputText
+                      placeholder="^[A-Za-z0-9 _-]+$"
+                      [(ngModel)]="pattern"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="minLength">minLength</label>
+                    <input
+                      id="minLength"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="minLength"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maxLength">maxLength</label>
+                    <input
+                      id="maxLength"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="maxLength"
+                      [style]="{ width: '100%' }"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      [(ngModel)]="deprecated"
+                      id="deprecated"
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'boolean'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content"></div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'enum'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content"></div>
+            </p-panel>
+          </ng-container>
+
+          <ng-container *ngIf="selectedType?.name === 'dictionary'">
+            <p-panel
+              header="Properties"
+              [toggleable]="true"
+              [collapsed]="false"
+            >
+              <div class="properties-content"></div>
+            </p-panel>
+          </ng-container>
+        </div>
       </div>
     </div>
 

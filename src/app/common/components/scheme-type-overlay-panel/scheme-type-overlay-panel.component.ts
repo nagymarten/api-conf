@@ -20,6 +20,8 @@ import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
 import { ScrollerModule } from 'primeng/scroller';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { PanelModule } from 'primeng/panel';
 
 interface Type {
   name: string;
@@ -42,6 +44,8 @@ interface Type {
     TooltipModule,
     DividerModule,
     ScrollerModule,
+    InputSwitchModule,
+    PanelModule,
   ],
   templateUrl: './scheme-type-overlay-panel.component.html',
   styleUrl: './scheme-type-overlay-panel.component.css',
@@ -54,39 +58,94 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   @ViewChild('op') op!: OverlayPanel;
   @Output() updateRow = new EventEmitter<string>();
 
-  responseExamples: MenuItem[] = [];
+  responseExamples: MenuItem[] = [
+    { label: 'Type', icon: 'pi pi-fw pi-tag' },
+    { label: 'Components', icon: 'pi pi-fw pi-cog' },
+    { label: 'Combine Schemas', icon: 'pi pi-fw pi-th-large' },
+  ];
   activeItem!: MenuItem;
-  types: Type[] = [];
+  types: Type[] = [
+    { name: 'object' },
+    { name: 'array' },
+    { name: 'integer' },
+    { name: 'number' },
+    { name: 'string' },
+    { name: 'boolean' },
+    { name: 'enum' },
+    { name: 'dictionary' },
+  ];
   selectedType: Type | undefined;
-  combineTypes: Type[] | undefined;
-
+  intFormats: Type[] = [{ name: 'int32' }, { name: 'int64' }];
+  selectedIntType: any;
+  combineTypes: Type[] = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
   showAddPropertyForm: boolean = false;
   scrollHeight!: string;
   selectedCombineType!: string;
+  selectedFormat: any;
+  selectedBehavior: any;
+  default: string = '';
+  example: string = '';
+  minimum: number | null = null;
+  maximum: number | null = null;
+  multipleOf: number | null = null;
+  exclusiveMin: boolean = false;
+  exclusiveMax: boolean = false;
+  deprecated: boolean = false;
+
+  minProperties: number | null = null;
+  maxProperties: number | null = null;
+  allowAdditionalProperties: boolean = false;
+  deprecatedObject: boolean = false;
+
+  selectedStringFormat: string = '';
+  selectedStringBehavior: string = '';
+  defaultString: string = '';
+  exampleString: string = '';
+  pattern: string = '';
+  minLength: number | null = null;
+  maxLength: number | null = null;
+  deprecatedString: boolean = false;
+
+  selectedBehaviorArray: string = '';
+  minItems: number | null = null;
+  maxItems: number | null = null;
+  uniqueItems: boolean = false;
+  deprecatedArray: boolean = false;
+
+  stringFormats = [
+    { name: 'None' },
+    { name: 'byte' },
+    { name: 'binary' },
+    { name: 'date' },
+    { name: 'date-time' },
+    { name: 'password' },
+    { name: 'email' },
+  ];
+
+  behaviorOptions = [
+    { name: 'Read/Write' },
+    { name: 'ReadOnly' },
+    { name: 'WriteOnly' },
+  ];
+
+  selectedNumberFormat: string = '';
+  selectedBehaviorNumber: string = '';
+  defaultNumber: string = '';
+  exampleNumber: string = '';
+  minimumNumber: number | null = null;
+  maximumNumber: number | null = null;
+  multipleOfNumber: number | null = null;
+  exclusiveMinNumber: boolean = false;
+  exclusiveMaxNumber: boolean = false;
+  deprecatedNumber: boolean = false;
+
+  // Options for the Format dropdown (for numbers)
+  numberFormats = [{ name: 'None' }, { name: 'float' }, { name: 'double' }];
 
   ngOnInit() {
-    this.responseExamples = [
-      { label: 'Type', icon: 'pi pi-fw pi-tag' },
-      { label: 'Components', icon: 'pi pi-fw pi-cog' },
-      { label: 'Combine Schemas', icon: 'pi pi-fw pi-th-large' },
-    ];
-
-    this.types = [
-      { name: 'object' },
-      { name: 'array' },
-      { name: 'integer' },
-      { name: 'number' },
-      { name: 'string' },
-      { name: 'boolean' },
-      { name: 'enum' },
-      { name: 'dictionary' },
-    ];
-
-    this.combineTypes = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
     this.activeItem = this.responseExamples[0];
   }
 
-  // Set rowData and col
   setRowData(rowData: any) {
     this.rowData = rowData;
   }
