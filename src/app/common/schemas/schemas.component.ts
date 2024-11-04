@@ -375,7 +375,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   isValidType(type: any): boolean {
     if (type === undefined) return false;
 
-    // Ensure `type` is a string before checking for matches
     if (Array.isArray(type)) {
       return type.every(
         (t) => typeof t === 'string' && this.VALID_TYPES.includes(t)
@@ -389,7 +388,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return this.VALID_TYPES.includes(type);
     }
 
-    // If `type` is not a string or array, return false
     return false;
   }
 

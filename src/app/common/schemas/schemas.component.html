@@ -93,16 +93,25 @@
                 <tr [ttRow]="rowNode">
                   <td
                     *ngFor="let col of columns; let i = index"
-                    [ttEditableColumn]="col.field === 'name' && rowNode.parent  || ! rowData.editDisabled"
+                    [ttEditableColumn]="
+                      (col.field === 'name' && rowNode.parent) ||
+                      !rowData.editDisabled
+                    "
                     [ttEditableColumnDisabled]="
-                      !rowNode.parent || rowData.editDisabled
+                      !rowNode.parent ||
+                      rowData.editDisabled ||
+                      (rowData.showAddButton && col.field === 'name')
                     "
                     [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
                     <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
                     <ng-container
-                      *ngIf="col.field === 'name' && rowNode.parent && !isSpecialType(rowData[col.field])"
+                      *ngIf="
+                        col.field === 'name' &&
+                        rowNode.parent &&
+                        !isSpecialType(rowData[col.field])
+                      "
                     >
                       <p-treeTableCellEditor>
                         <ng-template pTemplate="input">
@@ -114,16 +123,45 @@
                             placeholder="Enter schema name"
                           />
                         </ng-template>
+
                         <ng-template pTemplate="output">
-                          {{ rowData[col.field] }}
+                          <ng-container
+                            *ngIf="
+                              (rowData.showReferenceButton ||
+                                rowData.showAddButton) &&
+                                col.field === 'name';
+                              else defaultOutput
+                            "
+                          >
+                            <p-button
+                              label="{{ rowData[col.field] }}"
+                              [outlined]="true"
+                              (click)="toggleChildOverlay($event, rowData, col)"
+                              class="no-border-button"
+                            ></p-button>
+                            <app-scheme-type-overlay-panel
+                              #overlayPanel
+                              [rowData]="rowData"
+                              [col]="selectedCol"
+                              [apiSchemas]="apiSchemas"
+                              (updateRow)="updateButtonLabel($event)"
+                            ></app-scheme-type-overlay-panel>
+                          </ng-container>
+                          <ng-template #defaultOutput>
+                            {{ rowData[col.field] }}
+                          </ng-template>
                         </ng-template>
                       </p-treeTableCellEditor>
                     </ng-container>
 
-                    <ng-container
-                      *ngIf="col.field !== 'name'"
-                    >
-                      <ng-container *ngIf="isSpecialType(rowData[col.field])  && !rowData.isReferenceChild && !rowData.isRootNode">
+                    <ng-container *ngIf="col.field !== 'name'">
+                      <ng-container
+                        *ngIf="
+                          isSpecialType(rowData[col.field]) &&
+                          !rowData.isReferenceChild &&
+                          !rowData.isRootNode
+                        "
+                      >
                         <p-button
                           label="{{ rowData[col.field] }}"
                           [outlined]="true"
@@ -138,12 +176,26 @@
                           (updateRow)="updateButtonLabel($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
-                      <ng-container *ngIf="!isSpecialType(rowData[col.field]) &&  !rowData.isRootNode && getTypeStatus(rowData[col.field] || rowData.isReferenceChild)">
+                      <ng-container
+                        *ngIf="
+                          !isSpecialType(rowData[col.field]) &&
+                          !rowData.isRootNode &&
+                          getTypeStatus(
+                            rowData[col.field] || rowData.isReferenceChild
+                          )
+                        "
+                      >
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
 
-                    <ng-container *ngIf="col.field == 'name' && rowNode.parent && !rowData.isReferenceChild">
+                    <ng-container
+                      *ngIf="
+                        col.field == 'name' &&
+                        rowNode.parent &&
+                        !rowData.isReferenceChild
+                      "
+                    >
                       <ng-container *ngIf="isSpecialType(rowData[col.field])">
                         <p-button
                           label="{{ rowData[col.field] }}"
@@ -159,7 +211,12 @@
                           (updateRow)="updateButtonLabel($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
-                      <ng-container *ngIf="isSpecialType(rowData[col.field]) && rowData.isReferenceChild">
+                      <ng-container
+                        *ngIf="
+                          isSpecialType(rowData[col.field]) &&
+                          rowData.isReferenceChild
+                        "
+                      >
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
@@ -183,15 +240,39 @@
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container *ngIf="!isSpecialType(rowData[col.field])">
-                        {{ rowData[col.field] }}
+                        <p-button
+                          label="{{ rowData[col.field] }}"
+                          [outlined]="true"
+                          (click)="toggleChildOverlay($event, rowData, col)"
+                          class="no-border-button"
+                        ></p-button>
+                        <app-scheme-type-overlay-panel
+                          #overlayPanel
+                          [rowData]="rowData"
+                          [col]="selectedCol"
+                          [apiSchemas]="apiSchemas"
+                          (updateRow)="updateButtonLabel($event)"
+                        ></app-scheme-type-overlay-panel>
                       </ng-container>
-                      <ng-container *ngIf="isSpecialType(rowData[col.field]) && rowData.isReferenceChild">
+                      <ng-container
+                        *ngIf="
+                          isSpecialType(rowData[col.field]) &&
+                          rowData.isReferenceChild
+                        "
+                      >
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
 
-                    <ng-container *ngIf="col.field == 'name' && rowData.isReferenceChild">
-                      <ng-container *ngIf="isSpecialType(rowData[col.field]) && rowData.isReferenceChild">
+                    <ng-container
+                      *ngIf="col.field == 'name' && rowData.isReferenceChild"
+                    >
+                      <ng-container
+                        *ngIf="
+                          isSpecialType(rowData[col.field]) &&
+                          rowData.isReferenceChild
+                        "
+                      >
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>
