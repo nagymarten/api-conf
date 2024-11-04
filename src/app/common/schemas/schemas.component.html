@@ -138,7 +138,7 @@
                           (updateRow)="updateButtonLabel($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
-                      <ng-container *ngIf="!isSpecialType(rowData[col.field])">
+                      <ng-container *ngIf="!isSpecialType(rowData[col.field]) &&  !rowData.isRootNode && getTypeStatus(rowData[col.field] || rowData.isReferenceChild)">
                         {{ rowData[col.field] }}
                       </ng-container>
                     </ng-container>

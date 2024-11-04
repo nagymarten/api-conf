@@ -206,7 +206,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
-          console.log(refSchemaName);
+          // console.log(refSchemaName);
 
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
@@ -288,13 +288,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
           parent: rootNode,
         };
 
-        if (this.isValidType(property?.type)) {
-          rootNode.children!.push(childNode);
-        } else if (property.$ref) {
+        if (property.$ref) {
+          const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
           const childNode: TreeNode = {
-            label: propertyKey,
+            label: refSchemaName,
             data: {
-              name: propertyKey,
+              name: refSchemaName,
               description: property?.description || '',
               type: property?.type || '',
               showReferenceButton: !!property?.$ref,
@@ -305,10 +304,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
-
-          console.log('Ref:', property.$ref);
-
-          const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
 
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
@@ -330,6 +325,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
+        } else if (this.isValidType(property?.type)) {
+          rootNode.children!.push(childNode);
         }
       });
     } else if (schema?.enum) {
@@ -375,31 +372,53 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.router.navigate(['/schemas', cleanedSchemaName]);
   }
 
-  isValidType(type: string | string[] | undefined): boolean {
+  isValidType(type: any): boolean {
     if (type === undefined) return false;
 
+    // Ensure `type` is a string before checking for matches
     if (Array.isArray(type)) {
-      return type.every((t) => this.VALID_TYPES.includes(t));
+      return type.every(
+        (t) => typeof t === 'string' && this.VALID_TYPES.includes(t)
+      );
+    } else if (typeof type === 'string') {
+      const arrayTypeMatch = type.match(/^Array\((\w+)\)$/);
+      if (arrayTypeMatch) {
+        const innerType = arrayTypeMatch[1];
+        return this.VALID_TYPES.includes(innerType);
+      }
+      return this.VALID_TYPES.includes(type);
     }
 
-    const arrayTypeMatch = type.match(/^Array\((\w+)\)$/);
-    if (arrayTypeMatch) {
-      const innerType = arrayTypeMatch[1];
-      return this.VALID_TYPES.includes(innerType);
-    }
-
-    return this.VALID_TYPES.includes(type);
+    // If `type` is not a string or array, return false
+    return false;
   }
 
   formatPropertyType(property: any): string {
-    // Check if property has type and format fields
     if (property.type) {
       return property.format
         ? `${property.type}<${property.format}>`
         : property.type;
     }
-    // Default case if type is not defined
     return 'unknown';
+  }
+
+  isValidTypeWithNumber(input: string): {
+    isValidType: boolean;
+    isTypeWithNumber: boolean;
+  } {
+    const isValidType = this.isValidType(input);
+
+    const isTypeWithNumber = /\{\d+\}/.test(input);
+
+    return {
+      isValidType,
+      isTypeWithNumber,
+    };
+  }
+
+  getTypeStatus(input: string): boolean {
+    const result = this.isValidTypeWithNumber(input);
+    return result.isValidType && result.isTypeWithNumber;
   }
 
   handleAddScheme(_event: Event): void {
@@ -629,7 +648,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchema,
       this.selectedSchemaName
     );
-    console.log(this.schemaDetailsForm.value);
+    // console.log(this.schemaDetailsForm.value);
   }
 
   updateSchemaProperty(propertyKey: string, newValue: any): void {
