@@ -539,7 +539,6 @@
                       class="enum-input-field"
                     />
 
-                    <!-- Three-dot menu button -->
                     <p-button
                       icon="pi pi-ellipsis-v"
                       class="p-button-text p-button-icon-only menu-button"
@@ -565,13 +564,31 @@
                     ></p-button>
                   </div>
 
-                  <!-- Add Button to create a new input field -->
                   <p-button
-                    label="Add +"
+                    label="Add"
                     icon="pi pi-plus"
                     class="p-button-text add-button"
                     (click)="addEnumValue()"
                   ></p-button>
+
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      id="behavior"
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                    ></p-dropdown>
+                  </div>
+                </div>
+                <div class="toggle-group">
+                  <label for="deprecatedSwitch">deprecated</label>
+                  <p-inputSwitch
+                    [(ngModel)]="deprecated"
+                    id="deprecated"
+                  ></p-inputSwitch>
                 </div>
               </div>
             </p-panel>
