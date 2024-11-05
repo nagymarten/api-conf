@@ -1,0 +1,80 @@
+.properties-container,
+.object-properties-container,
+.string-properties-container,
+.array-properties-container,
+.boolean-properties-container,
+.dictionary-properties-container,
+.enum-properties-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 48%;
+    min-width: 150px;
+}
+
+.form-group input,
+.form-group p-dropdown {
+    width: 100%;
+}
+
+.toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1 1 48%;
+    grid-column: span 2;
+    padding-top: 1rem;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.type-selection-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.not-nullable-button {
+    margin-left: auto;
+}
+
+/* Enum Specific Styling */
+.enum-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.enum-input-field {
+    flex: 1;
+    height: 2.5rem;
+}
+
+.menu-button,
+.delete-button {
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-button {
+    width: 100%;
+    text-align: center;
+    color: #333;
+    margin-top: 0.5rem;
+}

@@ -130,6 +130,7 @@
                   </div>
                 </div>
               </div>
+              <app-sub-scheme-type></app-sub-scheme-type>
             </p-panel>
           </ng-container>
 
@@ -188,7 +189,6 @@
                     />
                   </div>
 
-                  <!-- Minimum, Maximum, and Multiple Of Fields -->
                   <div class="form-group">
                     <label for="minimum">Minimum</label>
                     <input
@@ -257,7 +257,7 @@
               [collapsed]="false"
             >
               <div class="properties-content">
-                <div class="number-properties-container">
+                <div class="properties-container">
                   <div class="form-group">
                     <label for="format">Format</label>
                     <p-dropdown
@@ -343,29 +343,23 @@
                   </div>
 
                   <div class="toggle-group">
-                    <div class="toggle-item">
-                      <label for="exclusiveMinSwitch">exclusiveMin</label>
-                      <p-inputSwitch
-                        id="exclusiveMinSwitch"
-                        [(ngModel)]="exclusiveMin"
-                      ></p-inputSwitch>
-                    </div>
+                    <label for="exclusiveMinSwitch">exclusiveMin</label>
+                    <p-inputSwitch
+                      id="exclusiveMinSwitch"
+                      [(ngModel)]="exclusiveMin"
+                    ></p-inputSwitch>
 
-                    <div class="toggle-item">
-                      <label for="exclusiveMaxSwitch">exclusiveMax</label>
-                      <p-inputSwitch
-                        id="exclusiveMaxSwitch"
-                        [(ngModel)]="exclusiveMax"
-                      ></p-inputSwitch>
-                    </div>
+                    <label for="exclusiveMaxSwitch">exclusiveMax</label>
+                    <p-inputSwitch
+                      id="exclusiveMaxSwitch"
+                      [(ngModel)]="exclusiveMax"
+                    ></p-inputSwitch>
 
-                    <div class="toggle-item">
-                      <label for="deprecatedSwitch">deprecated</label>
-                      <p-inputSwitch
-                        id="deprecatedSwitch"
-                        [(ngModel)]="deprecated"
-                      ></p-inputSwitch>
-                    </div>
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      id="deprecatedSwitch"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
                   </div>
                 </div>
               </div>
@@ -542,17 +536,16 @@
                     <p-button
                       icon="pi pi-ellipsis-v"
                       class="p-button-text p-button-icon-only menu-button"
-                      (click)="optionsMenu.toggle($event)"
+                      (click)="enumOverlayPanel.open($event)"
                       aria-label="Options"
                     ></p-button>
-                    <p-overlayPanel #optionsMenu>
-                      <div (click)="markAsExample(i)" class="menu-option">
-                        Mark as example
-                      </div>
-                      <div (click)="markAsDefault(i)" class="menu-option">
-                        Mark as default
-                      </div>
-                    </p-overlayPanel>
+                    <app-enum-overlay-panel
+                      #enumOverlayPanel
+                      [index]="i"
+                      (markAsExample)="onMarkAsExample(i)"
+                      (markAsDefault)="onMarkAsDefault(i)"
+                    >
+                    </app-enum-overlay-panel>
 
                     <!-- Trash button to remove the specific input field -->
                     <p-button
@@ -600,7 +593,51 @@
               [toggleable]="true"
               [collapsed]="false"
             >
-              <div class="properties-content"></div>
+              <div class="properties-content">
+                <div class="dictionary-properties-container">
+                  <div class="form-group">
+                    <label for="minProperties">minProperties</label>
+                    <input
+                      id="minProperties"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="minProperties"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maxProperties">maxProperties</label>
+                    <input
+                      id="maxProperties"
+                      type="number"
+                      pInputText
+                      placeholder=">= 0"
+                      [(ngModel)]="maxProperties"
+                    />
+                  </div>
+
+                  <div class="toggle-group">
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      id="deprecatedSwitch"
+                      [(ngModel)]="deprecated"
+                    ></p-inputSwitch>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="behavior">behavior</label>
+                    <p-dropdown
+                      id="behavior"
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                    ></p-dropdown>
+                  </div>
+                </div>
+              </div>
+              <app-sub-scheme-type></app-sub-scheme-type>
             </p-panel>
           </ng-container>
         </div>

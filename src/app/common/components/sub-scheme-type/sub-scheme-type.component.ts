@@ -1,13 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
-  Input,
-  ViewChild,
-  OnInit,
-  Output,
-  EventEmitter,
 } from '@angular/core';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ChipsModule } from 'primeng/chips';
@@ -23,18 +17,16 @@ import { ScrollerModule } from 'primeng/scroller';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { PanelModule } from 'primeng/panel';
 import { EnumOverlayPanelComponent } from '../enum-overlay-panel/enum-overlay-panel.component';
-import { SubSchemeTypeComponent } from "../sub-scheme-type/sub-scheme-type.component";
 
 interface Type {
   name: string;
 }
 
 @Component({
-  selector: 'app-scheme-type-overlay-panel',
+  selector: 'app-sub-scheme-type',
   standalone: true,
   imports: [
     CommonModule,
-    OverlayPanelModule,
     InputGroupModule,
     InputGroupAddonModule,
     ChipsModule,
@@ -49,19 +41,11 @@ interface Type {
     InputSwitchModule,
     PanelModule,
     EnumOverlayPanelComponent,
-    SubSchemeTypeComponent
-],
-  templateUrl: './scheme-type-overlay-panel.component.html',
-  styleUrl: './scheme-type-overlay-panel.component.css',
+  ],
+  templateUrl: './sub-scheme-type.component.html',
+  styleUrl: './sub-scheme-type.component.css',
 })
-export class SchemeTypeOverlayPanelComponent implements OnInit {
-  @Input() rowData: any;
-  @Input() col: any;
-  @Input() apiSchemas: any;
-
-  @ViewChild('op') op!: OverlayPanel;
-  @Output() updateRow = new EventEmitter<string>();
-
+export class SubSchemeTypeComponent {
   responseExamples: MenuItem[] = [
     { label: 'Type', icon: 'pi pi-fw pi-tag' },
     { label: 'Components', icon: 'pi pi-fw pi-cog' },
@@ -147,12 +131,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   defaultBoolean: string = '';
 
-  // Options for the Default dropdown for boolean values
   booleanDefaults = [{ name: 'true' }, { name: 'false' }];
 
   enumValue: string = ''; // Temporarily holds the value to be added to the enum list
   enumValues: string[] = []; // Holds all enum values
-  showEnumInput: boolean = false; // Controls the display of the enum input field
+  showEnumInput: boolean = false;
+  optionsMenu: any;
+  apiSchemas: any[] | null | undefined;
 
   ngOnInit() {
     this.activeItem = this.responseExamples[0];
@@ -177,31 +162,19 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.showEnumInput = false;
   }
 
-  setRowData(rowData: any) {
-    this.rowData = rowData;
+  markAsExample(index: number) {
+    console.log(
+      `Marking value at index ${index} as example: ${this.enumValues[index]}`
+    );
+    // Add your logic to handle marking as example
   }
 
-  setCol(col: any) {
-    this.col = col;
-  }
-
-  toggleOverlay(event: Event, rowData: any, col: any) {
-    this.setRowData(rowData);
-    this.setCol(col);
-
-    const originalType = { name: rowData[col.field] };
-    this.types = [
-      originalType,
-      ...this.types.filter((type) => type.name !== originalType.name),
-    ];
-
-    this.selectedType = originalType;
-
-    this.op.toggle(event);
-  }
-
-  onTypeSelect() {
-    this.updateRowData(this.rowData);
+  // Mark as default for the specific index
+  markAsDefault(index: number) {
+    console.log(
+      `Marking value at index ${index} as default: ${this.enumValues[index]}`
+    );
+    // Add your logic to handle marking as default
   }
 
   onSchemeSelect(scheme: any) {
@@ -212,23 +185,17 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     console.log('Selected combine type:', this.selectedCombineType);
   }
 
-  updateRowData(rowData: any) {
-    rowData[this.col.field] =
-      this.selectedType?.name || rowData[this.col.field];
-    this.updateRow.emit(rowData);
-  }
-
   onMarkAsExample(index: number) {
     console.log(
       `Marking value at index ${index} as example: ${this.enumValues[index]}`
     );
-    // TODO: Add logic for marking the value as an example
+    // Add logic for marking the value as an example
   }
 
   onMarkAsDefault(index: number) {
     console.log(
       `Marking value at index ${index} as default: ${this.enumValues[index]}`
     );
-    // TODO: Add logic for marking the value as default
+    // Add logic for marking the value as default
   }
 }
