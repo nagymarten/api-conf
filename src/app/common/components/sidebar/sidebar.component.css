@@ -1,13 +1,18 @@
+/* Sidebar Container */
 .sidenav-container {
   height: 100vh;
+  display: flex;
 }
 
+/* Sidebar (PrimeNG PanelMenu) */
 .sidenav {
   width: 300px;
   background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
-.mat-toolbar {
+.card .mat-toolbar {
   background-color: #3f51b5;
   color: white;
   display: flex;
@@ -30,10 +35,9 @@
 /* Hover effect to highlight the link */
 .method-link:hover {
   background-color: #e0e0e0;
-  /* Light gray background on hover */
 }
 
-/* Flexbox to arrange the summary and method type neatly */
+/* Method Details - Flex Layout */
 .method-details {
   display: flex;
   justify-content: space-between;
@@ -49,7 +53,6 @@
   color: #000;
   flex-grow: 1;
   padding-right: 5px;
-  /* Reduce padding to make more space for the method type */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -64,9 +67,9 @@
   white-space: nowrap;
   width: 55px;
   flex-shrink: 0;
-  /* Prevent shrinking of this element */
 }
 
+/* Method-specific colors */
 .method-post {
   color: #007bff;
   font-weight: bold;
@@ -92,37 +95,25 @@
   font-weight: bold;
 }
 
+/* Content section styling */
 .mat-sidenav-content {
+  padding: 20px;
+  flex: 1;
+}
+
+.card-content {
   padding: 20px;
 }
 
-.mat-expansion-panel {
-  border-bottom: 1px solid #ddd;
-}
-
-.mat-expansion-panel-header {
-  font-weight: bold;
-}
-
-.mat-list-item {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  cursor: pointer;
-  border-radius: 0;
-}
-
-.mat-list-item mat-icon {
-  margin-right: 10px;
-}
-
+/* Active item styling */
 .active-model {
   background-color: #e0f7fa;
   font-weight: bold;
   border-left: 3px solid #007bff;
 }
 
-.mat-list-item a {
+/* Link styling in PanelMenu */
+.panelmenu-item a {
   text-decoration: none;
   color: black;
   display: block;
@@ -131,53 +122,19 @@
   transition: background-color 0.2s;
 }
 
-.mat-list-item a:hover {
+.panelmenu-item a:hover {
   background-color: #f0f0f0;
 }
 
-.mat-list-item a.active-model {
+.panelmenu-item a.active-model {
   color: #007bff;
   background-color: #e0f7fa;
   font-weight: bold;
 }
 
-.mat-expansion-panel-header {
-  font-size: 16px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-}
-
-.mat-expansion-panel-header mat-icon {
-  margin-right: 8px;
-}
-
-.mat-list-item {
-  padding-left: 20px;
-  padding-right: 20px;
-}
-
-.mat-list-item mat-icon {
-  margin-right: 8px;
-}
-
-.method-link,
-.mat-list-item {
-  background: none;
-  border-radius: 0;
-}
-
+/* Button container styling */
 .button-container {
   display: flex;
   gap: 10px;
   margin-top: 20px;
-}
-
-p-treetable {
-  width: 100%;
-  margin: 20px 0;
-}
-
-p-treetable tr {
-  cursor: pointer;
 }

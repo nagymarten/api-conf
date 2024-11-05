@@ -1,59 +1,33 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatListModule } from '@angular/material/list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterModule } from '@angular/router';
-import { ApiDocumentUploadButtonComponent } from '../api-document-upload-button/api-document-upload-button.component';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { MenuItem, MessageService } from 'primeng/api';
+import { PanelMenuModule } from 'primeng/panelmenu';
+import { ToastModule } from 'primeng/toast';
 import { Subscription } from 'rxjs';
 import { ApiDataService } from '../../../services/api-data.service';
-import { DownloadYamlButtonComponent } from '../download-yaml-button/download-yaml-button.component';
-import { DeleteDocumentButtonComponent } from '../delete-document-button/delete-document-button.component';
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatSidenavModule,
-    MatExpansionModule,
-    MatListModule,
-    MatIconModule,
-    MatToolbarModule,
-    ApiDocumentUploadButtonComponent,
-    DownloadYamlButtonComponent,
-    DeleteDocumentButtonComponent
-  ],
   templateUrl: './sidebar.component.html',
-  styleUrls: ['./sidebar.component.css'],
+  standalone: true,
+  imports: [PanelMenuModule, ToastModule],
+  providers: [MessageService],
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  paths: { [key: string]: any } = {};
-  models: any[] = [];
-  requestBodies: any[] = [];
-  responses: any[] = [];
-  parameters: any[] = [];
-  examples: any[] = [];
+  items: MenuItem[] = [];
   swaggerSubscription!: Subscription;
 
-  validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
-
-  constructor(private apiDataService: ApiDataService) {}
+  constructor(
+    private apiDataService: ApiDataService,
+    private messageService: MessageService
+  ) {}
 
   ngOnInit(): void {
-    // Fetch the Swagger spec when the component initializes
+    // Fetch Swagger spec data
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          this.paths = this.getPaths(swaggerSpec);
-          this.models = this.getModels(swaggerSpec);
-          this.requestBodies = this.getRequestBodies(swaggerSpec);
-          this.responses = this.getResponses(swaggerSpec);
-          this.parameters = this.getParameters(swaggerSpec);
-          this.examples = this.getExamples(swaggerSpec);
+          // Populate menu items based on fetched Swagger spec
+          this.items = this.buildMenuItems(swaggerSpec);
         }
       },
       error: (error) => {
@@ -62,73 +36,148 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Function to build the API paths with methods only (filter out parameters)
-  getPaths(swaggerSpec: any): { [key: string]: any } {
-    const apiPaths: { [key: string]: any } = {};
-
-    // Loop over each API path
-    Object.keys(swaggerSpec.paths).forEach((pathKey) => {
-      const methods = Object.keys(swaggerSpec.paths[pathKey])
-        .sort()
-        .filter((methodKey) => this.validHttpMethods.includes(methodKey)) // Only include valid HTTP methods
-        .map((methodKey) => {
-          const methodDetails = swaggerSpec.paths[pathKey][methodKey];
-
-          // Build the method details object (without parameters)
-          return {
-            method: methodKey, // HTTP method (POST, GET, etc.)
-            summary: methodDetails.summary, // Summary for each method
-            description: methodDetails.description, // Method description (optional)
-            responses: JSON.stringify(methodDetails.responses, null, 2), // Stringify the responses
-          };
-        });
-
-      apiPaths[pathKey] = methods; // Assign the methods to the path
-    });
-
-    return apiPaths;
+  private buildMenuItems(swaggerSpec: any): MenuItem[] {
+    return [
+      {
+        label: 'Paths',
+        icon: 'pi pi-folder',
+        items: this.getPaths(swaggerSpec),
+      },
+      {
+        label: 'Models',
+        icon: 'pi pi-folder',
+        items: this.getModels(swaggerSpec),
+      },
+      {
+        label: 'Request Bodies',
+        icon: 'pi pi-folder',
+        items: this.getRequestBodies(swaggerSpec),
+      },
+      {
+        label: 'Responses',
+        icon: 'pi pi-folder',
+        items: this.getResponses(swaggerSpec),
+      },
+      {
+        label: 'Parameters',
+        icon: 'pi pi-folder',
+        items: this.getParameters(swaggerSpec),
+      },
+      {
+        label: 'Examples',
+        icon: 'pi pi-folder',
+        items: this.getExamples(swaggerSpec),
+      },
+    ];
   }
 
-  getModels(swaggerSpec: any): any[] {
-    return Object.keys(swaggerSpec.components.schemas)
-      .sort()
-      .map((key) => ({
-        name: key,
-      }));
+  private getPaths(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.paths).map((pathKey) => ({
+      label: pathKey,
+      icon: 'pi pi-folder',
+      items: Object.keys(swaggerSpec.paths[pathKey])
+        .filter((methodKey) => this.isHttpMethod(methodKey))
+        .map((methodKey) => ({
+          label: `
+                  <span class="method-summary">${
+                    swaggerSpec.paths[pathKey][methodKey].summary ||
+                    'No summary available'
+                  }: </span>
+                    <span class="method-type ${methodKey.toLowerCase()}">${methodKey.toUpperCase()}</span>
+                `,
+          escape: false, // Allows HTML in label for method type and summary
+          icon: this.getMethodIcon(methodKey),
+          routerLink: ['/path', pathKey, methodKey],
+        })),
+    }));
   }
 
-  getRequestBodies(_swaggerSpec: any) {
-    return this.requestBodies;
+  private getModels(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.components.schemas).map((modelKey) => ({
+      label: modelKey,
+      icon: 'pi pi-file',
+      routerLink: ['/schemas', modelKey],
+      command: () => this.showToast('Model Details', `Model: ${modelKey}`),
+    }));
   }
 
-  getResponses(swaggerSpec: any) {
-    const responsesArray: any[] = [];
+  private getRequestBodies(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.components.requestBodies || {}).map(
+      (requestKey) => ({
+        label: requestKey,
+        icon: 'pi pi-file',
+        routerLink: ['/request-bodies', requestKey],
+        command: () =>
+          this.showToast('Request Body Details', `Request Body: ${requestKey}`),
+      })
+    );
+  }
 
-    if (swaggerSpec.components && swaggerSpec.components.responses) {
-      Object.keys(swaggerSpec.components.responses).forEach((responseKey) => {
-        const response = swaggerSpec.components.responses[responseKey];
-        const contentTypes = response.content
-          ? Object.keys(response.content)
-          : [];
+  private getResponses(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.components.responses || {}).map(
+      (responseKey) => ({
+        label: responseKey,
+        icon: 'pi pi-file',
+        routerLink: ['/responses', responseKey],
+        command: () =>
+          this.showToast('Response Details', `Response: ${responseKey}`),
+      })
+    );
+  }
 
-        responsesArray.push({
-          name: responseKey,
-          description: response.description,
-          contentTypes: contentTypes,
-          examples: response.content?.['application/json']?.examples || null,
-        });
-      });
+  private getParameters(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.components.parameters || {}).map(
+      (parameterKey) => ({
+        label: parameterKey,
+        icon: 'pi pi-file',
+        routerLink: ['/parameters', parameterKey],
+        command: () =>
+          this.showToast('Parameter Details', `Parameter: ${parameterKey}`),
+      })
+    );
+  }
+
+  private getExamples(swaggerSpec: any): MenuItem[] {
+    return Object.keys(swaggerSpec.components.examples || {}).map(
+      (exampleKey) => ({
+        label: exampleKey,
+        icon: 'pi pi-file',
+        routerLink: ['/examples', exampleKey],
+        command: () =>
+          this.showToast('Example Details', `Example: ${exampleKey}`),
+      })
+    );
+  }
+
+  private getMethodIcon(method: string): string {
+    switch (method.toLowerCase()) {
+      case 'get':
+        return 'pi pi-arrow-right';
+      case 'post':
+        return 'pi pi-plus';
+      case 'put':
+        return 'pi pi-refresh';
+      case 'delete':
+        return 'pi pi-trash';
+      case 'patch':
+        return 'pi pi-pencil';
+      default:
+        return 'pi pi-file';
     }
-
-    return responsesArray;
   }
 
-  getParameters(_swaggerSpec: any) {
-    return this.parameters;
+  private isHttpMethod(method: string): boolean {
+    const validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
+    return validHttpMethods.includes(method.toLowerCase());
   }
 
-  getExamples(_swaggerSpec: any) {
-    return this.examples;
+  private showToast(summary: string, detail: string): void {
+    this.messageService.add({
+      severity: 'info',
+      summary: summary,
+      detail: detail,
+      life: 3000,
+    });
   }
 
   ngOnDestroy(): void {
