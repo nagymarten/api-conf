@@ -116,7 +116,7 @@
                   </div>
 
                   <div class="toggle-group">
-                    <label for="uniqe_items">uniqe  items</label>
+                    <label for="uniqe_items">uniqe items</label>
                     <p-inputSwitch
                       id="uniqe_items"
                       [(ngModel)]="deprecated"
@@ -481,7 +481,39 @@
               [toggleable]="true"
               [collapsed]="false"
             >
-              <div class="properties-content"></div>
+              <div class="boolean-properties-container">
+                <div class="form-group">
+                  <label for="behavior">Behavior</label>
+                  <p-dropdown
+                    id="behavior"
+                    [options]="behaviorOptions"
+                    [(ngModel)]="selectedBehavior"
+                    optionLabel="name"
+                    placeholder="Read/Write"
+                    [style]="{ width: '100%' }"
+                  ></p-dropdown>
+                </div>
+
+                <div class="form-group">
+                  <label for="default">default</label>
+                  <p-dropdown
+                    id="default"
+                    [options]="booleanDefaults"
+                    [(ngModel)]="defaultBoolean"
+                    optionLabel="name"
+                    placeholder="Select a value"
+                    [style]="{ width: '100%' }"
+                  ></p-dropdown>
+                </div>
+
+                <div class="toggle-group">
+                  <label for="deprecatedSwitch">deprecated</label>
+                  <p-inputSwitch
+                    [(ngModel)]="deprecated"
+                    id="deprecated"
+                  ></p-inputSwitch>
+                </div>
+              </div>
             </p-panel>
           </ng-container>
 
@@ -491,7 +523,57 @@
               [toggleable]="true"
               [collapsed]="false"
             >
-              <div class="properties-content"></div>
+              <div class="enum-properties-container">
+                <!-- Dynamic Enum Input Fields with Options Menu and Trash Button -->
+                <div class="form-group">
+                  <label for="enumValues">enum</label>
+                  <div
+                    *ngFor="let value of enumValues; let i = index"
+                    class="enum-input-row"
+                  >
+                    <input
+                      type="text"
+                      pInputText
+                      [(ngModel)]="enumValues[i]"
+                      placeholder="Enter value"
+                      class="enum-input-field"
+                    />
+
+                    <!-- Three-dot menu button -->
+                    <p-button
+                      icon="pi pi-ellipsis-v"
+                      class="p-button-text p-button-icon-only menu-button"
+                      (click)="optionsMenu.toggle($event)"
+                      aria-label="Options"
+                    ></p-button>
+                    <p-overlayPanel #optionsMenu>
+                      <div (click)="markAsExample(i)" class="menu-option">
+                        Mark as example
+                      </div>
+                      <div (click)="markAsDefault(i)" class="menu-option">
+                        Mark as default
+                      </div>
+                    </p-overlayPanel>
+
+                    <!-- Trash button to remove the specific input field -->
+                    <p-button
+                      icon="pi pi-trash"
+                      class="p-button-text p-button-icon-only delete-button"
+                      (click)="removeEnumValue(i)"
+                      aria-label="Remove value"
+                      pTooltip="Remove this value"
+                    ></p-button>
+                  </div>
+
+                  <!-- Add Button to create a new input field -->
+                  <p-button
+                    label="Add +"
+                    icon="pi pi-plus"
+                    class="p-button-text add-button"
+                    (click)="addEnumValue()"
+                  ></p-button>
+                </div>
+              </div>
             </p-panel>
           </ng-container>
 

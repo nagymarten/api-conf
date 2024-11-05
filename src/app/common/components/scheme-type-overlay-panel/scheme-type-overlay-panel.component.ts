@@ -142,8 +142,51 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   // Options for the Format dropdown (for numbers)
   numberFormats = [{ name: 'None' }, { name: 'float' }, { name: 'double' }];
 
+  defaultBoolean: string = '';
+
+  // Options for the Default dropdown for boolean values
+  booleanDefaults = [{ name: 'true' }, { name: 'false' }];
+
+  enumValue: string = ''; // Temporarily holds the value to be added to the enum list
+  enumValues: string[] = []; // Holds all enum values
+  showEnumInput: boolean = false; // Controls the display of the enum input field
+
   ngOnInit() {
     this.activeItem = this.responseExamples[0];
+  }
+
+  toggleEnumInput() {
+    this.showEnumInput = !this.showEnumInput;
+  }
+
+  addEnumValue() {
+    this.enumValues.push(''); // Add an empty string to create a new input
+  }
+
+  // Removes an input field from the enumValues array by index
+  removeEnumValue(index: number) {
+    this.enumValues.splice(index, 1);
+  }
+
+  // Clears all enum values
+  clearEnumValues() {
+    this.enumValues = [];
+    this.showEnumInput = false;
+  }
+
+  markAsExample(index: number) {
+    console.log(
+      `Marking value at index ${index} as example: ${this.enumValues[index]}`
+    );
+    // Add your logic to handle marking as example
+  }
+
+  // Mark as default for the specific index
+  markAsDefault(index: number) {
+    console.log(
+      `Marking value at index ${index} as default: ${this.enumValues[index]}`
+    );
+    // Add your logic to handle marking as default
   }
 
   setRowData(rowData: any) {
