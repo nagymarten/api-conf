@@ -83,7 +83,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   selectedIntType: any;
   combineTypes: Type[] = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
   showAddPropertyForm: boolean = false;
-  scrollHeight!: string;
+  scrollHeight: string = '200px';
   selectedCombineType!: string;
   selectedFormat: any;
   selectedBehavior: any;

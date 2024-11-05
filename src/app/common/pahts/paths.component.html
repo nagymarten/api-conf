@@ -33,11 +33,9 @@
     </ul>
   </div>
 
-  <!-- Content for the General tab -->
   <div *ngIf="activeTab === 'general'" class="api-details">
     <h1>
       <input formControlName="summary" placeholder="Summary" />
-      {{ method | uppercase }} {{ apiPath }}
     </h1>
     <p *ngIf="methodDetailsForm.get('description')?.value">
       <textarea
@@ -47,13 +45,11 @@
     </p>
   </div>
 
-  <!-- Content for the Parameters tab -->
   <div *ngIf="activeTab === 'parameters'">
     <h2>Parameters</h2>
     <p>Parameters content goes here...</p>
   </div>
 
-  <!-- Content for the Request tab -->
   <div *ngIf="activeTab === 'request'">
     <h2>Request</h2>
     <div *ngIf="methodDetailsForm.get('requestBody')?.value">
@@ -65,7 +61,6 @@
     </div>
   </div>
 
-  <!-- Content for the Responses tab -->
   <div *ngIf="activeTab === 'responses'" class="responses-tab">
     <!-- Container for response codes and add/delete buttons -->
     <div class="response-codes-container">
@@ -95,7 +90,6 @@
         </div>
       </div>
 
-      <!-- Add Response and Delete Response buttons aligned to the right -->
       <div class="add-delete-response-container">
         <button type="button" class="add-response" (click)="onAddResponse()">
           + Add Response

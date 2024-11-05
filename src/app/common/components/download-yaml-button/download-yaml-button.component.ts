@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { ApiDataService } from '../../../services/api-data.service';
 import * as yaml from 'js-yaml';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-download-yaml-button',
   standalone: true,
-  imports: [],
+  imports: [ButtonModule],
   templateUrl: './download-yaml-button.component.html',
   styleUrl: './download-yaml-button.component.css',
 })
@@ -17,13 +18,13 @@ export class DownloadYamlButtonComponent {
       if (swaggerSpec) {
         const yamlContent = yaml.dump(swaggerSpec);
 
-         const currentDate = this.getFormattedDate();
+        const currentDate = this.getFormattedDate();
 
-         this.downloadFile(
-           yamlContent,
-           `openapi_${currentDate}.yaml`,
-           'text/yaml'
-         );
+        this.downloadFile(
+          yamlContent,
+          `openapi_${currentDate}.yaml`,
+          'text/yaml'
+        );
       } else {
         console.error('Swagger spec is null or undefined.');
       }

@@ -9,24 +9,23 @@ import { ApiDataService } from '../../../services/api-data.service';
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [PanelMenuModule, ToastModule],
+  imports: [
+    PanelMenuModule,
+    ToastModule,
+  ],
   providers: [MessageService],
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   items: MenuItem[] = [];
   swaggerSubscription!: Subscription;
 
-  constructor(
-    private apiDataService: ApiDataService,
-    private messageService: MessageService
-  ) {}
+  constructor(private apiDataService: ApiDataService) {}
 
   ngOnInit(): void {
     // Fetch Swagger spec data
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
         if (swaggerSpec) {
-          // Populate menu items based on fetched Swagger spec
           this.items = this.buildMenuItems(swaggerSpec);
         }
       },
@@ -74,19 +73,24 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private getPaths(swaggerSpec: any): MenuItem[] {
     return Object.keys(swaggerSpec.paths).map((pathKey) => ({
       label: pathKey,
-      icon: 'pi pi-folder',
+      icon: 'pi pi-folder', // Icon for the folder (top-level path)
+      expanded: true, // Expands this item by default
       items: Object.keys(swaggerSpec.paths[pathKey])
         .filter((methodKey) => this.isHttpMethod(methodKey))
         .map((methodKey) => ({
           label: `
-                  <span class="method-summary">${
-                    swaggerSpec.paths[pathKey][methodKey].summary ||
-                    'No summary available'
-                  }: </span>
-                    <span class="method-type ${methodKey.toLowerCase()}">${methodKey.toUpperCase()}</span>
+                    <span class="method-summary">
+                        ${
+                          swaggerSpec.paths[pathKey][methodKey].summary ||
+                          'No summary available'
+                        }:
+                    </span>
+                    <span class="method-type method-type-${methodKey.toLowerCase()}">
+                        ${methodKey.toUpperCase()}
+                    </span>
                 `,
-          escape: false, // Allows HTML in label for method type and summary
-          icon: this.getMethodIcon(methodKey),
+          escape: false,
+          icon: this.getMethodIcon(methodKey), // Set method-specific icon
           routerLink: ['/path', pathKey, methodKey],
         })),
     }));
@@ -97,7 +101,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       label: modelKey,
       icon: 'pi pi-file',
       routerLink: ['/schemas', modelKey],
-      command: () => this.showToast('Model Details', `Model: ${modelKey}`),
     }));
   }
 
@@ -107,8 +110,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         label: requestKey,
         icon: 'pi pi-file',
         routerLink: ['/request-bodies', requestKey],
-        command: () =>
-          this.showToast('Request Body Details', `Request Body: ${requestKey}`),
       })
     );
   }
@@ -119,8 +120,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         label: responseKey,
         icon: 'pi pi-file',
         routerLink: ['/responses', responseKey],
-        command: () =>
-          this.showToast('Response Details', `Response: ${responseKey}`),
       })
     );
   }
@@ -131,8 +130,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         label: parameterKey,
         icon: 'pi pi-file',
         routerLink: ['/parameters', parameterKey],
-        command: () =>
-          this.showToast('Parameter Details', `Parameter: ${parameterKey}`),
       })
     );
   }
@@ -143,8 +140,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         label: exampleKey,
         icon: 'pi pi-file',
         routerLink: ['/examples', exampleKey],
-        command: () =>
-          this.showToast('Example Details', `Example: ${exampleKey}`),
       })
     );
   }
@@ -169,15 +164,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private isHttpMethod(method: string): boolean {
     const validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
     return validHttpMethods.includes(method.toLowerCase());
-  }
-
-  private showToast(summary: string, detail: string): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: summary,
-      detail: detail,
-      life: 3000,
-    });
   }
 
   ngOnDestroy(): void {

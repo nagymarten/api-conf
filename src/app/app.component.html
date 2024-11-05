@@ -1,9 +1,15 @@
 <div class="app-container">
-    <!-- Sidebar Section -->
+  <div class="content-wrapper">
     <app-sidebar class="sidebar"></app-sidebar>
 
-    <!-- Main Content Section -->
     <main class="main-content">
-        <router-outlet></router-outlet>
+      <router-outlet></router-outlet>
     </main>
+  </div>
+
+  <footer class="footer">
+    <app-api-document-upload-button></app-api-document-upload-button>
+    <app-delete-document-button></app-delete-document-button>
+    <app-download-yaml-button></app-download-yaml-button>
+  </footer>
 </div>

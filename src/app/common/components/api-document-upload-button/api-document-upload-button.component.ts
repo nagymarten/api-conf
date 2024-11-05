@@ -1,11 +1,12 @@
 import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { ApiDataService } from '../../../services/api-data.service';
 import { Subscription } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-api-document-upload-button',
   standalone: true,
-  imports: [],
+  imports: [ButtonModule],
   templateUrl: './api-document-upload-button.component.html',
   styleUrl: './api-document-upload-button.component.css',
 })

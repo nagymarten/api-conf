@@ -1,10 +1,8 @@
-/* Sidebar Container */
 .sidenav-container {
   height: 100vh;
   display: flex;
 }
 
-/* Sidebar (PrimeNG PanelMenu) */
 .sidenav {
   width: 300px;
   background-color: #f5f5f5;
@@ -32,67 +30,41 @@
   box-shadow: none;
 }
 
-/* Hover effect to highlight the link */
 .method-link:hover {
   background-color: #e0e0e0;
 }
 
-/* Method Details - Flex Layout */
-.method-details {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 5px 0;
-  border-bottom: 1px dashed #ccc;
-}
-
-/* Style for the method summary (text) */
-.method-summary {
-  font-size: 14px;
-  color: #000;
-  flex-grow: 1;
-  padding-right: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Style for the method type (e.g., POST, GET, etc.) */
-.method-type {
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type {
   font-weight: bold;
   text-transform: uppercase;
-  color: #3f51b5;
-  font-size: 16px;
-  white-space: nowrap;
-  width: 55px;
-  flex-shrink: 0;
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
 }
 
-/* Method-specific colors */
-.method-post {
+/* Specific colors for each HTTP method */
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-post {
   color: #007bff;
-  font-weight: bold;
+  /* Blue for POST */
 }
 
-.method-get {
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-get {
   color: #28a745;
-  font-weight: bold;
+  /* Green for GET */
 }
 
-.method-delete {
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-delete {
   color: #ff5722;
-  font-weight: bold;
+  /* Red for DELETE */
 }
 
-.method-put {
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-put {
   color: #df680d;
-  font-weight: bold;
+  /* Orange for PUT */
 }
 
-.method-patch {
+::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-patch {
   color: #ff9800;
-  font-weight: bold;
+  /* Yellow-orange for PATCH */
 }
 
 /* Content section styling */
