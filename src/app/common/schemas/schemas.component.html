@@ -277,6 +277,30 @@
                       </ng-container>
                     </ng-container>
 
+                    <div
+                      class="button-container"
+                      *ngIf="
+                        col.field === 'type' &&
+                        rowNode.parent &&
+                        !rowData.isReferenceChild"
+                    >
+                      <p-button
+                        type="button"
+                        icon="pi pi-info-circle"
+                        (click)="onInfoClick()"
+                      ></p-button>
+                      <p-button
+                        type="button"
+                        icon="pi pi-book"
+                        (click)="onBookClick()"
+                      ></p-button>
+                      <p-button
+                        type="button"
+                        icon="pi pi-trash"
+                        (click)="onDeleteClick()"
+                      ></p-button>
+                    </div>
+
                     <app-add-scheme-button
                       [rowData]="rowData"
                       [col]="col"

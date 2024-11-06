@@ -281,7 +281,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             type: this.formatPropertyType(property) || '',
             showReferenceButton: !!property?.$ref,
             editDisabled: !!property?.$ref,
-            isReferenceChild: !!property?.$ref,
+            isReferenceChild: false,
             isRootNode: false,
           },
           children: [],
@@ -298,7 +298,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               type: property?.type || '',
               showReferenceButton: !!property?.$ref,
               editDisabled: !!property?.$ref,
-              isReferenceChild: !!property?.$ref,
+              isReferenceChild: false,
               isRootNode: false,
             },
             children: [],
@@ -495,6 +495,21 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const schemaName = this.extractSchemaNameFromRef(ref);
     return this.apiSchemas.find((schema) => schema.name === schemaName)
       ?.details;
+  }
+
+  onInfoClick() {
+    console.log('Info button clicked');
+    // Add your logic here
+  }
+
+  onBookClick() {
+    console.log('Book button clicked');
+    // Add your logic here
+  }
+
+  onDeleteClick() {
+    console.log('Delete button clicked');
+    // Add your logic here
   }
 
   onRowUpdated(updatedRowData: any) {

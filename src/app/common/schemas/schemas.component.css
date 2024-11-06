@@ -179,3 +179,12 @@ p-treeTable td {
 .no-border-button .p-button {
   border: none !important;
 }
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  white-space: nowrap;
+}

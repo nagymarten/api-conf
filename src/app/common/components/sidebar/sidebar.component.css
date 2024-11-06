@@ -1,112 +1,32 @@
-.sidenav-container {
-  height: 100vh;
-  display: flex;
-}
-
 .sidenav {
   width: 300px;
-  background-color: #f5f5f5;
+  /* Fixed width for the sidebar */
+  background-color: #f9f9f9;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  /* Stretch to fill the parent container */
+  overflow-y: auto;
+  /* Enable vertical scrolling */
 }
 
-.card .mat-toolbar {
-  background-color: #3f51b5;
-  color: white;
-  display: flex;
-  align-items: center;
-  padding-left: 10px;
+.path-item {
+  padding: 8px 16px;
+  font-weight: bold;
+  color: #000;
+  /* Black text for path names */
 }
 
 .method-link {
   text-decoration: none;
-  color: inherit;
+  color: #000;
+  /* Black text for methods */
+  padding: 4px 16px;
+  /* Align with the path-item */
   display: block;
-  width: 100%;
-  padding: 10px;
-  transition: background-color 0.2s ease-in-out;
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
 .method-link:hover {
   background-color: #e0e0e0;
-}
-
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type {
-  font-weight: bold;
-  text-transform: uppercase;
-  margin-left: 0.5rem;
-  font-size: 0.85rem;
-}
-
-/* Specific colors for each HTTP method */
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-post {
-  color: #007bff;
-  /* Blue for POST */
-}
-
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-get {
-  color: #28a745;
-  /* Green for GET */
-}
-
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-delete {
-  color: #ff5722;
-  /* Red for DELETE */
-}
-
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-put {
-  color: #df680d;
-  /* Orange for PUT */
-}
-
-::ng-deep .p-panelmenu-content .p-menuitem-text .method-type-patch {
-  color: #ff9800;
-  /* Yellow-orange for PATCH */
-}
-
-/* Content section styling */
-.mat-sidenav-content {
-  padding: 20px;
-  flex: 1;
-}
-
-.card-content {
-  padding: 20px;
-}
-
-/* Active item styling */
-.active-model {
-  background-color: #e0f7fa;
-  font-weight: bold;
-  border-left: 3px solid #007bff;
-}
-
-/* Link styling in PanelMenu */
-.panelmenu-item a {
-  text-decoration: none;
-  color: black;
-  display: block;
-  width: 100%;
-  padding: 10px;
-  transition: background-color 0.2s;
-}
-
-.panelmenu-item a:hover {
-  background-color: #f0f0f0;
-}
-
-.panelmenu-item a.active-model {
-  color: #007bff;
-  background-color: #e0f7fa;
-  font-weight: bold;
-}
-
-/* Button container styling */
-.button-container {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  /* Simple hover effect */
 }
