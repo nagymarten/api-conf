@@ -17,7 +17,9 @@
               placeholder="Select type"
               [showClear]="true"
               [style]="{ width: '100%' }"
+              (onChange)="onTypeSelect()"
             ></p-dropdown>
+
             <p-button
               icon="pi pi-times"
               pTooltip="Not nullable"

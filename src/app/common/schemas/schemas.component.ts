@@ -480,9 +480,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   toggleChildOverlay(event: Event, rowData: any, col: any): void {
-    // console.log('toggleChildOverlay');
-    // console.log('Selected Row Data:', rowData);
-    // console.log('Selected Column Data:', col);
+    console.log('toggleChildOverlay');
+    console.log('Selected Row Data:', rowData);
+    console.log('Selected Column Data:', col);
     this.childComponent.toggleOverlay(event, rowData, col);
   }
 

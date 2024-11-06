@@ -23,7 +23,7 @@ import { ScrollerModule } from 'primeng/scroller';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { PanelModule } from 'primeng/panel';
 import { EnumOverlayPanelComponent } from '../enum-overlay-panel/enum-overlay-panel.component';
-import { SubSchemeTypeComponent } from "../sub-scheme-type/sub-scheme-type.component";
+import { SubSchemeTypeComponent } from '../sub-scheme-type/sub-scheme-type.component';
 
 interface Type {
   name: string;
@@ -49,8 +49,8 @@ interface Type {
     InputSwitchModule,
     PanelModule,
     EnumOverlayPanelComponent,
-    SubSchemeTypeComponent
-],
+    SubSchemeTypeComponent,
+  ],
   templateUrl: './scheme-type-overlay-panel.component.html',
   styleUrl: './scheme-type-overlay-panel.component.css',
 })
@@ -190,6 +190,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.setCol(col);
 
     const originalType = { name: rowData[col.field] };
+    console.log('Original type:', originalType);
     this.types = [
       originalType,
       ...this.types.filter((type) => type.name !== originalType.name),

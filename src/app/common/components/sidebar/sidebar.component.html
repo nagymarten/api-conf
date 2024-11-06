@@ -1,6 +1,10 @@
 <div class="sidenav">
+  
   <p-toast></p-toast>
-  <p-panelMenu [model]="items" styleClass="w-full"></p-panelMenu>
+
+  <p-panelMenu #panelMenu [model]="items" styleClass="w-full"> </p-panelMenu>
+
+  <p-contextMenu #cm [model]="contextMenuItems"></p-contextMenu>
 </div>
-  <div class="button-container">
-  </div>
+
+<div class="button-container"></div>

@@ -1,71 +1,119 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  Renderer2,
+  AfterViewInit,
+} from '@angular/core';
 import { MenuItem, MessageService } from 'primeng/api';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { ToastModule } from 'primeng/toast';
 import { Subscription } from 'rxjs';
 import { ApiDataService } from '../../../services/api-data.service';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
   standalone: true,
-  imports: [
-    PanelMenuModule,
-    ToastModule,
-  ],
+  imports: [PanelMenuModule, ToastModule, ContextMenuModule, ButtonModule],
   providers: [MessageService],
 })
-export class SidebarComponent implements OnInit, OnDestroy {
+export class SidebarComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('cm') contextMenu!: ContextMenu;
+  @ViewChild('panelMenu', { static: false }) panelMenu!: ElementRef;
+
   items: MenuItem[] = [];
   swaggerSubscription!: Subscription;
+  contextMenuItems: MenuItem[] = [];
+  selectedMenuItem: MenuItem | null = null;
+  topLevelContextMenuItems: MenuItem[] = [];
 
-  constructor(private apiDataService: ApiDataService) {}
+  constructor(
+    private apiDataService: ApiDataService,
+    private messageService: MessageService,
+    private renderer: Renderer2
+  ) {}
 
-  ngOnInit(): void {
-    // Fetch Swagger spec data
-    this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
-      next: (swaggerSpec) => {
-        if (swaggerSpec) {
-          this.items = this.buildMenuItems(swaggerSpec);
-        }
-      },
-      error: (error) => {
-        console.error('Error fetching Swagger spec:', error);
-      },
+  openItem() {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Open',
+      detail: 'Item opened',
     });
   }
 
+  editItem() {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Edit',
+      detail: 'Edit item',
+    });
+  }
+
+  deleteItem() {
+    this.messageService.add({
+      severity: 'warn',
+      summary: 'Delete',
+      detail: 'Item deleted',
+    });
+  }
+
+  showProperties() {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Properties',
+      detail: 'Showing properties',
+    });
+  }
   private buildMenuItems(swaggerSpec: any): MenuItem[] {
     return [
       {
         label: 'Paths',
         icon: 'pi pi-folder',
         items: this.getPaths(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
       },
       {
         label: 'Models',
         icon: 'pi pi-folder',
         items: this.getModels(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
+        contextmenu: 'cm',
       },
       {
         label: 'Request Bodies',
         icon: 'pi pi-folder',
         items: this.getRequestBodies(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
+        contextmenu: 'cm',
       },
       {
         label: 'Responses',
         icon: 'pi pi-folder',
         items: this.getResponses(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
       },
       {
         label: 'Parameters',
         icon: 'pi pi-folder',
         items: this.getParameters(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
       },
       {
         label: 'Examples',
         icon: 'pi pi-folder',
         items: this.getExamples(swaggerSpec),
+        styleClass: 'top-level-item',
+        data: { isTopLevel: true },
       },
     ];
   }
@@ -161,9 +209,139 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  private isHttpMethod(method: string): boolean {
+  isHttpMethod(method: string): boolean {
     const validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
     return validHttpMethods.includes(method.toLowerCase());
+  }
+
+  viewDetails() {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'View Details',
+      detail: 'Viewing details of top-level item',
+    });
+  }
+
+  refresh() {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Refresh',
+      detail: 'Top-level item refreshed',
+    });
+  }
+
+  ngOnInit(): void {
+    this.setupContextMenuItems();
+
+    this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
+      next: (swaggerSpec) => {
+        if (swaggerSpec) {
+          this.items = this.buildMenuItems(swaggerSpec);
+          console.log('Menu items:', this.items);
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching Swagger spec:', error);
+      },
+    });
+  }
+
+  ngAfterViewInit(): void {
+    if (this.panelMenu && this.panelMenu.nativeElement) {
+      this.addContextMenuListeners();
+    }
+  }
+
+  private addContextMenuListeners(): void {
+    if (!this.panelMenu || !this.panelMenu.nativeElement) {
+      console.error('panelMenu is not defined');
+      return;
+    }
+
+    const menuItems = this.panelMenu.nativeElement.querySelectorAll(
+      '.p-panelmenu-header'
+    );
+    console.log('Found menu items:', menuItems.length); // Log the count of found items
+
+    if (menuItems.length === 0) {
+      console.warn(
+        'No menu items found. Check the selector or ensure items are rendered.'
+      );
+    }
+
+    menuItems.forEach((menuItem: HTMLElement) => {
+      console.log('Found menu item:', menuItem.innerText.trim());
+      this.renderer.listen(menuItem, 'contextmenu', (event: MouseEvent) =>
+        this.onRightClick(event, menuItem)
+      );
+    });
+  }
+
+  private setupContextMenuItems(): void {
+    this.contextMenuItems = [
+      {
+        label: 'Open',
+        icon: 'pi pi-folder-open',
+        command: () => this.openItem(),
+      },
+      { label: 'Edit', icon: 'pi pi-pencil', command: () => this.editItem() },
+      {
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.deleteItem(),
+      },
+      { separator: true },
+      {
+        label: 'Properties',
+        icon: 'pi pi-info-circle',
+        command: () => this.showProperties(),
+      },
+    ];
+
+    this.topLevelContextMenuItems = [
+      {
+        label: 'View Details',
+        icon: 'pi pi-info-circle',
+        command: () => this.viewDetails(),
+      },
+      {
+        label: 'Refresh',
+        icon: 'pi pi-refresh',
+        command: () => this.refresh(),
+      },
+    ];
+  }
+
+  onRightClick(event: MouseEvent, menuItem: HTMLElement): void {
+    event.preventDefault(); // Prevent the default context menu
+
+    const itemLabel = menuItem.innerText.trim();
+    const clickedItem = this.findMenuItem(itemLabel, this.items);
+
+    if (clickedItem) {
+      console.log('Right-clicked item:', clickedItem);
+
+      const isTopLevel = clickedItem['data']?.isTopLevel;
+      this.contextMenu.model = isTopLevel
+        ? this.topLevelContextMenuItems
+        : this.contextMenuItems;
+      this.contextMenu.show(event);
+    }
+  }
+
+  private findMenuItem(label: string, items: MenuItem[]): MenuItem | null {
+    for (const item of items) {
+      if (item.label === label) {
+        return item;
+      }
+      if (item.items) {
+        const found = this.findMenuItem(label, item.items);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
   }
 
   ngOnDestroy(): void {
