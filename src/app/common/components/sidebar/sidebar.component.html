@@ -21,7 +21,6 @@
           </div>
 
           <mat-list>
-            <!-- Iterate over methods for each path -->
             <mat-list-item *ngFor="let method of path.value">
               <a
                 [routerLink]="['/path', path.key, method.method]"

@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  HostListener,
+} from '@angular/core';
 import { MenuItem, MessageService } from 'primeng/api';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { ToastModule } from 'primeng/toast';
@@ -82,7 +88,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.setupContextMenuItems();
   }
 
-  // Function to build the API paths with methods only (filter out parameters)
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(_event: MouseEvent): void {
+    if (this.contextMenu && this.contextMenu.visible()) {
+      this.contextMenu.hide();
+    }
+    if (this.contextHeaderMenu && this.contextHeaderMenu.visible()) {
+      this.contextHeaderMenu.hide();
+    }
+  }
+
   getPaths(swaggerSpec: any): { [key: string]: any } {
     const apiPaths: { [key: string]: any } = {};
 
@@ -93,8 +108,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         .filter((methodKey) => this.validHttpMethods.includes(methodKey)) // Only include valid HTTP methods
         .map((methodKey) => {
           const methodDetails = swaggerSpec.paths[pathKey][methodKey];
-
-          // Build the method details object (without parameters)
+          // console.log('methodDetails:', pathKey);
           return {
             method: methodKey, // HTTP method (POST, GET, etc.)
             summary: methodDetails.summary, // Summary for each method
@@ -112,12 +126,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private setupContextMenuItems(): void {
     this.contextMenuItems = [
       {
-        label: 'Copy Path', 
+        originalLabel: 'Copy Path',
+        label: 'Copy Path',
         icon: 'pi pi-copy',
         command: () => this.copyPath(),
       },
       {
-        label: 'Copy Relative Path', 
+        originalLabel: 'Copy Relative Path',
+        label: 'Copy Relative Path',
         icon: 'pi pi-copy',
         command: () => this.copyRelativePath(),
       },
@@ -125,11 +141,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
         separator: true,
       },
       {
+        originalLabel: 'Rename {type}',
         label: 'Rename {type}',
         icon: 'pi pi-pencil',
         command: () => this.renameEndpoint(),
       },
       {
+        originalLabel: 'Delete {type}',
         label: 'Delete {type}',
         icon: 'pi pi-trash',
         command: () => this.deleteEndpoint(),
@@ -138,7 +156,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     this.topLevelContextMenuItems = [
       {
-        label: 'New {type}', 
+        originalLabel: 'New {type}',
+        label: 'New {type}',
         icon: 'pi pi-plus',
         command: () => this.createNewPath(),
       },
@@ -146,11 +165,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
         separator: true,
       },
       {
+        originalLabel: 'Copy Path',
         label: 'Copy Path',
         icon: 'pi pi-copy',
         command: () => this.copyPath(),
       },
       {
+        originalLabel: 'Copy Relative Path',
         label: 'Copy Relative Path',
         icon: 'pi pi-copy',
         command: () => this.copyRelativePath(),
@@ -262,89 +283,93 @@ export class SidebarComponent implements OnInit, OnDestroy {
   getExamples(_swaggerSpec: any) {
     return this.examples;
   }
-
-  onPathRightClick(event: MouseEvent, path: any): void {
+  onPathRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.selectedItem = path;
-    this.updateContextMenuLabels('Path'); // Update labels for "Path"
-    this.contextMenu.show(event);
-  }
-
-  onMethodRightClick(event: MouseEvent, method: any): void {
-    event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Method'); // Update labels for "Method"
-    this.contextMenu.show(event);
+    this.updateContextMenuLabels('Path');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
+    this.contextHeaderMenu.show(event);
   }
 
   onModelsRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.updateContextMenuLabels('Model'); // Update labels for "Model"
+    this.updateContextMenuLabels('Model');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
   onRequestBodiesRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.updateContextMenuLabels('Request Body'); // Update labels for "Request Body"
+    this.updateContextMenuLabels('Request Body');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
-  }
-
-  onModelRightClick(event: MouseEvent, method: any): void {
-    event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Model'); // Update labels for "Method"
-    this.contextMenu.show(event);
   }
 
   onResponsesRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.updateContextMenuLabels('Response'); // Update labels for "Response"
+    this.updateContextMenuLabels('Response');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
   onParametersRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.updateContextMenuLabels('Parameter'); // Update labels for "Parameter"
+    this.updateContextMenuLabels('Parameter');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
   onExamplesRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
-    this.updateContextMenuLabels('Example'); // Update labels for "Example"
-    this.contextHeaderMenu.show(event);
-  }
-
-  onPathRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
     this.updateContextMenuLabels('Example');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
-  onRequestBodyRightClick(event: MouseEvent, method: any): void {
+  onPathRightClick(event: MouseEvent, path: any): void {
     event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Request Body'); // Update labels for "Method"
+    this.selectedItem = path;
+    this.updateContextMenuLabels('Path');
+    this.contextMenu.model = [...this.contextMenuItems];
     this.contextMenu.show(event);
   }
 
-  onResponseRightClick(event: MouseEvent, method: any): void {
+  onModelRightClick(event: MouseEvent, model: any): void {
     event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Respones Body'); // Update labels for "Method"
+    this.selectedItem = model;
+    this.updateContextMenuLabels('Model');
+    this.contextMenu.model = [...this.contextMenuItems];
     this.contextMenu.show(event);
   }
 
-  onParameterRightClick(event: MouseEvent, method: any): void {
+  onRequestBodyRightClick(event: MouseEvent, requestBody: any): void {
     event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Parameter'); // Update labels for "Method"
+    this.selectedItem = requestBody;
+    this.updateContextMenuLabels('Request Body');
+    this.contextMenu.model = [...this.contextMenuItems];
     this.contextMenu.show(event);
   }
 
-  onExampleRightClick(event: MouseEvent, method: any): void {
+  onResponseRightClick(event: MouseEvent, response: any): void {
     event.preventDefault();
-    this.selectedItem = method;
-    this.updateContextMenuLabels('Example'); // Update labels for "Method"
+    this.selectedItem = response;
+    this.updateContextMenuLabels('Response');
+    this.contextMenu.model = [...this.contextMenuItems];
+    this.contextMenu.show(event);
+  }
+
+  onParameterRightClick(event: MouseEvent, parameter: any): void {
+    event.preventDefault();
+    this.selectedItem = parameter;
+    this.updateContextMenuLabels('Parameter');
+    this.contextMenu.model = [...this.contextMenuItems];
+    this.contextMenu.show(event);
+  }
+
+  onExampleRightClick(event: MouseEvent, example: any): void {
+    event.preventDefault();
+    this.selectedItem = example;
+    this.updateContextMenuLabels('Example');
+    this.contextMenu.model = [...this.contextMenuItems];
     this.contextMenu.show(event);
   }
 
@@ -353,17 +378,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   private updateContextMenuLabels(type: string): void {
-    this.contextMenuItems.forEach((item) => {
-      if (item.label) {
-        item.label = item.label.replace(/\{type\}/g, type);
-      }
-    });
+    this.contextMenuItems = this.contextMenuItems.map((item) => ({
+      ...item,
+      label: item['originalLabel']?.replace(/\{type\}/g, type) || item.label,
+    }));
 
-    this.topLevelContextMenuItems.forEach((item) => {
-      if (item.label) {
-        item.label = item.label.replace(/\{type\}/g, type);
-      }
-    });
+    this.topLevelContextMenuItems = this.topLevelContextMenuItems.map(
+      (item) => ({
+        ...item,
+        label: item['originalLabel']?.replace(/\{type\}/g, type) || item.label,
+      })
+    );
   }
 
   ngOnDestroy(): void {
