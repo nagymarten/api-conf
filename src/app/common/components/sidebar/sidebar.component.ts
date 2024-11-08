@@ -60,10 +60,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   expandAllPaths = false;
   private currentMenu: ContextMenu | null = null;
 
-  constructor(
-    private apiDataService: ApiDataService,
-    private messageService: MessageService
-  ) {}
+  constructor(private apiDataService: ApiDataService) {}
 
   ngOnInit(): void {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
@@ -147,7 +144,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         originalLabel: 'Delete {type}',
         label: 'Delete {type}',
         icon: 'pi pi-trash',
-        command: () => this.deleteEndpoint(),
+        // command: () => this.deleteEndpoint(),
       },
     ];
 
@@ -182,25 +179,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     throw new Error('Method not implemented.');
   }
   deletePath(selectedPath: any): void {
-    console.log('Deleting path:', selectedPath);
-
-    // Fetch the current Swagger spec
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
       if (swaggerSpec && swaggerSpec.paths) {
-        console.log(
-          'Available Paths Before Deletion:',
-          Object.keys(swaggerSpec.paths)
-        );
-
-        // Ensure the path exists before attempting to delete
         if (swaggerSpec.paths[selectedPath.key]) {
           delete swaggerSpec.paths[selectedPath.key];
-          console.log('Path deleted successfully:', selectedPath.key);
 
-          // Update the paths in local state
           delete this.paths[selectedPath.key];
 
-          // Save the updated Swagger spec
           this.apiDataService.setPaths(
             JSON.stringify(swaggerSpec.paths, null, 2)
           );
@@ -208,7 +193,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
           console.log('Updated Swagger spec:', swaggerSpec);
 
-          // Trigger change detection for the UI
           this.paths = { ...this.paths };
         } else {
           console.warn(
@@ -224,9 +208,60 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   renameEndpoint(): void {
     throw new Error('Method not implemented.');
   }
-  deleteEndpoint(): void {
-    throw new Error('Method not implemented.');
+  deleteEndpoint(pathKey: any, methodKey: any): void {
+    console.log(
+      `Deleting endpoint: ${methodKey.method} from path: ${pathKey.key}`
+    );
+
+    // Fetch the current Swagger spec
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        console.log(
+          'Available Paths Before Deletion:',
+          Object.keys(swaggerSpec.paths)
+        );
+
+        // Check if the path and method exist
+        if (
+          swaggerSpec.paths[pathKey.key] &&
+          swaggerSpec.paths[pathKey.key][methodKey.method]
+        ) {
+          // Delete the specific endpoint (HTTP method) from the path
+          delete swaggerSpec.paths[pathKey.key][methodKey.method];
+          console.log(
+            `Endpoint "${methodKey.method}" deleted successfully from path "${pathKey.key}"`
+          );
+
+          // Update the local paths state
+          if (this.paths[pathKey.key]) {
+            const pathEndpoints: any = this.paths[pathKey.key];
+            this.paths[pathKey.key] = pathEndpoints.filter(
+              (endpoint: any) => endpoint.method !== methodKey.method
+            );
+          }
+
+          // Save the updated Swagger spec
+          this.apiDataService.setPaths(
+            JSON.stringify(swaggerSpec.paths, null, 2)
+          );
+          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+          console.log('Updated Swagger spec:', swaggerSpec);
+
+          // Trigger UI change detection
+          this.paths = { ...this.paths };
+          console.log('Updated paths:', this.paths);
+        } else {
+          console.warn(
+            `Endpoint "${methodKey.method}" does not exist in path "${pathKey.key}" within the Swagger spec.`
+          );
+        }
+      } else {
+        console.error('Failed to fetch Swagger spec.');
+      }
+    });
   }
+
   createNewPath(clickedType: string): void {
     this.expandAllPaths = true;
     if (clickedType === 'Path') {
@@ -322,56 +357,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     throw new Error('Method not implemented.');
   }
 
-  viewDetails() {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'View Details',
-      detail: 'Viewing details of top-level item',
-    });
-  }
-
   onPanelClose() {
     this.expandAllPaths = false;
-  }
-
-  refresh() {
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Refresh',
-      detail: 'Top-level item refreshed',
-    });
-  }
-
-  openItem() {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Open',
-      detail: 'Item opened',
-    });
-  }
-
-  editItem() {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Edit',
-      detail: 'Edit item',
-    });
-  }
-
-  deleteItem() {
-    this.messageService.add({
-      severity: 'warn',
-      summary: 'Delete',
-      detail: 'Item deleted',
-    });
-  }
-
-  showProperties() {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Properties',
-      detail: 'Showing properties',
-    });
   }
 
   getModels(swaggerSpec: any): any[] {
@@ -420,7 +407,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.contextHeaderMenu.show(event);
   }
 
-  onPathEndpointRightClick(event: MouseEvent, path: any): void {
+  onPathEndpointRightClick(event: MouseEvent, path: any, method: any): void {
     event.preventDefault();
 
     if (this.currentMenu) {
@@ -431,8 +418,31 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.currentMenu = this.contextMenu;
 
     this.selectedItem = path;
-    this.updateContextMenuLabels('Path');
-    this.contextMenu.model = [...this.contextMenuItems];
+    this.contextMenuItems = [
+      {
+        label: 'Copy Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyPath(),
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyRelativePath(),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Rename Endpoint',
+        icon: 'pi pi-pencil',
+        command: () => this.renameEndpoint(),
+      },
+      {
+        label: 'Delete Endpoint',
+        icon: 'pi pi-trash',
+        command: () => this.deleteEndpoint(path, method),
+      },
+    ];
     this.contextMenu.show(event);
   }
 

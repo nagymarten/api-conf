@@ -39,7 +39,7 @@
           <mat-list>
             <mat-list-item
               *ngFor="let method of path.value"
-              (contextmenu)="onPathEndpointRightClick($event, method)"
+              (contextmenu)="onPathEndpointRightClick($event, path, method)"
             >
               <a
                 [routerLink]="['/path', path.key, method.method]"
