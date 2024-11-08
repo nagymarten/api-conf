@@ -51,7 +51,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   requestBodies: any[] = [];
   responses: any[] = [];
   parameters: any[] = [];
-  examples: any[] = [];
   swaggerSubscription!: Subscription;
   items: MenuItem[] | undefined;
   editingPath: string | null = null;
@@ -61,7 +60,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   selectedItem: any;
   pathEndpointItems: MenuItem[] = [];
   clickedType!: string;
-  expandAllPaths = false; // Control whether all paths are expanded or collapsed
+  expandAllPaths = false;
+  private currentMenu: ContextMenu | null = null;
 
   constructor(
     private apiDataService: ApiDataService,
@@ -327,6 +327,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   copyRelativePath(): void {
     throw new Error('Method not implemented.');
   }
+
   viewDetails() {
     this.messageService.add({
       severity: 'info',
@@ -335,7 +336,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  onPanelClose(){
+  onPanelClose() {
     this.expandAllPaths = false;
   }
 
@@ -387,10 +388,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       }));
   }
 
-  getRequestBodies(_swaggerSpec: any) {
-    return this.requestBodies;
-  }
-
   getResponses(swaggerSpec: any) {
     const responsesArray: any[] = [];
 
@@ -417,13 +414,19 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     return this.parameters;
   }
 
-  getExamples(_swaggerSpec: any) {
-    return this.examples;
-  }
   onPathRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null; 
+    }
+
+    this.currentMenu = this.contextHeaderMenu;
+
     this.updateContextMenuLabels('Path');
     this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
+
     this.contextHeaderMenu.show(event);
   }
 
@@ -455,15 +458,16 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.contextHeaderMenu.show(event);
   }
 
-  onExamplesRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
-    this.updateContextMenuLabels('Example');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
-    this.contextHeaderMenu.show(event);
-  }
-
   onPathEndpointRightClick(event: MouseEvent, path: any): void {
     event.preventDefault();
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+
+    this.currentMenu = this.contextMenu;
+
     this.selectedItem = path;
     this.updateContextMenuLabels('Path');
     this.contextMenu.model = [...this.contextMenuItems];
@@ -502,17 +506,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.contextMenu.show(event);
   }
 
-  onExampleRightClick(event: MouseEvent, example: any): void {
-    event.preventDefault();
-    this.selectedItem = example;
-    this.updateContextMenuLabels('Example');
-    this.contextMenu.model = [...this.contextMenuItems];
-    this.contextMenu.show(event);
-  }
-
   onPathRightClick(event: MouseEvent, _method: any): void {
     event.preventDefault();
-    //  this.selectedItem = example;
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+    this.currentMenu = this.pathMethodContextMenu;
+
     this.updateContextMenuLabels('Path');
     this.pathMethodContextMenu.model = [...this.pathEndpointItems];
     this.pathMethodContextMenu.show(event);
