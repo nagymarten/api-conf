@@ -48,9 +48,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   paths: { [key: string]: any } = {};
   models: any[] = [];
-  requestBodies: any[] = [];
-  responses: any[] = [];
-  parameters: any[] = [];
   swaggerSubscription!: Subscription;
   items: MenuItem[] | undefined;
   editingPath: string | null = null;
@@ -103,18 +100,17 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   getPaths(swaggerSpec: any): { [key: string]: any } {
     const apiPaths: { [key: string]: any } = {};
 
-    // Loop over each API path
     Object.keys(swaggerSpec.paths).forEach((pathKey) => {
       const methods = Object.keys(swaggerSpec.paths[pathKey])
         .sort()
-        .filter((methodKey) => this.validHttpMethods.includes(methodKey)) // Only include valid HTTP methods
+        .filter((methodKey) => this.validHttpMethods.includes(methodKey))
         .map((methodKey) => {
           const methodDetails = swaggerSpec.paths[pathKey][methodKey];
           return {
-            method: methodKey, // HTTP method (POST, GET, etc.)
-            summary: methodDetails.summary, // Summary for each method
-            description: methodDetails.description, // Method description (optional)
-            responses: JSON.stringify(methodDetails.responses, null, 2), // Stringify the responses
+            method: methodKey,
+            summary: methodDetails.summary,
+            description: methodDetails.description,
+            responses: JSON.stringify(methodDetails.responses, null, 2),
           };
         });
 
@@ -410,16 +406,12 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     return responsesArray;
   }
 
-  getParameters(_swaggerSpec: any) {
-    return this.parameters;
-  }
-
   onPathRightClickHeader(event: MouseEvent): void {
     event.preventDefault();
 
     if (this.currentMenu) {
       this.currentMenu.hide();
-      this.currentMenu = null; 
+      this.currentMenu = null;
     }
 
     this.currentMenu = this.contextHeaderMenu;
@@ -427,34 +419,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.updateContextMenuLabels('Path');
     this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
 
-    this.contextHeaderMenu.show(event);
-  }
-
-  onModelsRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
-    this.updateContextMenuLabels('Model');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
-    this.contextHeaderMenu.show(event);
-  }
-
-  onRequestBodiesRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
-    this.updateContextMenuLabels('Request Body');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
-    this.contextHeaderMenu.show(event);
-  }
-
-  onResponsesRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
-    this.updateContextMenuLabels('Response');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
-    this.contextHeaderMenu.show(event);
-  }
-
-  onParametersRightClickHeader(event: MouseEvent): void {
-    event.preventDefault();
-    this.updateContextMenuLabels('Parameter');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
@@ -474,38 +438,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.contextMenu.show(event);
   }
 
-  onModelRightClick(event: MouseEvent, model: any): void {
-    event.preventDefault();
-    this.selectedItem = model;
-    this.updateContextMenuLabels('Model');
-    this.contextMenu.model = [...this.contextMenuItems];
-    this.contextMenu.show(event);
-  }
-
-  onRequestBodyRightClick(event: MouseEvent, requestBody: any): void {
-    event.preventDefault();
-    this.selectedItem = requestBody;
-    this.updateContextMenuLabels('Request Body');
-    this.contextMenu.model = [...this.contextMenuItems];
-    this.contextMenu.show(event);
-  }
-
-  onResponseRightClick(event: MouseEvent, response: any): void {
-    event.preventDefault();
-    this.selectedItem = response;
-    this.updateContextMenuLabels('Response');
-    this.contextMenu.model = [...this.contextMenuItems];
-    this.contextMenu.show(event);
-  }
-
-  onParameterRightClick(event: MouseEvent, parameter: any): void {
-    event.preventDefault();
-    this.selectedItem = parameter;
-    this.updateContextMenuLabels('Parameter');
-    this.contextMenu.model = [...this.contextMenuItems];
-    this.contextMenu.show(event);
-  }
-
   onPathRightClick(event: MouseEvent, _method: any): void {
     event.preventDefault();
 
@@ -520,8 +452,34 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.pathMethodContextMenu.show(event);
   }
 
-  onOpen(): void {
-    console.log('Open:', this.selectedItem);
+  onModelsRightClickHeader(event: MouseEvent): void {
+    event.preventDefault();
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+
+    this.currentMenu = this.contextHeaderMenu;
+    this.updateContextMenuLabels('Model');
+    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
+    this.contextHeaderMenu.show(event);
+  }
+
+  onModelRightClick(event: MouseEvent, model: any): void {
+    event.preventDefault();
+
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+
+    this.currentMenu = this.contextMenu;
+    this.selectedItem = model;
+    this.updateContextMenuLabels('Model');
+    this.contextMenu.model = [...this.contextMenuItems];
+    this.contextMenu.show(event);
   }
 
   private updateContextMenuLabels(type: string): void {
