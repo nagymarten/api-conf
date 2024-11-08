@@ -4,6 +4,8 @@ import {
   OnDestroy,
   ViewChild,
   HostListener,
+  ElementRef,
+  AfterViewChecked,
 } from '@angular/core';
 import { MenuItem, MessageService } from 'primeng/api';
 import { PanelMenuModule } from 'primeng/panelmenu';
@@ -19,10 +21,6 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
-import { ApiDocumentUploadButtonComponent } from '../api-document-upload-button/api-document-upload-button.component';
-import { DownloadYamlButtonComponent } from '../download-yaml-button/download-yaml-button.component';
-import { DeleteDocumentButtonComponent } from '../delete-document-button/delete-document-button.component';
-
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
@@ -39,15 +37,14 @@ import { DeleteDocumentButtonComponent } from '../delete-document-button/delete-
     MatIconModule,
     MatToolbarModule,
     RouterModule,
-    ApiDocumentUploadButtonComponent,
-    DownloadYamlButtonComponent,
-    DeleteDocumentButtonComponent,
   ],
   providers: [MessageService],
 })
-export class SidebarComponent implements OnInit, OnDestroy {
+export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('contextMenu') contextMenu!: ContextMenu;
   @ViewChild('contextHeaderMenu') contextHeaderMenu!: ContextMenu;
+  @ViewChild('pathMethodContextMenu') pathMethodContextMenu!: ContextMenu;
+  @ViewChild('inputRef') inputElement!: ElementRef<HTMLInputElement>;
 
   paths: { [key: string]: any } = {};
   models: any[] = [];
@@ -57,11 +54,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   examples: any[] = [];
   swaggerSubscription!: Subscription;
   items: MenuItem[] | undefined;
-
+  editingPath: string | null = null;
   validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
   contextMenuItems: MenuItem[] = [];
   topLevelContextMenuItems: MenuItem[] = [];
   selectedItem: any;
+  pathEndpointItems: MenuItem[] = [];
+  clickedType!: string;
+  expandAllPaths = false; // Control whether all paths are expanded or collapsed
 
   constructor(
     private apiDataService: ApiDataService,
@@ -71,13 +71,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec) => {
-        if (swaggerSpec) {
+        if (swaggerSpec && swaggerSpec.paths) {
           this.paths = this.getPaths(swaggerSpec);
           this.models = this.getModels(swaggerSpec);
-          this.requestBodies = this.getRequestBodies(swaggerSpec);
-          this.responses = this.getResponses(swaggerSpec);
-          this.parameters = this.getParameters(swaggerSpec);
-          this.examples = this.getExamples(swaggerSpec);
         }
       },
       error: (error) => {
@@ -86,6 +82,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
 
     this.setupContextMenuItems();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.editingPath && this.inputElement) {
+      this.inputElement.nativeElement.focus();
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -108,7 +110,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         .filter((methodKey) => this.validHttpMethods.includes(methodKey)) // Only include valid HTTP methods
         .map((methodKey) => {
           const methodDetails = swaggerSpec.paths[pathKey][methodKey];
-          // console.log('methodDetails:', pathKey);
           return {
             method: methodKey, // HTTP method (POST, GET, etc.)
             summary: methodDetails.summary, // Summary for each method
@@ -159,7 +160,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         originalLabel: 'New {type}',
         label: 'New {type}',
         icon: 'pi pi-plus',
-        command: () => this.createNewPath(),
+        command: () => this.createNewPath(this.clickedType),
       },
       {
         separator: true,
@@ -177,6 +178,53 @@ export class SidebarComponent implements OnInit, OnDestroy {
         command: () => this.copyRelativePath(),
       },
     ];
+
+    this.pathEndpointItems = [
+      {
+        label: 'New Operation',
+        icon: 'pi pi-plus',
+        items: [
+          { label: 'GET', command: () => this.addOperation('GET') },
+          { label: 'PUT', command: () => this.addOperation('PUT') },
+          { label: 'PATCH', command: () => this.addOperation('PATCH') },
+          { label: 'DELETE', command: () => this.addOperation('DELETE') },
+          { label: 'HEAD', command: () => this.addOperation('HEAD') },
+          { label: 'OPTIONS', command: () => this.addOperation('OPTIONS') },
+          { label: 'TRACE', command: () => this.addOperation('TRACE') },
+        ],
+      },
+      { separator: true },
+      {
+        label: 'Copy Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyPath(),
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyRelativePath(),
+      },
+      { separator: true },
+      {
+        label: 'Rename',
+        icon: 'pi pi-pencil',
+        command: () => this.renamePath(),
+      },
+      {
+        label: 'Delete Path',
+        icon: 'pi pi-trash',
+        command: () => this.deletePath(),
+      },
+    ];
+  }
+  addOperation(_arg0: string): void {
+    throw new Error('Method not implemented.');
+  }
+  renamePath(): void {
+    throw new Error('Method not implemented.');
+  }
+  deletePath(): void {
+    throw new Error('Method not implemented.');
   }
 
   renameEndpoint(): void {
@@ -185,9 +233,94 @@ export class SidebarComponent implements OnInit, OnDestroy {
   deleteEndpoint(): void {
     throw new Error('Method not implemented.');
   }
-  createNewPath(): void {
-    throw new Error('Method not implemented.');
+  createNewPath(clickedType: string): void {
+    this.expandAllPaths = true;
+    if (clickedType === 'Path') {
+      const newPathKey = `/new-path-${Date.now()}`;
+      if (!this.paths) {
+        this.paths = {};
+      }
+      this.paths[newPathKey] = [];
+      this.editingPath = newPathKey;
+    }
   }
+
+  savePath(originalKey: string, event: any): void {
+    const newPathKey = (event.target as HTMLInputElement).value.trim();
+
+    if (!newPathKey || newPathKey === originalKey) {
+      this.cancelEditPath(originalKey);
+      return;
+    }
+
+    const originalPathData = this.paths[originalKey] || [];
+    delete this.paths[originalKey];
+    this.paths[newPathKey] = originalPathData;
+
+    this.paths[newPathKey].push({
+      method: 'get',
+      summary: 'Default GET endpoint for the new path',
+      description: 'Auto-generated GET endpoint.',
+      responses: {
+        200: {
+          description: 'Successful response',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string', example: 'Success' },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        if (!swaggerSpec.paths[newPathKey]) {
+          swaggerSpec.paths[newPathKey] = {};
+        }
+
+        swaggerSpec.paths[newPathKey] = {
+          get: {
+            summary: 'Default GET endpoint for the new path',
+            description: 'Auto-generated GET endpoint.',
+            responses: {
+              200: {
+                description: 'Successful response',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string', example: 'Success' },
+                      },
+                    },
+                  },
+                },
+              } as any,
+            },
+          },
+        };
+
+        this.apiDataService.setPaths(
+          JSON.stringify(swaggerSpec.paths, null, 2)
+        );
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+        console.log('Updated Swagger spec:', swaggerSpec);
+      }
+    });
+    this.editingPath = null;
+  }
+
+  cancelEditPath(_key: string): void {
+    this.editingPath = null;
+  }
+
   copyPath(): void {
     throw new Error('Method not implemented.');
   }
@@ -200,6 +333,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       summary: 'View Details',
       detail: 'Viewing details of top-level item',
     });
+  }
+
+  onPanelClose(){
+    this.expandAllPaths = false;
   }
 
   refresh() {
@@ -325,7 +462,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.contextHeaderMenu.show(event);
   }
 
-  onPathRightClick(event: MouseEvent, path: any): void {
+  onPathEndpointRightClick(event: MouseEvent, path: any): void {
     event.preventDefault();
     this.selectedItem = path;
     this.updateContextMenuLabels('Path');
@@ -373,11 +510,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.contextMenu.show(event);
   }
 
+  onPathRightClick(event: MouseEvent, _method: any): void {
+    event.preventDefault();
+    //  this.selectedItem = example;
+    this.updateContextMenuLabels('Path');
+    this.pathMethodContextMenu.model = [...this.pathEndpointItems];
+    this.pathMethodContextMenu.show(event);
+  }
+
   onOpen(): void {
     console.log('Open:', this.selectedItem);
   }
 
   private updateContextMenuLabels(type: string): void {
+    this.clickedType = type;
     this.contextMenuItems = this.contextMenuItems.map((item) => ({
       ...item,
       label: item['originalLabel']?.replace(/\{type\}/g, type) || item.label,

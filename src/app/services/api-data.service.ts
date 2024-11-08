@@ -9,7 +9,7 @@ import { Parameter, Schema, Security } from 'swagger-schema-official';
 })
 export class ApiDataService {
   private swaggerSpecSubject = new BehaviorSubject<ExtendedSwaggerSpec | null>(
-    this.getSwaggerSpecFromStorage() // Initialize with the stored spec, if any
+    this.getSwaggerSpecFromStorage()
   );
   swaggerSpec$: Observable<ExtendedSwaggerSpec | null> =
     this.swaggerSpecSubject.asObservable();
@@ -36,7 +36,7 @@ export class ApiDataService {
           const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
           this.swaggerSpecSubject.next(swaggerSpec);
           this.setApiData(swaggerSpec);
-          this.saveSwaggerSpecToStorage(swaggerSpec); // Save to localStorage
+          this.saveSwaggerSpecToStorage(swaggerSpec);
         } catch (error) {
           console.error('Error parsing the file as YAML:', error);
           this.swaggerSpecSubject.error(error);
@@ -55,7 +55,7 @@ export class ApiDataService {
     reader.readAsText(file);
   }
 
-  private setApiData(swaggerSpec: ExtendedSwaggerSpec): void {
+  setApiData(swaggerSpec: ExtendedSwaggerSpec): void {
     this.openApiVersion =
       swaggerSpec.openapi || swaggerSpec.swagger || 'Unknown version';
     this.version = swaggerSpec.info?.version || '';
@@ -149,13 +149,12 @@ export class ApiDataService {
     this.responses = responses;
   }
 
-  // Store the Swagger spec in localStorage
-  private saveSwaggerSpecToStorage(swaggerSpec: ExtendedSwaggerSpec): void {
+  saveSwaggerSpecToStorage(swaggerSpec: ExtendedSwaggerSpec): void {
     localStorage.setItem('swaggerSpec', JSON.stringify(swaggerSpec));
   }
 
   // Retrieve the Swagger spec from localStorage
-  private getSwaggerSpecFromStorage(): ExtendedSwaggerSpec | null {
+  getSwaggerSpecFromStorage(): ExtendedSwaggerSpec | null {
     const swaggerSpecString = localStorage.getItem('swaggerSpec');
     if (swaggerSpecString) {
       try {

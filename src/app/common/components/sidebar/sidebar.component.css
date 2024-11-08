@@ -1,32 +1,43 @@
 .sidenav {
   width: 300px;
-  /* Fixed width for the sidebar */
   background-color: #f9f9f9;
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Stretch to fill the parent container */
   overflow-y: auto;
-  /* Enable vertical scrolling */
+  /* Ensure vertical scrolling */
 }
 
 .path-item {
-  padding: 8px 16px;
   font-weight: bold;
   color: #000;
-  /* Black text for path names */
+  padding: 8px 0;
+  /* Adjust padding for better spacing */
 }
 
 .method-link {
   text-decoration: none;
   color: #000;
-  /* Black text for methods */
-  padding: 4px 16px;
-  /* Align with the path-item */
   display: block;
+  padding: 4px 16px;
+  font-size: 14px;
 }
 
 .method-link:hover {
   background-color: #e0e0e0;
-  /* Simple hover effect */
+}
+
+.mat-expansion-panel {
+  margin-bottom: 8px;
+  /* Add spacing between panels */
+}
+
+.mat-expansion-panel-header {
+  cursor: pointer;
+  /* Ensure it's clear that this is clickable */
+}
+
+.mat-list-item {
+  padding-left: 16px;
+  /* Align child items */
 }

@@ -4,24 +4,43 @@
 
   <mat-accordion>
     <!-- Paths Section -->
-    <mat-expansion-panel>
+    <mat-expansion-panel [expanded]="expandAllPaths" (closed)="onPanelClose()">
       <mat-expansion-panel-header
         (contextmenu)="onPathRightClickHeader($event)"
       >
         <mat-panel-title> <mat-icon>folder</mat-icon> Paths </mat-panel-title>
       </mat-expansion-panel-header>
 
+      <!-- Dynamically render all paths -->
       <mat-list>
-        <mat-list-item
+        <mat-expansion-panel
           *ngFor="let path of paths | keyvalue"
-          (contextmenu)="onPathRightClick($event, path)"
+          [expanded]="true"
         >
-          <div class="path-item">
-            {{ path.key }}
-          </div>
-
+          <mat-expansion-panel-header
+            (contextmenu)="onPathRightClick($event, path)"
+          >
+            <mat-panel-title>
+              <div *ngIf="editingPath === path.key; else displayPath">
+                <input
+                  #inputRef
+                  type="text"
+                  placeholder="users/{user_id}"
+                  (blur)="savePath(path.key, $event)"
+                  (keyup.enter)="savePath(path.key, $event)"
+                  (keyup.escape)="cancelEditPath(path.key)"
+                />
+              </div>
+              <ng-template #displayPath>
+                {{ path.key }}
+              </ng-template>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
           <mat-list>
-            <mat-list-item *ngFor="let method of path.value">
+            <mat-list-item
+              *ngFor="let method of path.value"
+              (contextmenu)="onPathEndpointRightClick($event, method)"
+            >
               <a
                 [routerLink]="['/path', path.key, method.method]"
                 class="method-link"
@@ -32,7 +51,7 @@
               </a>
             </mat-list-item>
           </mat-list>
-        </mat-list-item>
+        </mat-expansion-panel>
       </mat-list>
     </mat-expansion-panel>
 
@@ -59,114 +78,14 @@
       </mat-list>
     </mat-expansion-panel>
 
-    <!-- Request Bodies Section -->
-    <mat-expansion-panel>
-      <mat-expansion-panel-header
-        (contextmenu)="onRequestBodiesRightClickHeader($event)"
-      >
-        <mat-panel-title>
-          <mat-icon>folder</mat-icon> Request Bodies
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <mat-list>
-        <mat-list-item
-          *ngFor="let requestBody of requestBodies"
-          (contextmenu)="onRequestBodyRightClick($event, requestBody)"
-        >
-          <a
-            [routerLink]="['/request-bodies', requestBody.name]"
-            class="method-link"
-            routerLinkActive="active-model active-path-method"
-          >
-            {{ requestBody.name }}
-          </a>
-        </mat-list-item>
-      </mat-list>
-    </mat-expansion-panel>
-
-    <!-- Responses Section -->
-    <mat-expansion-panel>
-      <mat-expansion-panel-header
-        (contextmenu)="onResponsesRightClickHeader($event)"
-      >
-        <mat-panel-title>
-          <mat-icon>folder</mat-icon> Responses
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <mat-list>
-        <mat-list-item
-          *ngFor="let response of responses"
-          (contextmenu)="onResponseRightClick($event, response)"
-        >
-          <a
-            [routerLink]="['/responses', response.name]"
-            class="method-link"
-            routerLinkActive="active-model active-path-method"
-          >
-            {{ response.name }}
-          </a>
-        </mat-list-item>
-      </mat-list>
-    </mat-expansion-panel>
-
-    <!-- Parameters Section -->
-    <mat-expansion-panel>
-      <mat-expansion-panel-header
-        (contextmenu)="onParametersRightClickHeader($event)"
-      >
-        <mat-panel-title>
-          <mat-icon>folder</mat-icon> Parameters
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <mat-list>
-        <mat-list-item
-          *ngFor="let parameter of parameters"
-          (contextmenu)="onParameterRightClick($event, parameter)"
-        >
-          <a
-            [routerLink]="['/parameters', parameter.name]"
-            class="method-link"
-            routerLinkActive="active-model active-path-method"
-          >
-            {{ parameter.name }}
-          </a>
-        </mat-list-item>
-      </mat-list>
-    </mat-expansion-panel>
-
-    <!-- Examples Section -->
-    <mat-expansion-panel>
-      <mat-expansion-panel-header
-        (contextmenu)="onExamplesRightClickHeader($event)"
-      >
-        <mat-panel-title>
-          <mat-icon>folder</mat-icon> Examples
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-
-      <mat-list>
-        <mat-list-item
-          *ngFor="let example of examples"
-          (contextmenu)="onExampleRightClick($event, example)"
-        >
-          <a
-            [routerLink]="['/examples', example.name]"
-            class="method-link"
-            routerLinkActive="active-model active-path-method"
-          >
-            {{ example.name }}
-          </a>
-        </mat-list-item>
-      </mat-list>
-    </mat-expansion-panel>
+    <p-contextMenu
+      #contextHeaderMenu
+      [model]="topLevelContextMenuItems"
+    ></p-contextMenu>
+    <p-contextMenu #contextMenu [model]="contextMenuItems"></p-contextMenu>
+    <p-contextMenu
+      #pathMethodContextMenu
+      [model]="pathEndpointItems"
+    ></p-contextMenu>
   </mat-accordion>
 </div>
-
-<p-contextMenu
-  #contextHeaderMenu
-  [model]="topLevelContextMenuItems"
-></p-contextMenu>
-<p-contextMenu #contextMenu [model]="contextMenuItems"></p-contextMenu>

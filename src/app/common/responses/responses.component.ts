@@ -62,12 +62,11 @@ export class ResponsesComponent implements OnInit, OnDestroy {
 
           this.apiResponse = Object.keys(responses).map((responseName) => ({
             name: responseName,
-            details: responses[responseName], // Store the response details
+            details: responses[responseName], 
           }));
 
           console.log('Formatted Responses:', this.apiResponse);
 
-          // If a specific response is passed in the route, select it
           if (this.response) {
             this.onSelectResponse(this.response);
           }

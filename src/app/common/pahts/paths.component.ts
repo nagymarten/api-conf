@@ -34,10 +34,11 @@ export class PathsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private apiDataService: ApiDataService,
-    private fb: FormBuilder  ) {}
+    private fb: FormBuilder
+  ) {}
 
   ngOnInit(): void {
-    // Initialize the form with empty controls
+
     this.methodDetailsForm = this.fb.group({
       summary: [''],
       description: [''],
@@ -47,7 +48,6 @@ export class PathsComponent implements OnInit, OnDestroy {
       responseBody: [''], // To hold response body schema
     });
 
-    // Get the path and method from the route parameters
     this.route.params.subscribe((params) => {
       this.apiPath = params['path'];
       this.method = params['method'];
@@ -60,15 +60,18 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   fetchMethodDetails(): void {
+    console.log('Fetching method details for:', this.apiPath, this.method);
     this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (swaggerSpec) {
           const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
-
+          console.log('apiPathObject:', apiPathObject);
+          
           if (apiPathObject) {
             const methodDetails = apiPathObject[
               this.method.toLowerCase() as keyof typeof apiPathObject
             ] as ExtendedOperation;
+              console.log('methodDetails:', methodDetails);
 
             if (methodDetails) {
               // Populate form with summary and description
@@ -146,7 +149,7 @@ export class PathsComponent implements OnInit, OnDestroy {
       .getSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (swaggerSpec && swaggerSpec.paths) {
-          const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
+          const apiPathObject = swaggerSpec.paths[this.apiPath];
 
           if (apiPathObject) {
             const method = this.method.toLowerCase() as HttpMethod;
