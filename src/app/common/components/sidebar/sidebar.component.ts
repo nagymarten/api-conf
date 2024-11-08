@@ -213,9 +213,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           },
         };
 
-        console.log(`Method "${method}" added to path "${pathKey}"`);
 
-        // Update the local paths state
         if (!this.paths[pathKey]) {
           this.paths[pathKey] = [];
         }
@@ -241,7 +239,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           },
         });
 
-        // Save the updated Swagger spec
         this.apiDataService.setPaths(
           JSON.stringify(swaggerSpec.paths, null, 2)
         );
@@ -249,16 +246,57 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         console.log('Updated Swagger spec:', swaggerSpec);
 
-        // Trigger UI update
-        this.paths = { ...this.paths }; // Force Angular to detect changes
+        this.paths = { ...this.paths };
       } else {
         console.error('Failed to fetch Swagger spec.');
       }
     });
   }
 
-  renamePath(): void {
-    throw new Error('Method not implemented.');
+  renamePath(originalKey: string, event: any): void {
+    const newPathKey = (event.target as HTMLInputElement).value.trim();
+
+    if (!newPathKey) {
+      console.warn('New path key is invalid or empty.');
+      this.cancelEditPath(originalKey);
+      return;
+    }
+
+    console.log(`Renaming path from "${originalKey}" to "${newPathKey}"`);
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        if (swaggerSpec.paths[originalKey]) {
+          swaggerSpec.paths[newPathKey] = swaggerSpec.paths[originalKey];
+
+          delete swaggerSpec.paths[originalKey];
+
+          this.paths[newPathKey] = this.paths[originalKey];
+          delete this.paths[originalKey];
+
+          console.log(
+            `Successfully renamed path from "${originalKey}" to "${newPathKey}"`
+          );
+
+          this.apiDataService.setPaths(
+            JSON.stringify(swaggerSpec.paths, null, 2)
+          );
+          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+          console.log('Updated Swagger spec with renamed path:', swaggerSpec);
+
+          this.paths = { ...this.paths }; // Force UI re-render
+        } else {
+          console.warn(
+            `Original path "${originalKey}" does not exist in the Swagger spec.`
+          );
+        }
+      } else {
+        console.error('Failed to fetch Swagger spec.');
+      }
+    });
+
+    this.editingPath = null; // Exit editing mode
   }
 
   deletePath(selectedPath: any): void {
@@ -561,7 +599,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       { separator: true },
       { label: 'Copy Path', command: () => this.copyPath() },
-      { label: 'Rename', command: () => this.renamePath() },
+      {
+        label: 'Rename',
+        command: () => {
+          this.editingPath = path.key;
+          setTimeout(() => this.inputElement?.nativeElement?.focus(), 0);
+        },
+      },
       { label: 'Delete Path', command: () => this.deletePath(path) },
     ];
 

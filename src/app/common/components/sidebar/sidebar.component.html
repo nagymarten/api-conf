@@ -26,8 +26,9 @@
                   #inputRef
                   type="text"
                   placeholder="users/{user_id}"
-                  (blur)="savePath(path.key, $event)"
-                  (keyup.enter)="savePath(path.key, $event)"
+                  [value]="path.key"
+                  (blur)="renamePath(path.key, $event)"
+                  (keyup.enter)="renamePath(path.key, $event)"
                   (keyup.escape)="cancelEditPath(path.key)"
                 />
               </div>
