@@ -21,6 +21,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
+import { DialogModule } from 'primeng/dialog';
+import { FormsModule } from '@angular/forms';
+
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
@@ -37,6 +40,8 @@ import { RouterModule } from '@angular/router';
     MatIconModule,
     MatToolbarModule,
     RouterModule,
+    DialogModule,
+    FormsModule,
   ],
   providers: [MessageService],
 })
@@ -59,6 +64,12 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   clickedType!: string;
   expandAllPaths = false;
   private currentMenu: ContextMenu | null = null;
+  visible: boolean = false;
+  newPathName: string = '';
+  renameEndpointDialogVisible: boolean = false;
+  newMethodKey: string = '';
+  selectedPath: any = null;
+  selectedMethod: any = null;
 
   constructor(private apiDataService: ApiDataService) {}
 
@@ -138,7 +149,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         originalLabel: 'Rename {type}',
         label: 'Rename {type}',
         icon: 'pi pi-pencil',
-        command: () => this.renameEndpoint(),
+        // command: () => this.renameEndpoint(),
       },
       {
         originalLabel: 'Delete {type}',
@@ -153,7 +164,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         originalLabel: 'New {type}',
         label: 'New {type}',
         icon: 'pi pi-plus',
-        command: () => this.createNewPath(this.clickedType),
+        command: () => this.createNewPath(),
       },
       {
         separator: true,
@@ -212,7 +223,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
             },
           },
         };
-
 
         if (!this.paths[pathKey]) {
           this.paths[pathKey] = [];
@@ -326,9 +336,67 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  renameEndpoint(): void {
-    throw new Error('Method not implemented.');
+  renameEndpoint(pathKey: any, methodKey: any, newSummary: string): void {
+    if (!pathKey || !methodKey || !newSummary) {
+      console.warn('Invalid pathKey, methodKey, or newSummary.');
+      return;
+    }
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        const path = swaggerSpec.paths[pathKey.key];
+
+        if (!path || !path[methodKey.method]) {
+          console.warn(
+            `Method "${methodKey.method}" does not exist for path "${pathKey.key}".`
+          );
+          return;
+        }
+
+        path[methodKey.method].summary = newSummary;
+
+        const endpointIndex = this.paths[pathKey.key]?.findIndex(
+          (endpoint: any) => endpoint.method === methodKey.method
+        );
+        if (endpointIndex !== -1) {
+          this.paths[pathKey.key][endpointIndex].summary = newSummary;
+        }
+
+        this.apiDataService.setPaths(
+          JSON.stringify(swaggerSpec.paths, null, 2)
+        );
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+        this.paths = { ...this.paths }; 
+      } else {
+        console.error('Failed to fetch Swagger spec.');
+      }
+    });
   }
+
+  openRenameEndpointDialog(path: any, method: any): void {
+    this.selectedPath = path;
+    this.selectedMethod = method;
+    this.newMethodKey = ''; // Reset input field
+    this.renameEndpointDialogVisible = true;
+  }
+
+  saveRenamedEndpoint(): void {
+    if (!this.newMethodKey.trim()) {
+      console.warn('New method name cannot be empty.');
+      return;
+    }
+
+    this.renameEndpoint(
+      this.selectedPath,
+      this.selectedMethod,
+      this.newMethodKey
+    );
+    this.renameEndpointDialogVisible = false;
+    this.selectedPath = null;
+    this.selectedMethod = null;
+  }
+
   deleteEndpoint(pathKey: any, methodKey: any): void {
     console.log(
       `Deleting endpoint: ${methodKey.method} from path: ${pathKey.key}`
@@ -377,61 +445,57 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  createNewPath(clickedType: string): void {
-    this.expandAllPaths = true;
-    if (clickedType === 'Path') {
-      const newPathKey = `/new-path-${Date.now()}`;
-      if (!this.paths) {
-        this.paths = {};
-      }
-      this.paths[newPathKey] = [];
-      this.editingPath = newPathKey;
-    }
+  showDialog() {
+    this.visible = true;
   }
 
-  savePath(originalKey: string, event: any): void {
-    const newPathKey = (event.target as HTMLInputElement).value.trim();
+  createNewPath(): void {
+    this.visible = true; // Show the dialog
+  }
 
-    if (!newPathKey || newPathKey === originalKey) {
-      this.cancelEditPath(originalKey);
+  saveNewPath(): void {
+    const newPathKey = this.newPathName.trim();
+
+    if (!newPathKey) {
+      console.warn('Path name cannot be empty.');
       return;
     }
 
-    const originalPathData = this.paths[originalKey] || [];
-    delete this.paths[originalKey];
-    this.paths[newPathKey] = originalPathData;
+    if (!this.paths) {
+      this.paths = {};
+    }
 
-    this.paths[newPathKey].push({
-      method: 'get',
-      summary: 'Default GET endpoint for the new path',
-      description: 'Auto-generated GET endpoint.',
-      responses: {
-        200: {
-          description: 'Successful response',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  message: { type: 'string', example: 'Success' },
+    // Add the new path with a default GET operation
+    this.paths[newPathKey] = [
+      {
+        method: 'get',
+        summary: `Default GET operation for ${newPathKey}`,
+        description: `Auto-generated GET operation for ${newPathKey}.`,
+        responses: {
+          200: {
+            description: 'Successful response',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', example: 'Success' },
+                  },
                 },
               },
             },
           },
         },
       },
-    });
+    ];
 
+    // Save the new path to Swagger spec
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
       if (swaggerSpec && swaggerSpec.paths) {
-        if (!swaggerSpec.paths[newPathKey]) {
-          swaggerSpec.paths[newPathKey] = {};
-        }
-
         swaggerSpec.paths[newPathKey] = {
           get: {
-            summary: 'Default GET endpoint for the new path',
-            description: 'Auto-generated GET endpoint.',
+            summary: `Default GET operation for ${newPathKey}`,
+            description: `Auto-generated GET operation for ${newPathKey}.`,
             responses: {
               200: {
                 description: 'Successful response',
@@ -455,10 +519,14 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         );
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-        console.log('Updated Swagger spec:', swaggerSpec);
+        console.log('New path added to Swagger spec:', swaggerSpec);
+
+        // Reset dialog state
+        this.newPathName = '';
+        this.visible = false;
+        this.paths = { ...this.paths }; // Trigger UI update
       }
     });
-    this.editingPath = null;
   }
 
   cancelEditPath(_key: string): void {
@@ -550,7 +618,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       {
         label: 'Rename Endpoint',
         icon: 'pi pi-pencil',
-        command: () => this.renameEndpoint(),
+        command: () => this.openRenameEndpointDialog(path, method),
       },
       {
         label: 'Delete Endpoint',

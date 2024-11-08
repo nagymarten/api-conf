@@ -89,4 +89,56 @@
       [model]="pathEndpointItems"
     ></p-contextMenu>
   </mat-accordion>
+
+  <p-dialog
+    header="Add New Path"
+    [modal]="true"
+    [(visible)]="visible"
+    [style]="{ width: '25rem' }"
+  >
+    <div class="flex align-items-center gap-3 mb-3">
+      <label for="pathName" class="font-semibold w-6rem">Path name:</label>
+      <input
+        pInputText
+        id="pathName"
+        [(ngModel)]="newPathName"
+        autocomplete="off"
+        placeholder="Enter new path name"
+      />
+    </div>
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (onClick)="visible = false"
+      />
+      <p-button label="Save" (onClick)="saveNewPath()" />
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    header="Rename Endpoint"
+    [modal]="true"
+    [(visible)]="renameEndpointDialogVisible"
+    [style]="{ width: '25rem' }"
+  >
+    <div class="flex align-items-center gap-3 mb-3">
+      <label for="methodName" class="font-semibold w-6rem">New Method:</label>
+      <input
+        pInputText
+        id="methodName"
+        [(ngModel)]="newMethodKey"
+        autocomplete="off"
+        placeholder="Enter new method name (e.g., get, post)"
+      />
+    </div>
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (onClick)="renameEndpointDialogVisible = false"
+      ></p-button>
+      <p-button label="Save" (onClick)="saveRenamedEndpoint()"></p-button>
+    </div>
+  </p-dialog>
 </div>
