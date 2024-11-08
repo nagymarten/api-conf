@@ -172,9 +172,91 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
     ];
   }
-  addOperation(_arg0: string): void {
-    throw new Error('Method not implemented.');
+
+  addOperation(method: string, pathKey: string): void {
+    console.log(`Adding ${method.toUpperCase()} operation to path: ${pathKey}`);
+
+    // Fetch the current Swagger spec
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        // Check if the path already exists in the Swagger spec
+        if (!swaggerSpec.paths[pathKey]) {
+          swaggerSpec.paths[pathKey] = {};
+        }
+
+        // Check if the method already exists
+        if (swaggerSpec.paths[pathKey][method]) {
+          console.warn(
+            `Method "${method}" already exists for path "${pathKey}"`
+          );
+          return;
+        }
+
+        // Add the new operation (method) to the path
+        swaggerSpec.paths[pathKey][method] = {
+          summary: `Default ${method.toUpperCase()} operation for ${pathKey}`,
+          description: `This is an auto-generated ${method.toUpperCase()} operation.`,
+          responses: {
+            200: {
+              description: 'Successful response',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      message: { type: 'string', example: 'Success' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+
+        console.log(`Method "${method}" added to path "${pathKey}"`);
+
+        // Update the local paths state
+        if (!this.paths[pathKey]) {
+          this.paths[pathKey] = [];
+        }
+
+        this.paths[pathKey].push({
+          method: method.toLowerCase(),
+          summary: `Default ${method.toUpperCase()} operation for ${pathKey}`,
+          description: `This is an auto-generated ${method.toUpperCase()} operation.`,
+          responses: {
+            200: {
+              description: 'Successful response',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      message: { type: 'string', example: 'Success' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Save the updated Swagger spec
+        this.apiDataService.setPaths(
+          JSON.stringify(swaggerSpec.paths, null, 2)
+        );
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+        console.log('Updated Swagger spec:', swaggerSpec);
+
+        // Trigger UI update
+        this.paths = { ...this.paths }; // Force Angular to detect changes
+      } else {
+        console.error('Failed to fetch Swagger spec.');
+      }
+    });
   }
+
   renamePath(): void {
     throw new Error('Method not implemented.');
   }
@@ -469,19 +551,18 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       (method) => !existingMethods.includes(method)
     );
 
-
     this.pathMethodContextMenu.model = [
       {
         label: 'New Operation',
         items: availableMethods.map((method: string) => ({
-          label: method.toUpperCase(), 
-          command: () => this.addOperation(method), 
+          label: method.toUpperCase(),
+          command: () => this.addOperation(method, path.key),
         })),
       },
       { separator: true },
       { label: 'Copy Path', command: () => this.copyPath() },
       { label: 'Rename', command: () => this.renamePath() },
-      { label: 'Delete Path', command: () => this.deletePath(path.key) },
+      { label: 'Delete Path', command: () => this.deletePath(path) },
     ];
 
     this.pathMethodContextMenu.show(event);
