@@ -178,6 +178,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   renamePath(): void {
     throw new Error('Method not implemented.');
   }
+
   deletePath(selectedPath: any): void {
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
       if (swaggerSpec && swaggerSpec.paths) {
@@ -213,7 +214,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       `Deleting endpoint: ${methodKey.method} from path: ${pathKey.key}`
     );
 
-    // Fetch the current Swagger spec
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
       if (swaggerSpec && swaggerSpec.paths) {
         console.log(
@@ -221,18 +221,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           Object.keys(swaggerSpec.paths)
         );
 
-        // Check if the path and method exist
         if (
           swaggerSpec.paths[pathKey.key] &&
           swaggerSpec.paths[pathKey.key][methodKey.method]
         ) {
-          // Delete the specific endpoint (HTTP method) from the path
           delete swaggerSpec.paths[pathKey.key][methodKey.method];
           console.log(
             `Endpoint "${methodKey.method}" deleted successfully from path "${pathKey.key}"`
           );
 
-          // Update the local paths state
           if (this.paths[pathKey.key]) {
             const pathEndpoints: any = this.paths[pathKey.key];
             this.paths[pathKey.key] = pathEndpoints.filter(
@@ -240,7 +237,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
             );
           }
 
-          // Save the updated Swagger spec
           this.apiDataService.setPaths(
             JSON.stringify(swaggerSpec.paths, null, 2)
           );
@@ -248,7 +244,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
           console.log('Updated Swagger spec:', swaggerSpec);
 
-          // Trigger UI change detection
           this.paths = { ...this.paths };
           console.log('Updated paths:', this.paths);
         } else {
@@ -455,12 +450,40 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.currentMenu = this.pathMethodContextMenu;
 
+    const existingMethods = path.value.map((methods: any) =>
+      methods.method.toLowerCase()
+    );
+
+    const allMethods = [
+      'get',
+      'post',
+      'put',
+      'delete',
+      'patch',
+      'head',
+      'options',
+      'trace',
+    ];
+
+    const availableMethods = allMethods.filter(
+      (method) => !existingMethods.includes(method)
+    );
+
+
     this.pathMethodContextMenu.model = [
-      { label: 'New Operation', command: () => this.addOperation('GET') },
+      {
+        label: 'New Operation',
+        items: availableMethods.map((method: string) => ({
+          label: method.toUpperCase(), 
+          command: () => this.addOperation(method), 
+        })),
+      },
+      { separator: true },
       { label: 'Copy Path', command: () => this.copyPath() },
       { label: 'Rename', command: () => this.renamePath() },
-      { label: 'Delete Path', command: () => this.deletePath(path) },
+      { label: 'Delete Path', command: () => this.deletePath(path.key) },
     ];
+
     this.pathMethodContextMenu.show(event);
   }
 
