@@ -114,7 +114,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           };
         });
 
-      apiPaths[pathKey] = methods; // Assign the methods to the path
+      apiPaths[pathKey] = methods;
     });
 
     return apiPaths;
@@ -174,44 +174,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         command: () => this.copyRelativePath(),
       },
     ];
-
-    this.pathEndpointItems = [
-      {
-        label: 'New Operation',
-        icon: 'pi pi-plus',
-        items: [
-          { label: 'GET', command: () => this.addOperation('GET') },
-          { label: 'PUT', command: () => this.addOperation('PUT') },
-          { label: 'PATCH', command: () => this.addOperation('PATCH') },
-          { label: 'DELETE', command: () => this.addOperation('DELETE') },
-          { label: 'HEAD', command: () => this.addOperation('HEAD') },
-          { label: 'OPTIONS', command: () => this.addOperation('OPTIONS') },
-          { label: 'TRACE', command: () => this.addOperation('TRACE') },
-        ],
-      },
-      { separator: true },
-      {
-        label: 'Copy Path',
-        icon: 'pi pi-copy',
-        command: () => this.copyPath(),
-      },
-      {
-        label: 'Copy Relative Path',
-        icon: 'pi pi-copy',
-        command: () => this.copyRelativePath(),
-      },
-      { separator: true },
-      {
-        label: 'Rename',
-        icon: 'pi pi-pencil',
-        command: () => this.renamePath(),
-      },
-      {
-        label: 'Delete Path',
-        icon: 'pi pi-trash',
-        command: () => this.deletePath(),
-      },
-    ];
   }
   addOperation(_arg0: string): void {
     throw new Error('Method not implemented.');
@@ -219,8 +181,44 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   renamePath(): void {
     throw new Error('Method not implemented.');
   }
-  deletePath(): void {
-    throw new Error('Method not implemented.');
+  deletePath(selectedPath: any): void {
+    console.log('Deleting path:', selectedPath);
+
+    // Fetch the current Swagger spec
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        console.log(
+          'Available Paths Before Deletion:',
+          Object.keys(swaggerSpec.paths)
+        );
+
+        // Ensure the path exists before attempting to delete
+        if (swaggerSpec.paths[selectedPath.key]) {
+          delete swaggerSpec.paths[selectedPath.key];
+          console.log('Path deleted successfully:', selectedPath.key);
+
+          // Update the paths in local state
+          delete this.paths[selectedPath.key];
+
+          // Save the updated Swagger spec
+          this.apiDataService.setPaths(
+            JSON.stringify(swaggerSpec.paths, null, 2)
+          );
+          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+          console.log('Updated Swagger spec:', swaggerSpec);
+
+          // Trigger change detection for the UI
+          this.paths = { ...this.paths };
+        } else {
+          console.warn(
+            `Path "${selectedPath.key}" does not exist in Swagger spec.`
+          );
+        }
+      } else {
+        console.error('Failed to fetch Swagger spec.');
+      }
+    });
   }
 
   renameEndpoint(): void {
@@ -438,7 +436,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.contextMenu.show(event);
   }
 
-  onPathRightClick(event: MouseEvent, _method: any): void {
+  onPathRightClick(event: MouseEvent, path: any): void {
     event.preventDefault();
 
     if (this.currentMenu) {
@@ -447,8 +445,12 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.currentMenu = this.pathMethodContextMenu;
 
-    this.updateContextMenuLabels('Path');
-    this.pathMethodContextMenu.model = [...this.pathEndpointItems];
+    this.pathMethodContextMenu.model = [
+      { label: 'New Operation', command: () => this.addOperation('GET') },
+      { label: 'Copy Path', command: () => this.copyPath() },
+      { label: 'Rename', command: () => this.renamePath() },
+      { label: 'Delete Path', command: () => this.deletePath(path) },
+    ];
     this.pathMethodContextMenu.show(event);
   }
 
@@ -468,7 +470,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   onModelRightClick(event: MouseEvent, model: any): void {
     event.preventDefault();
-
 
     if (this.currentMenu) {
       this.currentMenu.hide();
