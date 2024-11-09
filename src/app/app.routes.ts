@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { SidebarComponent } from './common/components/sidebar/sidebar.component';
-import { PathsComponent } from './common/pahts/paths.component';
+import { PathsComponent } from './common/paths/paths.component';
 import { SchemasComponent } from './common/schemas/schemas.component';
 import { ResponsesComponent } from './common/responses/responses.component';
 

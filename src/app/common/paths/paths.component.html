@@ -51,14 +51,18 @@
   </div>
 
   <div *ngIf="activeTab === 'request'">
-    <h2>Request</h2>
+    <!-- <h2>Request</h2>
     <div *ngIf="methodDetailsForm.get('requestBody')?.value">
       <strong>Body:</strong>
       <textarea
         formControlName="requestBody"
         placeholder="Request Body"
       ></textarea>
-    </div>
+    </div> -->
+    <app-path-request-page
+      *ngIf="methodDetailsForm.get('requestBody')"
+      [methodDetails]="methodDetailsForm"
+    ></app-path-request-page>
   </div>
 
   <div *ngIf="activeTab === 'responses'" class="responses-tab">

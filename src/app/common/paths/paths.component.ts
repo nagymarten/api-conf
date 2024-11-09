@@ -12,11 +12,12 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { RouterModule } from '@angular/router';
+import { PathRequestPageComponent } from "./path-request-page/path-request-page.component";
 
 @Component({
   selector: 'paths',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, PathRequestPageComponent],
   templateUrl: './paths.component.html',
   styleUrls: ['./paths.component.css'],
 })
@@ -43,9 +44,9 @@ export class PathsComponent implements OnInit, OnDestroy {
       summary: [''],
       description: [''],
       requestBody: [''],
-      responseMessage: [''], // To hold dynamic response message
-      headers: [''], // To hold headers of response
-      responseBody: [''], // To hold response body schema
+      responseMessage: [''], 
+      headers: [''], 
+      responseBody: [''], 
     });
 
     this.route.params.subscribe((params) => {

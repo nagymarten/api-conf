@@ -1,0 +1,13 @@
+<div>
+  <h2>Request Details:</h2>
+  <div>
+    <strong>Body:</strong>
+    <textarea
+      [(ngModel)]="requestBodyValue"
+      (blur)="updateRequestBody()"
+      placeholder="Enter request body here"
+      rows="10"
+      cols="50"
+    ></textarea>
+  </div>
+</div>
