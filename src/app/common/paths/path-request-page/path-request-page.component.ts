@@ -1,18 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms'; // Import FormsModule
+import { FormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-path-request-page',
   standalone: true,
-  imports: [CommonModule, FormsModule], // Add FormsModule here
+  imports: [CommonModule, FormsModule],
   templateUrl: './path-request-page.component.html',
   styleUrls: ['./path-request-page.component.css'],
 })
 export class PathRequestPageComponent implements OnInit {
   @Input() methodDetails!: FormGroup;
-
+  //TODO: Make the page display body like scheme & make discription
   requestBodyValue!: string;
 
   ngOnInit(): void {

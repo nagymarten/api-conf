@@ -61,12 +61,11 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   fetchMethodDetails(): void {
-    // console.log('Fetching method details for:', this.apiPath, this.method);
     this.apiDataService.getSwaggerSpec().subscribe({
       next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (swaggerSpec) {
           const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
-          // console.log('apiPathObject:', apiPathObject);
+          console.log('apiPathObject:', apiPathObject);
           
           if (apiPathObject) {
             const methodDetails = apiPathObject[

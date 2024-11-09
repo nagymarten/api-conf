@@ -480,9 +480,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   toggleChildOverlay(event: Event, rowData: any, col: any): void {
-    console.log('toggleChildOverlay');
-    console.log('Selected Row Data:', rowData);
-    console.log('Selected Column Data:', col);
+    // console.log('Selected Row Data:', rowData);
+    // console.log('Selected Column Data:', col);
     this.childComponent.toggleOverlay(event, rowData, col);
   }
 
@@ -557,7 +556,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       children: [],
       expanded: true,
     };
-
+    console.log(this.selectedSchema);
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
     console.log(this.jsonTree);
   }

@@ -58,6 +58,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   @Input() rowData: any;
   @Input() col: any;
   @Input() apiSchemas: any;
+  @Input() selectedSchema: any;
 
   @ViewChild('op') op!: OverlayPanel;
   @Output() updateRow = new EventEmitter<string>();
@@ -95,6 +96,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMin: boolean = false;
   exclusiveMax: boolean = false;
   deprecated: boolean = false;
+  allow_additional_properties: boolean = false;
 
   minProperties: number | null = null;
   maxProperties: number | null = null;
@@ -150,16 +152,26 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   // Options for the Default dropdown for boolean values
   booleanDefaults = [{ name: 'true' }, { name: 'false' }];
 
-  enumValue: string = ''; // Temporarily holds the value to be added to the enum list
-  enumValues: string[] = []; // Holds all enum values
-  showEnumInput: boolean = false; // Controls the display of the enum input field
+  enumValue: string = '';
+  enumValues: string[] = [];
+  showEnumInput: boolean = false;
 
   ngOnInit() {
     this.activeItem = this.responseExamples[0];
+    this.logData();
   }
 
   toggleEnumInput() {
     this.showEnumInput = !this.showEnumInput;
+  }
+
+  logData() {
+    console.log('Selected Type:', this.selectedType);
+    console.log('Min Properties:', this.minProperties);
+    console.log('Max Properties:', this.maxProperties);
+    console.log('Allow Additional Properties:', this.allowAdditionalProperties);
+    console.log('Deprecated:', this.deprecated);
+    console.log('Original Row Data:', this.rowData);
   }
 
   addEnumValue() {
@@ -186,17 +198,25 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   toggleOverlay(event: Event, rowData: any, col: any) {
-    this.setRowData(rowData);
-    this.setCol(col);
+    // this.logData();
+    const cleanString = (value: string) => value.replace(/\{\d+\}/, '').trim();
+    const originalType = { name: cleanString(rowData[col.field]) };
 
-    const originalType = { name: rowData[col.field] };
-    console.log('Original type:', originalType);
-    this.types = [
-      originalType,
-      ...this.types.filter((type) => type.name !== originalType.name),
-    ];
+    // this.setRowData(rowData);
+    // this.setCol(col);
+    if (!this.types.some((type) => type.name === originalType.name)) {
+      this.types.unshift(originalType);
+    }
 
     this.selectedType = originalType;
+
+      if (this.selectedSchema?.type === 'object') {
+        this.minProperties = this.selectedSchema.minProperties || null;
+        this.maxProperties = this.selectedSchema.maxProperties || null;
+        this.allowAdditionalProperties =
+          this.selectedSchema.allowAdditionalProperties || false;
+        this.deprecated = this.selectedSchema.deprecated || false;
+      } 
 
     this.op.toggle(event);
   }
