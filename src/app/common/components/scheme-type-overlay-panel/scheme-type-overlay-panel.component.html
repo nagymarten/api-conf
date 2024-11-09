@@ -45,6 +45,7 @@
                       pInputText
                       placeholder=">= 0"
                       [(ngModel)]="minProperties"
+                      (ngModelChange)="onFieldChange('minProperties', $event)"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -57,6 +58,7 @@
                       pInputText
                       placeholder=">= 0"
                       [(ngModel)]="maxProperties"
+                      (ngModelChange)="onFieldChange('maxProperties', $event)"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -67,12 +69,22 @@
                     >
                     <p-inputSwitch
                       id="allow_additional_properties"
-                      [(ngModel)]="allow_additional_properties"
+                      [(ngModel)]="allowAdditionalProperties"
+                      (onChange)="
+                        onFieldChange(
+                          'allowAdditionalProperties',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
+                  </div>
+
+                  <div class="toggle-group">
                     <label for="deprecatedSwitch">deprecated</label>
                     <p-inputSwitch
                       id="deprecatedSwitch"
                       [(ngModel)]="deprecated"
+                      (onChange)="onFieldChange('deprecated', $event.checked)"
                     ></p-inputSwitch>
                   </div>
                 </div>

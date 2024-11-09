@@ -556,9 +556,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
       children: [],
       expanded: true,
     };
-    console.log(this.selectedSchema);
+    // console.log(this.selectedSchema);
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
-    console.log(this.jsonTree);
+    // console.log(this.jsonTree);
   }
 
   private initializeFormBasedOnSchema(
@@ -728,7 +728,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
               return;
             }
 
-            // Handle examples field
             if (formData.examples) {
               try {
                 schemaObject.examples = JSON.parse(formData.examples);
@@ -738,16 +737,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
               }
             }
 
-            // Assign the updated schema back
             swaggerSpec.components.schemas[schemaName] = schemaObject;
-            console.log('Schema Object After Update:', schemaObject);
 
-            // Save the updated schema
             this.apiDataService.setSchemes(
               JSON.stringify(swaggerSpec.components.schemas, null, 2)
             );
 
-            // Fetch and log the updated Swagger spec
             this.apiDataService
               .getSwaggerSpec()
               .subscribe((updatedSpec: ExtendedSwaggerSpec | null) => {

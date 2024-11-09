@@ -24,6 +24,7 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { PanelModule } from 'primeng/panel';
 import { EnumOverlayPanelComponent } from '../enum-overlay-panel/enum-overlay-panel.component';
 import { SubSchemeTypeComponent } from '../sub-scheme-type/sub-scheme-type.component';
+import { ApiDataService } from '../../../services/api-data.service';
 
 interface Type {
   name: string;
@@ -59,6 +60,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   @Input() col: any;
   @Input() apiSchemas: any;
   @Input() selectedSchema: any;
+  @Input() selectedSchemaName: any;
 
   @ViewChild('op') op!: OverlayPanel;
   @Output() updateRow = new EventEmitter<string>();
@@ -156,9 +158,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   enumValues: string[] = [];
   showEnumInput: boolean = false;
 
+  constructor(private apiDataService: ApiDataService) {}
+
   ngOnInit() {
     this.activeItem = this.responseExamples[0];
-    this.logData();
+    // this.logData();
   }
 
   toggleEnumInput() {
@@ -210,15 +214,50 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     this.selectedType = originalType;
 
-      if (this.selectedSchema?.type === 'object') {
-        this.minProperties = this.selectedSchema.minProperties || null;
-        this.maxProperties = this.selectedSchema.maxProperties || null;
-        this.allowAdditionalProperties =
-          this.selectedSchema.allowAdditionalProperties || false;
-        this.deprecated = this.selectedSchema.deprecated || false;
-      } 
+    if (this.selectedSchema?.type === 'object') {
+      this.minProperties = this.selectedSchema.minProperties || null;
+      this.maxProperties = this.selectedSchema.maxProperties || null;
+      this.allowAdditionalProperties =
+        this.selectedSchema.allowAdditionalProperties || false;
+      this.deprecated = this.selectedSchema.deprecated || false;
+    }
 
     this.op.toggle(event);
+  }
+
+  onFieldChange(field: string, value: any) {
+
+    if (this.selectedSchema) {
+      switch (field) {
+        case 'minProperties':
+          this.selectedSchema.minProperties = value;
+          break;
+        case 'maxProperties':
+          this.selectedSchema.maxProperties = value;
+          break;
+        case 'allowAdditionalProperties':
+          this.selectedSchema.allowAdditionalProperties = value;
+          break;
+        case 'deprecated':
+          this.selectedSchema.deprecated = value;
+          break;
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+    }
+
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec && swaggerSpec.components.schemas) {
+        swaggerSpec.components.schemas[this.selectedSchemaName] =
+          this.selectedSchema;
+
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+      } else {
+        console.error('No schemas found in the Swagger spec.');
+      }
+    });
   }
 
   onTypeSelect() {
