@@ -147,6 +147,7 @@
                               [selectedSchema]="selectedSchema"
                               [selectedSchemaName]="selectedSchemaName"
                               (updateRow)="updateButtonLabel($event)"
+                              (schemaUpdated)="onSchemaUpdated($event)"
                             ></app-scheme-type-overlay-panel>
                           </ng-container>
                           <ng-template #defaultOutput>
@@ -177,6 +178,7 @@
                           [apiSchemas]="apiSchemas"
                           [selectedSchema]="selectedSchema"
                           (updateRow)="updateButtonLabel($event)"
+                          (schemaUpdated)="onSchemaUpdated($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container
@@ -213,6 +215,7 @@
                           [apiSchemas]="apiSchemas"
                           [selectedSchema]="selectedSchema"
                           (updateRow)="updateButtonLabel($event)"
+                          (schemaUpdated)="onSchemaUpdated($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container
@@ -242,6 +245,7 @@
                           [apiSchemas]="apiSchemas"
                           [selectedSchema]="selectedSchema"
                           (updateRow)="updateButtonLabel($event)"
+                          (schemaUpdated)="onSchemaUpdated($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container *ngIf="!isSpecialType(rowData[col.field])">
@@ -258,6 +262,7 @@
                           [apiSchemas]="apiSchemas"
                           [selectedSchema]="selectedSchema"
                           (updateRow)="updateButtonLabel($event)"
+                          (schemaUpdated)="onSchemaUpdated($event)"
                         ></app-scheme-type-overlay-panel>
                       </ng-container>
                       <ng-container

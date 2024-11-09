@@ -64,6 +64,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   @ViewChild('op') op!: OverlayPanel;
   @Output() updateRow = new EventEmitter<string>();
+  @Output() schemaUpdated: EventEmitter<any> = new EventEmitter<any>();
 
   responseExamples: MenuItem[] = [
     { label: 'Type', icon: 'pi pi-fw pi-tag' },
@@ -147,6 +148,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMaxNumber: boolean = false;
   deprecatedNumber: boolean = false;
 
+  isNullable: boolean = false;
+
   numberFormats = [{ name: 'float' }, { name: 'double' }];
 
   defaultBoolean: string = '';
@@ -203,7 +206,12 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   toggleOverlay(event: Event, rowData: any, col: any) {
     // this.logData();
-    const cleanString = (value: string) => value.replace(/\{\d+\}/, '').trim();
+    const cleanString = (value: string) =>
+      value
+        .replace(/\{\d+\}/g, '')
+        .replace(/\s*or\s+null\s*$/i, '')
+        .trim();
+
     const originalType = { name: cleanString(rowData[col.field]) };
 
     // this.setRowData(rowData);
@@ -220,13 +228,23 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.allowAdditionalProperties =
         this.selectedSchema.allowAdditionalProperties || false;
       this.deprecated = this.selectedSchema.deprecated || false;
+      this.isNullable = false;
+    } else if (
+      Array.isArray(this.selectedSchema.type) &&
+      this.selectedSchema.type.includes('object') &&
+      this.selectedSchema.type.includes('null')
+    ) {
+      this.minProperties = this.selectedSchema.minProperties || null;
+      this.maxProperties = this.selectedSchema.maxProperties || null;
+      this.allowAdditionalProperties =
+        this.selectedSchema.allowAdditionalProperties || false;
+      this.deprecated = this.selectedSchema.deprecated || false;
+      this.isNullable = true;
     }
-
     this.op.toggle(event);
   }
 
   onFieldChange(field: string, value: any) {
-
     if (this.selectedSchema) {
       switch (field) {
         case 'minProperties':
@@ -241,23 +259,44 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'deprecated':
           this.selectedSchema.deprecated = value;
           break;
+        case 'isNullable':
+          if (value) {
+            if (Array.isArray(this.selectedSchema.type)) {
+              if (!this.selectedSchema.type.includes('null')) {
+                this.selectedSchema.type.push('null');
+              }
+            } else if (typeof this.selectedSchema.type === 'string') {
+              this.selectedSchema.type = [this.selectedSchema.type, 'null'];
+            }
+          } else {
+            if (Array.isArray(this.selectedSchema.type)) {
+              this.selectedSchema.type = this.selectedSchema.type.filter(
+                (t: string) => t !== 'null'
+              );
+              if (this.selectedSchema.type.length === 1) {
+                this.selectedSchema.type = this.selectedSchema.type[0];
+              }
+            }
+          }
+          console.log('Selected Schema:', this.selectedSchema.type);
+          break;
         default:
           console.warn(`Unhandled field: ${field}`);
       }
     }
 
-
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
       if (swaggerSpec && swaggerSpec.components.schemas) {
         swaggerSpec.components.schemas[this.selectedSchemaName] =
           this.selectedSchema;
-
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
-
+        console.log('Updated Swagger spec:', swaggerSpec.components.schemas);
       } else {
         console.error('No schemas found in the Swagger spec.');
       }
     });
+
+    this.schemaUpdated.emit(this.selectedSchema);
   }
 
   onTypeSelect() {
@@ -283,6 +322,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       `Marking value at index ${index} as example: ${this.enumValues[index]}`
     );
     // TODO: Add logic for marking the value as an example
+  }
+
+  toggleNullable(): void {
+    this.isNullable = !this.isNullable; // Toggle the boolean value
   }
 
   onMarkAsDefault(index: number) {

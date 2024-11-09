@@ -134,6 +134,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   getSchemaName(schema: any): string {
+    if (Array.isArray(schema?.type)) {
+      // Handle array of types, e.g., ["object", "null"]
+      const nonNullTypes = schema.type.filter((t: string) => t !== 'null');
+      const formattedType =
+        nonNullTypes.join(' or ') +
+        (schema.type.includes('null') ? ' or null' : '');
+      return this.formatTypeWithCount(formattedType, schema.type.length);
+    }
+
     return schema?.allOf
       ? this.formatTypeWithCount('allOf', Object.keys(schema.allOf).length)
       : schema?.oneOf
@@ -414,6 +423,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
   }
 
+  onSchemaUpdated(updatedSchema: any) {
+    console.log('Schema updated in child:', updatedSchema);
+
+    this.selectedSchema = updatedSchema;
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+      if (swaggerSpec?.components?.schemas) {
+        swaggerSpec.components.schemas[this.selectedSchemaName] =
+          this.selectedSchema;
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+        this.fetchModelDetails();
+      } else {
+        console.error('No schemas found in Swagger spec.');
+      }
+    });
+  }
+
   getTypeStatus(input: string): boolean {
     const result = this.isValidTypeWithNumber(input);
     return result.isValidType && result.isTypeWithNumber;
@@ -558,6 +585,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
     // console.log(this.selectedSchema);
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
+
     // console.log(this.jsonTree);
   }
 

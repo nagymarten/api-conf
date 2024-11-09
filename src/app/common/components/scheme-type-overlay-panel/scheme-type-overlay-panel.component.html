@@ -20,11 +20,13 @@
               (onChange)="onTypeSelect()"
             ></p-dropdown>
 
-            <p-button
-              icon="pi pi-times"
-              pTooltip="Not nullable"
+            <p-inputSwitch
+              id="isNullable"
+              [(ngModel)]="isNullable"
+              [pTooltip]="isNullable ? 'Nullable' : 'Not nullable'"
+              (onChange)="onFieldChange('isNullable', $event.checked)"
               class="not-nullable-button"
-            ></p-button>
+            ></p-inputSwitch>
           </div>
 
           <p-divider />
