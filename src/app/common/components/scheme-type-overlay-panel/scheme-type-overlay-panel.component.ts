@@ -106,14 +106,14 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   allowAdditionalProperties: boolean = false;
   deprecatedObject: boolean = false;
 
-  selectedStringFormat: string = '';
+  selectedStringFormat: Type | undefined;
   selectedStringBehavior: string = '';
   defaultString: string = '';
   exampleString: string = '';
-  pattern: string = '';
-  minLength: number | null = null;
-  maxLength: number | null = null;
-  deprecatedString: boolean = false;
+  stringPattern: string = '';
+  stringMinLength: number | null = null;
+  stringMaxLength: number | null = null;
+  isStringDeprecated: boolean = false;
 
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
@@ -121,7 +121,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   uniqueItems: boolean = false;
   deprecatedArray: boolean = false;
 
-  stringFormats = [
+  stringFormats: Type[] = [
     { name: 'None' },
     { name: 'byte' },
     { name: 'binary' },
@@ -129,6 +129,20 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { name: 'date-time' },
     { name: 'password' },
     { name: 'email' },
+    { name: 'time' },
+    { name: 'duration' },
+    { name: 'idn-email' },
+    { name: 'hostname' },
+    { name: 'idn-hostname' },
+    { name: 'ipv4' },
+    { name: 'ipv6' },
+    { name: 'uri' },
+    { name: 'uri-reference' },
+    { name: 'uuid' },
+    { name: 'uri-template' },
+    { name: 'json-pointer' },
+    { name: 'relative-json-pointer' },
+    { name: 'regex' },
   ];
 
   behaviorOptions = [
@@ -210,6 +224,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       value
         .replace(/\{\d+\}/g, '')
         .replace(/\s*or\s+null\s*$/i, '')
+        .replace(/<[^>]*>/g, '')
         .trim();
 
     const originalType = { name: cleanString(rowData[col.field]) };
@@ -221,6 +236,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     }
 
     this.selectedType = originalType;
+    console.log(this.selectedSchema);
+    // console.log(rowData);
+    // console.log(this.selectedSchema?.properties[rowData.name].format.trim());
+    // console.log(this.selectedSchema?.properties[rowData.name].type);
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;
@@ -241,8 +260,35 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.deprecated = this.selectedSchema.deprecated || false;
       this.isNullable = true;
     }
-    //TODO: Add support for other types
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'string'
+    ) {
+      this.selectedStringFormat = {
+        name: this.selectedSchema?.properties[rowData.name].format || null,
+      };
+      this.selectedBehavior =
+        this.selectedSchema?.properties[rowData.name].behavior || null;
+      this.defaultString =
+        this.selectedSchema?.properties[rowData.name].default || '';
+      this.exampleString =
+        this.selectedSchema?.properties[rowData.name].example || '';
+      this.stringPattern =
+        this.selectedSchema?.properties[rowData.name].pattern || '';
+      this.stringMinLength =
+        this.selectedSchema?.properties[rowData.name].minLength || null;
+      this.stringMaxLength =
+        this.selectedSchema?.properties[rowData.name].maxLength || null;
+      this.isStringDeprecated =
+        this.selectedSchema?.properties[rowData.name].deprecated || false;
+    }
+
     this.op.toggle(event);
+  }
+
+  onFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onFieldChange(field, value);
   }
 
   onFieldChange(field: string, value: any) {
@@ -296,8 +342,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         console.error('No schemas found in the Swagger spec.');
       }
     });
+  }
 
-    this.schemaUpdated.emit(this.selectedSchema);
+  onOverlayHide(): void {
+    if (this.selectedSchema) {
+      this.schemaUpdated.emit(this.selectedSchema);
+      console.log('Schema updated emitted:', this.selectedSchema);
+    }
   }
 
   onTypeSelect() {

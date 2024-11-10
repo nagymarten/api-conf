@@ -1,4 +1,4 @@
-<p-overlayPanel #op>
+<p-overlayPanel #op (onHide)="onOverlayHide()">
   <div class="flex flex-column gap-3 w-25rem">
     <div>
       <p-tabMenu
@@ -47,7 +47,8 @@
                       pInputText
                       placeholder=">= 0"
                       [(ngModel)]="minProperties"
-                      (ngModelChange)="onFieldChange('minProperties', $event)"
+                      (blur)="onFieldBlur('minProperties', $event)"
+                      (keydown.enter)="onFieldBlur('minProperties', $event)"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -60,7 +61,8 @@
                       pInputText
                       placeholder=">= 0"
                       [(ngModel)]="maxProperties"
-                      (ngModelChange)="onFieldChange('maxProperties', $event)"
+                      (blur)="onFieldBlur('maxProperties', $event)"
+                      (keydown.enter)="onFieldBlur('maxProperties', $event)"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -412,10 +414,11 @@
                     <label for="behavior">Behavior</label>
                     <p-dropdown
                       [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
+                      [(ngModel)]="selectedStringBehavior"
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
+                      (onChange)="onTypeSelect()"
                     ></p-dropdown>
                   </div>
 
@@ -451,7 +454,7 @@
                       type="text"
                       pInputText
                       placeholder="^[A-Za-z0-9 _-]+$"
-                      [(ngModel)]="pattern"
+                      [(ngModel)]="stringPattern"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -463,7 +466,7 @@
                       type="number"
                       pInputText
                       placeholder=">= 0"
-                      [(ngModel)]="minLength"
+                      [(ngModel)]="stringMinLength"
                       [style]="{ width: '100%' }"
                     />
                   </div>
@@ -475,16 +478,16 @@
                       type="number"
                       pInputText
                       placeholder=">= 0"
-                      [(ngModel)]="maxLength"
+                      [(ngModel)]="stringMaxLength"
                       [style]="{ width: '100%' }"
                     />
                   </div>
 
                   <div class="toggle-group">
-                    <label for="deprecatedSwitch">deprecated</label>
+                    <label for="isStringDeprecated">deprecated</label>
                     <p-inputSwitch
-                      [(ngModel)]="deprecated"
-                      id="deprecated"
+                      [(ngModel)]="isStringDeprecated"
+                      id="isStringDeprecated"
                     ></p-inputSwitch>
                   </div>
                 </div>
