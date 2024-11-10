@@ -407,6 +407,9 @@
                       optionLabel="name"
                       placeholder="Select a value"
                       [style]="{ width: '100%' }"
+                      (onChange)="
+                        onStringFormatSelect('selectedStringFormat', $event.value)
+                      "
                     ></p-dropdown>
                   </div>
 
@@ -418,7 +421,9 @@
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
-                      (onChange)="onTypeSelect()"
+                      (onChange)="
+                        onBehaviorOptionsSelect('selectedStringBehavior', $event.value)
+                      "
                     ></p-dropdown>
                   </div>
 
@@ -431,6 +436,10 @@
                       placeholder="default"
                       [(ngModel)]="defaultString"
                       [style]="{ width: '100%' }"
+                      (blur)="onStringFieldBlur('defaultString', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('defaultString', $event)
+                      "
                     />
                   </div>
 
@@ -443,10 +452,13 @@
                       placeholder="example"
                       [(ngModel)]="exampleString"
                       [style]="{ width: '100%' }"
+                      (blur)="onStringFieldBlur('exampleString', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('exampleString', $event)
+                      "
                     />
                   </div>
 
-                  <!-- Pattern Field -->
                   <div class="form-group">
                     <label for="pattern">Pattern</label>
                     <input
@@ -456,6 +468,10 @@
                       placeholder="^[A-Za-z0-9 _-]+$"
                       [(ngModel)]="stringPattern"
                       [style]="{ width: '100%' }"
+                      (blur)="onStringFieldBlur('stringPattern', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('stringPattern', $event)
+                      "
                     />
                   </div>
 
@@ -468,6 +484,10 @@
                       placeholder=">= 0"
                       [(ngModel)]="stringMinLength"
                       [style]="{ width: '100%' }"
+                      (blur)="onStringFieldBlur('stringMinLength', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('stringMinLength', $event)
+                      "
                     />
                   </div>
 
@@ -480,6 +500,10 @@
                       placeholder=">= 0"
                       [(ngModel)]="stringMaxLength"
                       [style]="{ width: '100%' }"
+                      (blur)="onStringFieldBlur('stringMaxLength', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('stringMaxLength', $event)
+                      "
                     />
                   </div>
 
@@ -488,6 +512,12 @@
                     <p-inputSwitch
                       [(ngModel)]="isStringDeprecated"
                       id="isStringDeprecated"
+                      (onChange)="
+                        onStringFieldChange(
+                          'isStringDeprecated',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
                   </div>
                 </div>

@@ -145,7 +145,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { name: 'regex' },
   ];
 
-  behaviorOptions:  Type[] = [
+  behaviorOptions: Type[] = [
     { name: 'Read/Write' },
     { name: 'ReadOnly' },
     { name: 'WriteOnly' },
@@ -229,17 +229,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     const originalType = { name: cleanString(rowData[col.field]) };
 
-    // this.setRowData(rowData);
-    // this.setCol(col);
+    this.setRowData(rowData);
+    this.setCol(col);
     if (!this.types.some((type) => type.name === originalType.name)) {
       this.types.unshift(originalType);
     }
 
     this.selectedType = originalType;
-    console.log(this.selectedSchema);
-    // console.log(rowData);
-    // console.log(this.selectedSchema?.properties[rowData.name].format.trim());
-    // console.log(this.selectedSchema?.properties[rowData.name].type);
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;
@@ -267,13 +263,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.selectedStringFormat = {
         name: this.selectedSchema?.properties[rowData.name].format || null,
       };
-     if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-       this.selectedStringBehavior = { name: 'WriteOnly'};
-     } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-       this.selectedStringBehavior = { name: 'WriteOnly'};;
-     } else {
-       this.selectedStringBehavior = { name: 'Read/Write' };
-     }
+      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+        this.selectedStringBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+        this.selectedStringBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedStringBehavior = { name: 'Read/Write' };
+      }
       this.defaultString =
         this.selectedSchema?.properties[rowData.name].default || '';
       this.exampleString =
@@ -337,16 +333,89 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       }
     }
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
-      if (swaggerSpec && swaggerSpec.components.schemas) {
-        swaggerSpec.components.schemas[this.selectedSchemaName] =
-          this.selectedSchema;
-        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
-        console.log('Updated Swagger spec:', swaggerSpec.components.schemas);
-      } else {
-        console.error('No schemas found in the Swagger spec.');
+    this.updateSwaggerSpec();
+  }
+
+  onStringFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onStringFieldChange(field, value);
+  }
+
+  onStringFormatSelect(field: string, event: any) {
+    const value = event.target?.value || event;
+    this.onStringFieldChange(field, value.name);
+  }
+
+  onBehaviorOptionsSelect(field: string, event: any) {
+    const value = event.target?.value || event;
+    this.onStringFieldChange(field, value.name);
+  }
+
+  onStringFieldChange(field: string, value: any): void {
+    if (this.selectedSchema && this.selectedSchema.properties) {
+      const string = this.selectedSchema?.properties[this.rowData.name];
+
+      if (!string) {
+        console.warn('Property not found in selected schema.');
+        return;
       }
-    });
+
+      switch (field) {
+        case 'selectedStringFormat':
+          string.format = value || null;
+          break;
+        case 'selectedStringBehavior':
+          if (value === 'WriteOnly') {
+            string.writeOnly = true;
+            delete string.readOnly;
+          } else if (value === 'ReadOnly') {
+            string.readOnly = true;
+            delete string.writeOnly;
+          } else {
+            delete string.readOnly;
+            delete string.writeOnly;
+          }
+          break;
+        case 'defaultString':
+          string.default = value || '';
+          break;
+        case 'exampleString':
+          string.example = value || '';
+          break;
+        case 'stringPattern':
+          string.pattern = value || '';
+          break;
+        case 'stringMinLength':
+          string.minLength = value ? Number(value) : null;
+          break;
+        case 'stringMaxLength':
+          string.maxLength = value ? Number(value) : null;
+          break;
+        case 'isStringDeprecated':
+          string.deprecated = !!value;
+          break;
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+
+      console.log(`Updated property ${field}:`, string);
+      this.updateSwaggerSpec();
+    }
+  }
+
+  updateSwaggerSpec(): void {
+    this.apiDataService.getSwaggerSpec().subscribe(
+      (swaggerSpec: any) => {
+        if (swaggerSpec && swaggerSpec.components.schemas) {
+          swaggerSpec.components.schemas[this.selectedSchemaName] =
+            this.selectedSchema;
+          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+        }
+      },
+      (error: any) => {
+        console.error('Error fetching Swagger spec:', error);
+      }
+    );
   }
 
   onOverlayHide(): void {
