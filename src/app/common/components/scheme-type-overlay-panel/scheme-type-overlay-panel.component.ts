@@ -241,6 +241,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.deprecated = this.selectedSchema.deprecated || false;
       this.isNullable = true;
     }
+    //TODO: Add support for other types
     this.op.toggle(event);
   }
 

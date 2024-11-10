@@ -162,7 +162,8 @@
                         *ngIf="
                           isSpecialType(rowData[col.field]) &&
                           !rowData.isReferenceChild &&
-                          !rowData.isRootNode
+                          !rowData.isRootNode &&
+                          !rowData.showReferenceButton
                         "
                       >
                         <p-button
@@ -294,7 +295,7 @@
                         col.field === 'type' &&
                         rowNode.parent &&
                         !rowData.isReferenceChild
-                      "
+                        "
                     >
                       <p-button
                         type="button"

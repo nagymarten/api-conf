@@ -586,7 +586,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     // console.log(this.selectedSchema);
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
 
-    // console.log(this.jsonTree);
+    console.log(this.jsonTree);
   }
 
   private initializeFormBasedOnSchema(
