@@ -365,6 +365,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
       // console.log('Type is a single value:', type);
       return type;
     }
+
+    return 'unknown';
   };
 
   cleanSchemaName(value: string): string {
@@ -401,12 +403,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   formatPropertyType(property: any): string {
-    if (property.type) {
+    if (Array.isArray(property.type)) {
+      // Handle array of types, e.g., ["string", "null"]
+      if (property.type.length === 2 && property.type.includes('null')) {
+        // Find the non-null type
+        const nonNullType = property.type.find((t: string) => t !== 'null');
+        return property.format
+          ? `${nonNullType}<${property.format}> or null`
+          : `${nonNullType} or null`;
+      }
+      return property.type.join(' | '); // Fallback for unexpected structures
+    } else if (typeof property.type === 'string') {
+      // Handle single string type
       return property.format
         ? `${property.type}<${property.format}>`
         : property.type;
     }
-    return 'unknown';
+
+    return 'unknown'; // Default case
   }
 
   isValidTypeWithNumber(input: string): {
@@ -583,7 +597,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       children: [],
       expanded: true,
     };
-    // console.log(this.selectedSchema);
+
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
 
     console.log(this.jsonTree);
@@ -599,7 +613,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Dynamically adjust form controls based on the schema's structure
     if (schema.properties) {
       this.schemaDetailsForm.addControl('properties', this.fb.control(''));
       this.schemaDetailsForm.patchValue({
@@ -809,13 +822,23 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     // Helper function to clean and handle type<format> format
     const cleanType = (typeStr: string): string => {
-      // Extract base type if format is type<format>
-      const baseType = typeStr.split('<')[0].trim();
-      return baseType;
+      const baseType = typeStr.split('<')[0].trim(); // Extract base type
+      return baseType.replace(/ or null$/, '').trim(); // Remove " or null" suffix
     };
+
+    // If type is a single string, clean it and check if it matches a special type
+    if (typeof type === 'string') {
+      return specialTypes.includes(cleanType(type));
+    }
 
     // If type is an array of strings, check if every cleaned type is a special type
     if (Array.isArray(type) && type.every((t) => typeof t === 'string')) {
+      if ((type as string[]).includes('null')) {
+        const nonNullTypes = type.filter((t) => t !== 'null');
+        return nonNullTypes.every(
+          (t) => typeof t === 'string' && specialTypes.includes(cleanType(t))
+        );
+      }
       return type.every(
         (t) => typeof t === 'string' && specialTypes.includes(cleanType(t))
       );
@@ -831,12 +854,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       );
     }
 
-    // If type is a single string, clean it and check if it matches a special type
-    if (typeof type === 'string') {
-      return specialTypes.includes(cleanType(type));
-    }
-
-    return false;
+    return false; // If none of the above cases match
   }
 
   cleanType(value: string): string {

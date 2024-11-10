@@ -19,14 +19,6 @@
               [style]="{ width: '100%' }"
               (onChange)="onTypeSelect()"
             ></p-dropdown>
-
-            <p-inputSwitch
-              id="isNullable"
-              [(ngModel)]="isNullable"
-              [pTooltip]="isNullable ? 'Nullable' : 'Not nullable'"
-              (onChange)="onFieldChange('isNullable', $event.checked)"
-              class="not-nullable-button"
-            ></p-inputSwitch>
           </div>
 
           <p-divider />
@@ -89,6 +81,18 @@
                       id="deprecatedSwitch"
                       [(ngModel)]="deprecated"
                       (onChange)="onFieldChange('deprecated', $event.checked)"
+                    ></p-inputSwitch>
+
+                    <p-inputSwitch
+                      id="isNullableObject"
+                      [(ngModel)]="isNullableObject"
+                      [pTooltip]="
+                        isNullableObject ? 'Nullable' : 'Not nullable'
+                      "
+                      (onChange)="
+                        onFieldChange('isNullableObject', $event.checked)
+                      "
+                      class="not-nullable-button"
                     ></p-inputSwitch>
                   </div>
                 </div>
@@ -408,7 +412,10 @@
                       placeholder="Select a value"
                       [style]="{ width: '100%' }"
                       (onChange)="
-                        onStringFormatSelect('selectedStringFormat', $event.value)
+                        onStringFormatSelect(
+                          'selectedStringFormat',
+                          $event.value
+                        )
                       "
                     ></p-dropdown>
                   </div>
@@ -422,7 +429,10 @@
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
                       (onChange)="
-                        onBehaviorOptionsSelect('selectedStringBehavior', $event.value)
+                        onBehaviorOptionsSelect(
+                          'selectedStringBehavior',
+                          $event.value
+                        )
                       "
                     ></p-dropdown>
                   </div>
@@ -518,6 +528,18 @@
                           $event.checked
                         )
                       "
+                    ></p-inputSwitch>
+                    
+                    <p-inputSwitch
+                      id="isNullableString"
+                      [(ngModel)]="isNullableString"
+                      [pTooltip]="
+                        isNullableString ? 'Nullable' : 'Not nullable'
+                      "
+                      (onChange)="
+                        onStringFieldChange('isNullableString', $event.checked)
+                      "
+                      class="not-nullable-button"
                     ></p-inputSwitch>
                   </div>
                 </div>

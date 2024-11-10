@@ -162,7 +162,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMaxNumber: boolean = false;
   deprecatedNumber: boolean = false;
 
-  isNullable: boolean = false;
+  isNullableObject: boolean = false;
+  isNullableString: boolean = false;
 
   numberFormats = [{ name: 'float' }, { name: 'double' }];
 
@@ -220,6 +221,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   toggleOverlay(event: Event, rowData: any, col: any) {
     // this.logData();
+
     const cleanString = (value: string) =>
       value
         .replace(/\{\d+\}/g, '')
@@ -238,12 +240,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.selectedType = originalType;
 
     if (this.selectedSchema?.type === 'object') {
+      //
       this.minProperties = this.selectedSchema.minProperties || null;
       this.maxProperties = this.selectedSchema.maxProperties || null;
       this.allowAdditionalProperties =
         this.selectedSchema.allowAdditionalProperties || false;
       this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullable = false;
+      this.isNullableObject = false;
     } else if (
       Array.isArray(this.selectedSchema.type) &&
       this.selectedSchema.type.includes('object') &&
@@ -254,7 +257,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.allowAdditionalProperties =
         this.selectedSchema.allowAdditionalProperties || false;
       this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullable = true;
+      this.isNullableObject = true;
     }
     if (
       col.field === 'type' &&
@@ -282,6 +285,32 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         this.selectedSchema?.properties[rowData.name].maxLength || null;
       this.isStringDeprecated =
         this.selectedSchema?.properties[rowData.name].deprecated || false;
+      this.isNullableString = false;
+    } else if (
+      col.field === 'type' &&
+      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+      this.selectedSchema?.properties[rowData.name].type.includes('string') &&
+      this.selectedSchema?.properties[rowData.name].type.includes('null')
+    ) {
+      const property = this.selectedSchema.properties[rowData.name];
+
+      this.selectedStringFormat = { name: property.format || null };
+
+      if (property.writeOnly) {
+        this.selectedStringBehavior = { name: 'WriteOnly' };
+      } else if (property.readOnly) {
+        this.selectedStringBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedStringBehavior = { name: 'Read/Write' };
+      }
+
+      this.defaultString = property.default || '';
+      this.exampleString = property.example || '';
+      this.stringPattern = property.pattern || '';
+      this.stringMinLength = property.minLength || null;
+      this.stringMaxLength = property.maxLength || null;
+      this.isStringDeprecated = property.deprecated || false;
+      this.isNullableString = true;
     }
 
     this.op.toggle(event);
@@ -307,7 +336,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'deprecated':
           this.selectedSchema.deprecated = value;
           break;
-        case 'isNullable':
+        case 'isNullableObject':
           if (value) {
             if (Array.isArray(this.selectedSchema.type)) {
               if (!this.selectedSchema.type.includes('null')) {
@@ -394,11 +423,38 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'isStringDeprecated':
           string.deprecated = !!value;
           break;
+        case 'isNullableString':
+          if (value) {
+            if (Array.isArray(string.type)) {
+              if (!string.type.includes('null')) {
+                string.type.push('null');
+              }
+            } else if (typeof string.type === 'string') {
+              string.type = [string.type, 'null'];
+            } else {
+              console.warn('Unexpected type, resetting to ["string", "null"]');
+              string.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(string.type)) {
+              string.type = string.type.filter((t: string) => t !== 'null');
+              if (string.type.length === 1) {
+                string.type = string.type[0];
+              }
+            } else if (typeof string.type === 'string') {
+              console.log('Type is already not nullable');
+            } else {
+              console.warn('Unexpected type, resetting to "string"');
+              string.type = 'string';
+            }
+          }
+
+          break;
+
         default:
           console.warn(`Unhandled field: ${field}`);
       }
 
-      console.log(`Updated property ${field}:`, string);
       this.updateSwaggerSpec();
     }
   }
@@ -421,7 +477,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   onOverlayHide(): void {
     if (this.selectedSchema) {
       this.schemaUpdated.emit(this.selectedSchema);
-      console.log('Schema updated emitted:', this.selectedSchema);
     }
   }
 
@@ -448,10 +503,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       `Marking value at index ${index} as example: ${this.enumValues[index]}`
     );
     // TODO: Add logic for marking the value as an example
-  }
-
-  toggleNullable(): void {
-    this.isNullable = !this.isNullable; // Toggle the boolean value
   }
 
   onMarkAsDefault(index: number) {
