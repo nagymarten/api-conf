@@ -107,7 +107,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   deprecatedObject: boolean = false;
 
   selectedStringFormat: Type | undefined;
-  selectedStringBehavior: string = '';
+  selectedStringBehavior: Type | undefined;
   defaultString: string = '';
   exampleString: string = '';
   stringPattern: string = '';
@@ -145,7 +145,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { name: 'regex' },
   ];
 
-  behaviorOptions = [
+  behaviorOptions:  Type[] = [
     { name: 'Read/Write' },
     { name: 'ReadOnly' },
     { name: 'WriteOnly' },
@@ -267,8 +267,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.selectedStringFormat = {
         name: this.selectedSchema?.properties[rowData.name].format || null,
       };
-      this.selectedBehavior =
-        this.selectedSchema?.properties[rowData.name].behavior || null;
+     if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+       this.selectedStringBehavior = { name: 'WriteOnly'};
+     } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+       this.selectedStringBehavior = { name: 'WriteOnly'};;
+     } else {
+       this.selectedStringBehavior = { name: 'Read/Write' };
+     }
       this.defaultString =
         this.selectedSchema?.properties[rowData.name].default || '';
       this.exampleString =
