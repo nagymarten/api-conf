@@ -176,10 +176,16 @@
                     <p-dropdown
                       id="format"
                       [options]="intFormats"
-                      [(ngModel)]="selectedFormat"
-                      placeholder="Select format"
+                      [(ngModel)]="selectedIntegerFormat"
+                      placeholder="Select integer format"
                       [style]="{ width: '100%' }"
                       optionLabel="name"
+                       (onChange)="
+                        onStringFormatSelect(
+                          'selectedIntegerFormat',
+                          $event.value
+                        )
+                      "
                     ></p-dropdown>
                   </div>
 
@@ -187,10 +193,16 @@
                     <label for="behavior">Behavior</label>
                     <p-dropdown
                       [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
+                      [(ngModel)]="selectedIntegerBehavior"
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
+                       (onChange)="
+                        onStringFormatSelect(
+                          'selectedIntegerBehavior',
+                          $event.value
+                        )
+                      "
                     ></p-dropdown>
                   </div>
 
@@ -200,9 +212,13 @@
                       id="default"
                       type="text"
                       pInputText
-                      placeholder="default"
-                      [(ngModel)]="default"
+                      placeholder="defaultInteger"
+                      [(ngModel)]="defaultInteger"
                       [style]="{ width: '100%' }"
+                       (blur)="onStringFieldBlur('defaultInteger', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('defaultInteger', $event)
+                      "
                     />
                   </div>
 
@@ -212,9 +228,13 @@
                       id="example"
                       type="text"
                       pInputText
-                      placeholder="example"
-                      [(ngModel)]="example"
+                      placeholder="exampleInteger"
+                      [(ngModel)]="exampleInteger"
                       [style]="{ width: '100%' }"
+                       (blur)="onStringFieldBlur('exampleInteger', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('exampleInteger', $event)
+                      "
                     />
                   </div>
 
@@ -225,8 +245,12 @@
                       type="number"
                       pInputText
                       placeholder="0"
-                      [(ngModel)]="minimum"
+                      [(ngModel)]="minimumInteger"
                       [style]="{ width: '100%' }"
+                       (blur)="onStringFieldBlur('minimumInteger', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('minimumInteger', $event)
+                      "
                     />
                   </div>
 
@@ -237,8 +261,12 @@
                       type="number"
                       pInputText
                       placeholder="100"
-                      [(ngModel)]="maximum"
+                      [(ngModel)]="maximumInteger"
                       [style]="{ width: '100%' }"
+                       (blur)="onStringFieldBlur('maximumInteger', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('maximumInteger', $event)
+                      "
                     />
                   </div>
 
@@ -249,8 +277,12 @@
                       type="number"
                       pInputText
                       placeholder=">= 0"
-                      [(ngModel)]="multipleOf"
+                      [(ngModel)]="multipleOfInteger"
                       [style]="{ width: '100%' }"
+                       (blur)="onStringFieldBlur('multipleOfInteger', $event)"
+                      (keydown.enter)="
+                        onStringFieldBlur('multipleOfInteger', $event)
+                      "
                     />
                   </div>
 
@@ -259,20 +291,40 @@
 
                     <p-inputSwitch
                       id="exclusiveMin"
-                      [(ngModel)]="exclusiveMin"
+                      [(ngModel)]="exclusiveMinInteger"
+                       (onChange)="
+                        onStringFieldChange(
+                          'exclusiveMinInteger',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
                     <label for="exclusiveMax">exclusiveMax</label>
 
                     <p-inputSwitch
                       id="exclusiveMax"
-                      [(ngModel)]="exclusiveMax"
+                      [(ngModel)]="exclusiveMaxInteger"
+                       (onChange)="
+                        onStringFieldChange(
+                          'exclusiveMaxInteger',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
                     <label for="deprecated">deprecated</label>
 
                     <p-inputSwitch
                       id="deprecated"
-                      [(ngModel)]="deprecated"
+                      [(ngModel)]="deprecatedInteger"
+                       (onChange)="
+                        onStringFieldChange(
+                          'isStringDeprecated',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
+
+                    //TODO: NULLABLE button
                   </div>
                 </div>
               </div>
@@ -625,7 +677,6 @@
                     >
                     </app-enum-overlay-panel>
 
-                    <!-- Trash button to remove the specific input field -->
                     <p-button
                       icon="pi pi-trash"
                       class="p-button-text p-button-icon-only delete-button"

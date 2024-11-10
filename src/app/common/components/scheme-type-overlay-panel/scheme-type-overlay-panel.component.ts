@@ -89,7 +89,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   showAddPropertyForm: boolean = false;
   scrollHeight: string = '200px';
   selectedCombineType!: string;
-  selectedFormat: any;
   selectedBehavior: any;
   default: string = '';
   example: string = '';
@@ -101,11 +100,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   deprecated: boolean = false;
   allow_additional_properties: boolean = false;
 
+  //Object
   minProperties: number | null = null;
   maxProperties: number | null = null;
   allowAdditionalProperties: boolean = false;
   deprecatedObject: boolean = false;
 
+  //String
   selectedStringFormat: Type | undefined;
   selectedStringBehavior: Type | undefined;
   defaultString: string = '';
@@ -114,6 +115,19 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   stringMinLength: number | null = null;
   stringMaxLength: number | null = null;
   isStringDeprecated: boolean = false;
+
+  //Integer
+  selectedIntegerFormat: Type | undefined;
+  selectedIntegerBehavior: any;
+  defaultInteger: string = '';
+  exampleInteger: string = '';
+  minimumInteger: number | null = null;
+  maximumInteger: number | null = null;
+  multipleOfInteger: number | null = null;
+  exclusiveMinInteger: boolean = false;
+  exclusiveMaxInteger: boolean = false;
+  deprecatedInteger: boolean = false;
+  isNullableInteger: boolean = false;
 
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
@@ -169,7 +183,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   defaultBoolean: string = '';
 
-  // Options for the Default dropdown for boolean values
   booleanDefaults = [{ name: 'true' }, { name: 'false' }];
 
   enumValue: string = '';
@@ -180,7 +193,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   ngOnInit() {
     this.activeItem = this.responseExamples[0];
-    // this.logData();
   }
 
   toggleEnumInput() {
@@ -197,15 +209,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   addEnumValue() {
-    this.enumValues.push(''); // Add an empty string to create a new input
+    this.enumValues.push('');
   }
 
-  // Removes an input field from the enumValues array by index
   removeEnumValue(index: number) {
     this.enumValues.splice(index, 1);
   }
 
-  // Clears all enum values
   clearEnumValues() {
     this.enumValues = [];
     this.showEnumInput = false;
@@ -240,7 +250,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.selectedType = originalType;
 
     if (this.selectedSchema?.type === 'object') {
-      //
       this.minProperties = this.selectedSchema.minProperties || null;
       this.maxProperties = this.selectedSchema.maxProperties || null;
       this.allowAdditionalProperties =
@@ -311,6 +320,71 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.stringMaxLength = property.maxLength || null;
       this.isStringDeprecated = property.deprecated || false;
       this.isNullableString = true;
+    }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'integer'
+    ) {
+      this.selectedIntegerFormat = {
+        name: this.selectedSchema?.properties[rowData.name].format || null,
+      };
+      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+        this.selectedIntegerBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+        this.selectedIntegerBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedIntegerBehavior = { name: 'Read/Write' };
+      }
+      this.defaultInteger =
+        this.selectedSchema?.properties[rowData.name].default || '';
+      this.exampleInteger =
+        this.selectedSchema?.properties[rowData.name].example || '';
+      this.minimumInteger =
+        this.selectedSchema?.properties[rowData.name].minimum ||
+        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+        null;
+      this.maximumInteger =
+        this.selectedSchema?.properties[rowData.name].maximum ||
+        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+        null;
+      this.multipleOfInteger =
+        this.selectedSchema?.properties[rowData.name].multipleOf || null;
+      this.exclusiveMinInteger =
+        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+        false;
+      this.exclusiveMaxInteger =
+        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+        false;
+      this.deprecatedInteger =
+        this.selectedSchema?.properties[rowData.name].deprecated || false;
+      this.isNullableInteger = false;
+    } else if (
+      col.field === 'type' &&
+      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+      this.selectedSchema?.properties[rowData.name].type.includes('integer') &&
+      this.selectedSchema?.properties[rowData.name].type.includes('null')
+    ) {
+      const integer = this.selectedSchema.properties[rowData.name];
+
+      this.selectedIntegerFormat = { name: integer.format || null };
+
+      if (integer.writeOnly) {
+        this.selectedIntegerBehavior = { name: 'WriteOnly' };
+      } else if (integer.readOnly) {
+        this.selectedIntegerBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedIntegerBehavior = { name: 'Read/Write' };
+      }
+
+      this.defaultInteger = integer.default || '';
+      this.exampleInteger = integer.example || '';
+      this.minimumInteger = integer.exclusiveMinimum || integer.minimum || null;
+      this.maximumInteger = integer.exclusiveMaximum || integer.maximum || null;
+      this.multipleOfInteger = integer.multipleOf || null;
+      this.deprecatedInteger = integer.deprecated || false;
+      this.exclusiveMinInteger = !!integer.exclusiveMinimum || false;
+      this.exclusiveMaxInteger = !!integer.exclusiveMaximum || false;
+      this.isNullableInteger = true;
     }
 
     this.op.toggle(event);
