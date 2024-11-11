@@ -165,6 +165,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   maxArrayItems: number | null = null;
   uniqueArrayItems: boolean = false;
   deprecatedArray: boolean = false;
+  arrayItens: any = null;
   isNullableArray: boolean = false;
 
   selectedBehaviorArray: string = '';
@@ -551,8 +552,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.maxArrayItems = arrayValue.maxItems || null;
       this.uniqueArrayItems = arrayValue.uniqueItems || false;
       this.deprecatedArray = arrayValue.deprecated || false;
+      this.arrayItens = arrayValue.items || false;
+      console.log('this.arrayItens in obj');
+      console.log(this.arrayItens);
       this.isNullableArray = false;
-      //TODO: Array items
     } else if (
       col.field === 'type' &&
       Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
@@ -574,15 +577,17 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.maxArrayItems = arrayValue.maxItems || null;
       this.uniqueArrayItems = arrayValue.uniqueItems || false;
       this.deprecatedArray = arrayValue.deprecated || false;
+      this.arrayItens = arrayValue.items || false;
+      console.log('this.arrayItens in obj or null');
+      console.log(this.arrayItens);
       this.isNullableArray = true;
-      //TODO: Array items
     }
 
     this.op.toggle(event);
 
-     setTimeout(() => {
-       this.op.align();
-     }, 0);
+    setTimeout(() => {
+      this.op.align();
+    }, 0);
   }
 
   onFieldBlur(field: string, event: any): void {
