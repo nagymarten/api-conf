@@ -893,13 +893,26 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           }
           break;
         case 'enumExample':
-          enumValue.enumExample = value;
-          console.log(enumValue.enumExample);
-          break;
+          if (value !== null) {
+            enumValue.example = value;
+            console.log(enumValue.enumExample); //
+            break;
+          } else {
+            console.log('Example Enum:', value);
+            delete enumValue.example;
+            break;
+          }
         case 'enumDefault':
-          enumValue.enumDefault = value;
-          console.log(enumValue.enumDefault);
-          break;
+          if (value !== null) {
+            enumValue.default = value;
+            console.log(enumValue.enumDefault);
+            break;
+          } else {
+            console.log('Default Enum:', value);
+
+            delete enumValue.default;
+            break;
+          }
         case 'deprecatedEnum':
           enumValue.deprecated = !!value;
           break;
@@ -1070,8 +1083,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     const value = this.enumValues[index];
     console.log('value', value);
     this.enumExample = this.enumExample === value ? null : value;
-    this.onEnumFieldChange('enumExample', value || null);
-  
+    console.log('enumex', this.enumExample);
+
+    this.onEnumFieldChange('enumExample', this.enumExample || null);
   }
 
   onMarkAsDefault(index: number) {
@@ -1079,6 +1093,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     console.log('onMarkAsDefault');
     console.log('value', value);
     this.enumDefault = this.enumDefault === value ? null : value;
-     this.onEnumFieldChange('enumDefault', value || null);
+    console.log('enumdef', this.enumDefault);
+    this.onEnumFieldChange('enumDefault', this.enumDefault || null);
   }
 }
