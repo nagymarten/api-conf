@@ -474,7 +474,10 @@
                       id="exclusiveMinSwitch"
                       [(ngModel)]="exclusiveMinNumber"
                       (onChange)="
-                        onNumberFieldChange('exclusiveMinNumber', $event.checked)
+                        onNumberFieldChange(
+                          'exclusiveMinNumber',
+                          $event.checked
+                        )
                       "
                     ></p-inputSwitch>
 
@@ -483,7 +486,10 @@
                       id="exclusiveMaxSwitch"
                       [(ngModel)]="exclusiveMaxNumber"
                       (onChange)="
-                        onNumberFieldChange('exclusiveMaxNumber', $event.checked)
+                        onNumberFieldChange(
+                          'exclusiveMaxNumber',
+                          $event.checked
+                        )
                       "
                     ></p-inputSwitch>
 
@@ -677,10 +683,16 @@
                   <p-dropdown
                     id="behavior"
                     [options]="behaviorOptions"
-                    [(ngModel)]="selectedBehavior"
+                    [(ngModel)]="selectedBooleanBehavior"
                     optionLabel="name"
                     placeholder="Read/Write"
                     [style]="{ width: '100%' }"
+                    (onChange)="
+                      onBooleanFieldChange(
+                        'selectedBooleanBehavior',
+                        $event.value
+                      )
+                    "
                   ></p-dropdown>
                 </div>
 
@@ -693,14 +705,28 @@
                     optionLabel="name"
                     placeholder="Select a value"
                     [style]="{ width: '100%' }"
+                    (onChange)="
+                      onBooleanFieldChange('defaultBoolean', $event.value)
+                    "
                   ></p-dropdown>
                 </div>
+                
+                <p-divider />
 
                 <div class="toggle-group">
                   <label for="deprecatedSwitch">deprecated</label>
                   <p-inputSwitch
-                    [(ngModel)]="deprecated"
+                    [(ngModel)]="deprecatedBoolean"
                     id="deprecated"
+                  ></p-inputSwitch>
+                  <p-inputSwitch
+                    id="isNullableBoolean"
+                    [(ngModel)]="isNullableBoolean"
+                    [pTooltip]="isNullableBoolean ? 'Nullable' : 'Not nullable'"
+                    (onChange)="
+                      onBooleanFieldChange('isNullableBoolean', $event.checked)
+                    "
+                    class="not-nullable-button"
                   ></p-inputSwitch>
                 </div>
               </div>
@@ -714,7 +740,6 @@
               [collapsed]="false"
             >
               <div class="enum-properties-container">
-                <!-- Dynamic Enum Input Fields with Options Menu and Trash Button -->
                 <div class="form-group">
                   <label for="enumValues">enum</label>
                   <div

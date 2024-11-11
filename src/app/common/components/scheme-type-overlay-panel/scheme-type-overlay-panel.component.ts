@@ -144,6 +144,12 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   deprecatedNumber: boolean = false;
   isNullableNumber: boolean = false;
 
+  //Boolean
+  selectedBooleanBehavior: Type | undefined;
+  defaultBoolean: Type | undefined;
+  deprecatedBoolean: boolean = false;
+  isNullableBoolean: boolean = false;
+
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
   maxItems: number | null = null;
@@ -181,8 +187,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   ];
 
   numberFormats = [{ name: 'float' }, { name: 'double' }];
-
-  defaultBoolean: string = '';
 
   booleanDefaults = [{ name: 'true' }, { name: 'false' }];
 
@@ -452,6 +456,62 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.exclusiveMaxNumber = !!number.exclusiveMaximum || false;
       this.isNullableNumber = true;
     }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'boolean'
+    ) {
+      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+        this.selectedBooleanBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+        this.selectedBooleanBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedBooleanBehavior = { name: 'Read/Write' };
+      }
+      if (this.selectedSchema?.properties[rowData.name].default) {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+        this.defaultBoolean = { name: 'true' };
+      } else if (!this.selectedSchema?.properties[rowData.name].default) {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+
+        this.defaultBoolean = { name: 'false' };
+      } else {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+
+        this.defaultBoolean = { name: '' };
+      }
+      this.deprecatedBoolean =
+        this.selectedSchema?.properties[rowData.name].deprecated || false;
+      this.isNullableBoolean = false;
+    } else if (
+      col.field === 'type' &&
+      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+      this.selectedSchema?.properties[rowData.name].type.includes('boolean') &&
+      this.selectedSchema?.properties[rowData.name].type.includes('null')
+    ) {
+      const boolean = this.selectedSchema.properties[rowData.name];
+
+      if (boolean.writeOnly) {
+        this.selectedBooleanBehavior = { name: 'WriteOnly' };
+      } else if (boolean.readOnly) {
+        this.selectedBooleanBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedBooleanBehavior = { name: 'Read/Write' };
+      }
+      if (this.selectedSchema?.properties[rowData.name].default) {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+        this.defaultBoolean = { name: 'true' };
+      } else if (!this.selectedSchema?.properties[rowData.name].default) {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+
+        this.defaultBoolean = { name: 'false' };
+      } else {
+        console.log(this.selectedSchema?.properties[rowData.name].default);
+
+        this.defaultBoolean = { name: '' };
+      }
+      this.deprecatedBoolean = boolean.deprecated || false;
+      this.isNullableBoolean = true;
+    }
 
     this.op.toggle(event);
   }
@@ -716,6 +776,81 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     }
   }
 
+  onBooleanFieldChange(field: string, value: any): void {
+    if (this.selectedSchema && this.selectedSchema.properties) {
+      const boolean = this.selectedSchema?.properties[this.rowData.name];
+
+      if (!boolean) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedBooleanBehavior':
+          if (value.name === 'WriteOnly') {
+            boolean.writeOnly = true;
+            delete boolean.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            boolean.readOnly = true;
+            delete boolean.writeOnly;
+          } else {
+            delete boolean.readOnly;
+            delete boolean.writeOnly;
+          }
+          break;
+        case 'defaultBoolean':
+          console.log('Default Boolean:', value.name);
+
+          if (typeof value.name === 'string') {
+            if (value.name.toLowerCase() === 'true') {
+              boolean.default = true;
+            } else if (value.name.toLowerCase() === 'false') {
+              boolean.default = false;
+            } else {
+              console.warn('Unexpected value for defaultBoolean:', value.name);
+              boolean.default = null;
+            }
+          } else {
+            boolean.default = !!value.name;
+          }
+          break;
+        case 'isNullableBoolean':
+          if (value) {
+            if (Array.isArray(boolean.type)) {
+              if (!boolean.type.includes('null')) {
+                boolean.type.push('null');
+              }
+            } else if (typeof boolean.type === 'string') {
+              boolean.type = [boolean.type, 'null'];
+            } else {
+              console.warn('Unexpected type, resetting to ["string", "null"]');
+              boolean.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(boolean.type)) {
+              boolean.type = boolean.type.filter((t: string) => t !== 'null');
+              if (boolean.type.length === 1) {
+                boolean.type = boolean.type[0];
+              }
+            } else if (typeof boolean.type === 'string') {
+              console.log('Type is already not nullable');
+            } else {
+              console.warn('Unexpected type, resetting to "string"');
+              boolean.type = 'string';
+            }
+          }
+
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
   onNumberFieldBlur(field: string, event: any): void {
     const value = event.target?.value || event;
     this.onNumberFieldChange(field, value);
@@ -732,8 +867,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
       switch (field) {
         case 'selectedNumberFormat':
-          console.log(value.name);
-          console.log('asdsasd');
           number.format = value.name || null;
           break;
         case 'selectedNumberBehavior':
