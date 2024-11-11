@@ -159,11 +159,18 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   enumValues: string[] = [];
   showEnumInput: boolean = false;
 
+  //Array
+  selectedArrayBehavior: Type | undefined;
+  minArrayItems: number | null = null;
+  maxArrayItems: number | null = null;
+  uniqueArrayItems: boolean = false;
+  deprecatedArray: boolean = false;
+  isNullableArray: boolean = false;
+
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
   maxItems: number | null = null;
   uniqueItems: boolean = false;
-  deprecatedArray: boolean = false;
 
   stringFormats: Type[] = [
     { name: 'None' },
@@ -510,7 +517,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       col.field === 'type' &&
       this.selectedSchema?.properties[rowData.name]?.enum
     ) {
-      console.log(this.selectedSchema?.properties[rowData.name]);
       const enumValue = this.selectedSchema.properties[rowData.name];
 
       this.enumValues = enumValue.enum;
@@ -523,13 +529,60 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         this.selectedEnumBehavior = { name: 'Read/Write' };
       }
       this.enumDefault = enumValue.default || '';
-      console.log(enumValue.default);
       this.enumExample = enumValue.example || '';
-      console.log(enumValue.example);
       this.deprecatedEnum = enumValue.deprecated || false;
+    }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'array'
+    ) {
+      const arrayValue = this.selectedSchema.properties[rowData.name];
+      console.log(this.selectedSchema?.properties[rowData.name]);
+
+      if (arrayValue.writeOnly) {
+        this.selectedArrayBehavior = { name: 'WriteOnly' };
+      } else if (arrayValue.readOnly) {
+        this.selectedArrayBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedArrayBehavior = { name: 'Read/Write' };
+      }
+
+      this.minArrayItems = arrayValue.minItems || null;
+      this.maxArrayItems = arrayValue.maxItems || null;
+      this.uniqueArrayItems = arrayValue.uniqueItems || false;
+      this.deprecatedArray = arrayValue.deprecated || false;
+      this.isNullableArray = false;
+      //TODO: Array items
+    } else if (
+      col.field === 'type' &&
+      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+      this.selectedSchema?.properties[rowData.name].type.includes('array') &&
+      this.selectedSchema?.properties[rowData.name].type.includes('null')
+    ) {
+      const arrayValue = this.selectedSchema.properties[rowData.name];
+      console.log(this.selectedSchema?.properties[rowData.name]);
+
+      if (arrayValue.writeOnly) {
+        this.selectedArrayBehavior = { name: 'WriteOnly' };
+      } else if (arrayValue.readOnly) {
+        this.selectedArrayBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedArrayBehavior = { name: 'Read/Write' };
+      }
+
+      this.minArrayItems = arrayValue.minItems || null;
+      this.maxArrayItems = arrayValue.maxItems || null;
+      this.uniqueArrayItems = arrayValue.uniqueItems || false;
+      this.deprecatedArray = arrayValue.deprecated || false;
+      this.isNullableArray = true;
+      //TODO: Array items
     }
 
     this.op.toggle(event);
+
+     setTimeout(() => {
+       this.op.align();
+     }, 0);
   }
 
   onFieldBlur(field: string, event: any): void {
@@ -895,21 +948,16 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'enumExample':
           if (value !== null) {
             enumValue.example = value;
-            console.log(enumValue.enumExample); //
             break;
           } else {
-            console.log('Example Enum:', value);
             delete enumValue.example;
             break;
           }
         case 'enumDefault':
           if (value !== null) {
             enumValue.default = value;
-            console.log(enumValue.enumDefault);
             break;
           } else {
-            console.log('Default Enum:', value);
-
             delete enumValue.default;
             break;
           }

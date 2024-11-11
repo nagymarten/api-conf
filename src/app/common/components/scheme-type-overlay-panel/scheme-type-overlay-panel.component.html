@@ -1,936 +1,970 @@
-<p-overlayPanel #op (onHide)="onOverlayHide()">
-  <div class="flex flex-column gap-3 w-25rem">
-    <div>
-      <p-tabMenu
-        [model]="responseExamples"
-        [(activeItem)]="activeItem"
-      ></p-tabMenu>
-      <p-divider />
+<p-overlayPanel #op (onHide)="onOverlayHide()" [baseZIndex]="1000">
+  <div class="overlay-wrapper">
+    <div class="flex flex-column gap-3 w-25rem">
+      <div>
+        <p-tabMenu
+          [model]="responseExamples"
+          [(activeItem)]="activeItem"
+        ></p-tabMenu>
+        <p-divider />
 
-      <div *ngIf="activeItem?.label === 'Type'">
-        <div class="card flex-column">
-          <div class="type-selection-container">
-            <p-dropdown
-              [options]="types"
-              [(ngModel)]="selectedType"
-              optionLabel="name"
-              placeholder="Select type"
-              [showClear]="true"
-              [style]="{ width: '100%' }"
-              (onChange)="onTypeSelect()"
-            ></p-dropdown>
+        <div *ngIf="activeItem?.label === 'Type'">
+          <div class="card flex-column">
+            <div class="type-selection-container">
+              <p-dropdown
+                [options]="types"
+                [(ngModel)]="selectedType"
+                optionLabel="name"
+                placeholder="Select type"
+                [showClear]="true"
+                [style]="{ width: '100%' }"
+                (onChange)="onTypeSelect()"
+              ></p-dropdown>
+            </div>
+
+            <p-divider />
+
+            <ng-container *ngIf="selectedType?.name === 'object'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="object-properties-container">
+                    <div class="form-group">
+                      <label for="minProperties">minProperties</label>
+                      <input
+                        id="minProperties"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="minProperties"
+                        (blur)="onFieldBlur('minProperties', $event)"
+                        (keydown.enter)="onFieldBlur('minProperties', $event)"
+                        [style]="{ width: '100%' }"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maxProperties">maxProperties</label>
+                      <input
+                        id="maxProperties"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="maxProperties"
+                        (blur)="onFieldBlur('maxProperties', $event)"
+                        (keydown.enter)="onFieldBlur('maxProperties', $event)"
+                        [style]="{ width: '100%' }"
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="allow_additional_properties"
+                        >allow additional properties</label
+                      >
+                      <p-inputSwitch
+                        id="allow_additional_properties"
+                        [(ngModel)]="allowAdditionalProperties"
+                        (onChange)="
+                          onFieldChange(
+                            'allowAdditionalProperties',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="deprecatedSwitch">deprecated</label>
+                      <p-inputSwitch
+                        id="deprecatedSwitch"
+                        [(ngModel)]="deprecated"
+                        (onChange)="onFieldChange('deprecated', $event.checked)"
+                      ></p-inputSwitch>
+
+                      <p-inputSwitch
+                        id="isNullableObject"
+                        [(ngModel)]="isNullableObject"
+                        [pTooltip]="
+                          isNullableObject ? 'Nullable' : 'Not nullable'
+                        "
+                        (onChange)="
+                          onFieldChange('isNullableObject', $event.checked)
+                        "
+                        class="not-nullable-button"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'array'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="array-properties-container">
+                    <div class="form-group">
+                      <label for="behavior">Behavior</label>
+                      <p-dropdown
+                        id="behavior"
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedArrayBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                        [style]="{ width: '100%' }"
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="minItems">minItems</label>
+                      <input
+                        id="minItems"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="minArrayItems"
+                        [style]="{ width: '100%' }"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maxItems">maxItems</label>
+                      <input
+                        id="maxItems"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="maxArrayItems"
+                        [style]="{ width: '100%' }"
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="uniqe_items">uniqe items</label>
+                      <p-inputSwitch
+                        id="uniqe_items"
+                        [(ngModel)]="uniqueArrayItems"
+                      ></p-inputSwitch>
+
+                      <label for="deprecatedSwitch">deprecated</label>
+                      <p-inputSwitch
+                        id="deprecated"
+                        [(ngModel)]="deprecatedArray"
+                      ></p-inputSwitch>
+
+                      <p-inputSwitch
+                        id="isNullableArray"
+                        [(ngModel)]="isNullableArray"
+                        [pTooltip]="
+                          isNullableArray ? 'Nullable' : 'Not nullable'
+                        "
+                        (onChange)="
+                          onFieldChange('isNullableArray', $event.checked)
+                        "
+                        class="not-nullable-button"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+                <app-sub-scheme-type></app-sub-scheme-type>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'integer'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="properties-container">
+                    <div class="form-group">
+                      <label for="format">Format</label>
+                      <p-dropdown
+                        id="format"
+                        [options]="intFormats"
+                        [(ngModel)]="selectedIntegerFormat"
+                        placeholder="Select integer format"
+                        [style]="{ width: '100%' }"
+                        optionLabel="name"
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'selectedIntegerFormat',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="behavior">Behavior</label>
+                      <p-dropdown
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedIntegerBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'selectedIntegerBehavior',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="default">Default</label>
+                      <input
+                        id="default"
+                        type="text"
+                        pInputText
+                        placeholder="defaultInteger"
+                        [(ngModel)]="defaultInteger"
+                        [style]="{ width: '100%' }"
+                        (blur)="onIntegerFieldBlur('defaultInteger', $event)"
+                        (keydown.enter)="
+                          onIntegerFieldBlur('defaultInteger', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="example">Example</label>
+                      <input
+                        id="example"
+                        type="text"
+                        pInputText
+                        placeholder="exampleInteger"
+                        [(ngModel)]="exampleInteger"
+                        [style]="{ width: '100%' }"
+                        (blur)="onIntegerFieldBlur('exampleInteger', $event)"
+                        (keydown.enter)="
+                          onIntegerFieldBlur('exampleInteger', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="minimum">Minimum</label>
+                      <input
+                        id="minimum"
+                        type="number"
+                        pInputText
+                        placeholder="0"
+                        [(ngModel)]="minimumInteger"
+                        [style]="{ width: '100%' }"
+                        (blur)="onIntegerFieldBlur('minimumInteger', $event)"
+                        (keydown.enter)="
+                          onIntegerFieldBlur('minimumInteger', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maximum">Maximum</label>
+                      <input
+                        id="maximum"
+                        type="number"
+                        pInputText
+                        placeholder="100"
+                        [(ngModel)]="maximumInteger"
+                        [style]="{ width: '100%' }"
+                        (blur)="onIntegerFieldBlur('maximumInteger', $event)"
+                        (keydown.enter)="
+                          onIntegerFieldBlur('maximumInteger', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="multipleOf">Multiple Of</label>
+                      <input
+                        id="multipleOf"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="multipleOfInteger"
+                        [style]="{ width: '100%' }"
+                        (blur)="onIntegerFieldBlur('multipleOfInteger', $event)"
+                        (keydown.enter)="
+                          onIntegerFieldBlur('multipleOfInteger', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="exclusiveMin">exclusiveMin</label>
+
+                      <p-inputSwitch
+                        id="exclusiveMin"
+                        [(ngModel)]="exclusiveMinInteger"
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'exclusiveMinInteger',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+                      <label for="exclusiveMax">exclusiveMax</label>
+
+                      <p-inputSwitch
+                        id="exclusiveMax"
+                        [(ngModel)]="exclusiveMaxInteger"
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'exclusiveMaxInteger',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+                      <label for="deprecated">deprecated</label>
+
+                      <p-inputSwitch
+                        id="deprecated"
+                        [(ngModel)]="deprecatedInteger"
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'deprecatedInteger',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+
+                      <p-inputSwitch
+                        id="isNullableInteger"
+                        [(ngModel)]="isNullableInteger"
+                        [pTooltip]="
+                          isNullableInteger ? 'Nullable' : 'Not nullable'
+                        "
+                        (onChange)="
+                          onIntegerFieldChange(
+                            'isNullableInteger',
+                            $event.checked
+                          )
+                        "
+                        class="not-nullable-button"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'number'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="properties-container">
+                    <div class="form-group">
+                      <label for="format">Format</label>
+                      <p-dropdown
+                        id="format"
+                        [options]="numberFormats"
+                        [(ngModel)]="selectedNumberFormat"
+                        optionLabel="name"
+                        placeholder="Select a value"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onNumberFieldChange(
+                            'selectedNumberFormat',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="behaviorNumber">Behavior</label>
+                      <p-dropdown
+                        id="behaviorNumber"
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedNumberBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onNumberFieldChange(
+                            'selectedNumberBehavior',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="defaultNumber">Default</label>
+                      <input
+                        id="defaultNumber"
+                        type="text"
+                        pInputText
+                        placeholder="default"
+                        [(ngModel)]="defaultNumber"
+                        [style]="{ width: '100%' }"
+                        (blur)="onNumberFieldBlur('defaultNumber', $event)"
+                        (keydown.enter)="
+                          onNumberFieldBlur('defaultNumber', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="exampleNumber">Example</label>
+                      <input
+                        id="exampleNumber"
+                        type="text"
+                        pInputText
+                        placeholder="example"
+                        [(ngModel)]="exampleNumber"
+                        [style]="{ width: '100%' }"
+                        (blur)="onNumberFieldBlur('exampleNumber', $event)"
+                        (keydown.enter)="
+                          onNumberFieldBlur('exampleNumber', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="minimumNumber">Minimum</label>
+                      <input
+                        id="minimumNumber"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="minimumNumber"
+                        [style]="{ width: '100%' }"
+                        (blur)="onNumberFieldBlur('minimumNumber', $event)"
+                        (keydown.enter)="
+                          onNumberFieldBlur('minimumNumber', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maximumNumber">Maximum</label>
+                      <input
+                        id="maximumNumber"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="maximumNumber"
+                        [style]="{ width: '100%' }"
+                        (blur)="onNumberFieldBlur('maximumNumber', $event)"
+                        (keydown.enter)="
+                          onNumberFieldBlur('maximumNumber', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="multipleOfNumber">Multiple Of</label>
+                      <input
+                        id="multipleOfNumber"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="multipleOfNumber"
+                        [style]="{ width: '100%' }"
+                        (blur)="onNumberFieldBlur('multipleOfNumber', $event)"
+                        (keydown.enter)="
+                          onNumberFieldBlur('multipleOfNumber', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="exclusiveMinSwitch">exclusiveMin</label>
+                      <p-inputSwitch
+                        id="exclusiveMinSwitch"
+                        [(ngModel)]="exclusiveMinNumber"
+                        (onChange)="
+                          onNumberFieldChange(
+                            'exclusiveMinNumber',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+
+                      <label for="exclusiveMaxSwitch">exclusiveMax</label>
+                      <p-inputSwitch
+                        id="exclusiveMaxSwitch"
+                        [(ngModel)]="exclusiveMaxNumber"
+                        (onChange)="
+                          onNumberFieldChange(
+                            'exclusiveMaxNumber',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+
+                      <label for="deprecatedSwitch">deprecated</label>
+                      <p-inputSwitch
+                        id="deprecatedSwitch"
+                        [(ngModel)]="deprecatedNumber"
+                        (onChange)="
+                          onNumberFieldChange(
+                            'deprecatedNumber',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+
+                      <p-inputSwitch
+                        id="isNullableNumber"
+                        [(ngModel)]="isNullableNumber"
+                        [pTooltip]="
+                          isNullableNumber ? 'Nullable' : 'Not nullable'
+                        "
+                        (onChange)="
+                          onNumberFieldChange(
+                            'isNullableNumber',
+                            $event.checked
+                          )
+                        "
+                        class="not-nullable-button"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'string'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="string-properties-container">
+                    <div class="form-group">
+                      <label for="format">Format</label>
+                      <p-dropdown
+                        [options]="stringFormats"
+                        [(ngModel)]="selectedStringFormat"
+                        optionLabel="name"
+                        placeholder="Select a value"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onStringFormatSelect(
+                            'selectedStringFormat',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="behavior">Behavior</label>
+                      <p-dropdown
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedStringBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onBehaviorOptionsSelect(
+                            'selectedStringBehavior',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="default">Default</label>
+                      <input
+                        id="default"
+                        type="text"
+                        pInputText
+                        placeholder="default"
+                        [(ngModel)]="defaultString"
+                        [style]="{ width: '100%' }"
+                        (blur)="onStringFieldBlur('defaultString', $event)"
+                        (keydown.enter)="
+                          onStringFieldBlur('defaultString', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="example">Example</label>
+                      <input
+                        id="example"
+                        type="text"
+                        pInputText
+                        placeholder="example"
+                        [(ngModel)]="exampleString"
+                        [style]="{ width: '100%' }"
+                        (blur)="onStringFieldBlur('exampleString', $event)"
+                        (keydown.enter)="
+                          onStringFieldBlur('exampleString', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="pattern">Pattern</label>
+                      <input
+                        id="pattern"
+                        type="text"
+                        pInputText
+                        placeholder="^[A-Za-z0-9 _-]+$"
+                        [(ngModel)]="stringPattern"
+                        [style]="{ width: '100%' }"
+                        (blur)="onStringFieldBlur('stringPattern', $event)"
+                        (keydown.enter)="
+                          onStringFieldBlur('stringPattern', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="minLength">minLength</label>
+                      <input
+                        id="minLength"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="stringMinLength"
+                        [style]="{ width: '100%' }"
+                        (blur)="onStringFieldBlur('stringMinLength', $event)"
+                        (keydown.enter)="
+                          onStringFieldBlur('stringMinLength', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maxLength">maxLength</label>
+                      <input
+                        id="maxLength"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="stringMaxLength"
+                        [style]="{ width: '100%' }"
+                        (blur)="onStringFieldBlur('stringMaxLength', $event)"
+                        (keydown.enter)="
+                          onStringFieldBlur('stringMaxLength', $event)
+                        "
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="isStringDeprecated">deprecated</label>
+                      <p-inputSwitch
+                        [(ngModel)]="isStringDeprecated"
+                        id="isStringDeprecated"
+                        (onChange)="
+                          onStringFieldChange(
+                            'isStringDeprecated',
+                            $event.checked
+                          )
+                        "
+                      ></p-inputSwitch>
+
+                      <p-inputSwitch
+                        id="isNullableString"
+                        [(ngModel)]="isNullableString"
+                        [pTooltip]="
+                          isNullableString ? 'Nullable' : 'Not nullable'
+                        "
+                        (onChange)="
+                          onStringFieldChange(
+                            'isNullableString',
+                            $event.checked
+                          )
+                        "
+                        class="not-nullable-button"
+                      ></p-inputSwitch>
+                    </div>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'boolean'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="boolean-properties-container">
+                  <div class="form-group">
+                    <label for="behavior">Behavior</label>
+                    <p-dropdown
+                      id="behavior"
+                      [options]="behaviorOptions"
+                      [(ngModel)]="selectedBooleanBehavior"
+                      optionLabel="name"
+                      placeholder="Read/Write"
+                      [style]="{ width: '100%' }"
+                      (onChange)="
+                        onBooleanFieldChange(
+                          'selectedBooleanBehavior',
+                          $event.value
+                        )
+                      "
+                    ></p-dropdown>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="default">default</label>
+                    <p-dropdown
+                      id="default"
+                      [options]="booleanDefaults"
+                      [(ngModel)]="defaultBoolean"
+                      optionLabel="name"
+                      placeholder="Select a value"
+                      [style]="{ width: '100%' }"
+                      (onChange)="
+                        onBooleanFieldChange('defaultBoolean', $event.value)
+                      "
+                    ></p-dropdown>
+                  </div>
+
+                  <p-divider />
+
+                  <div class="toggle-group">
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      [(ngModel)]="deprecatedBoolean"
+                      id="deprecated"
+                      (onChange)="
+                        onBooleanFieldChange(
+                          'deprecatedBoolean',
+                          $event.checked
+                        )
+                      "
+                    ></p-inputSwitch>
+                    <p-inputSwitch
+                      id="isNullableBoolean"
+                      [(ngModel)]="isNullableBoolean"
+                      [pTooltip]="
+                        isNullableBoolean ? 'Nullable' : 'Not nullable'
+                      "
+                      (onChange)="
+                        onBooleanFieldChange(
+                          'isNullableBoolean',
+                          $event.checked
+                        )
+                      "
+                      class="not-nullable-button"
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'enum'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="enum-properties-container">
+                  <div class="form-group">
+                    <label for="enumValues">enum</label>
+                    <div
+                      *ngFor="let value of enumValues; let i = index"
+                      class="enum-input-row"
+                    >
+                      <input
+                        type="text"
+                        pInputText
+                        [(ngModel)]="enumValues[i]"
+                        placeholder="Enter value"
+                        class="enum-input-field"
+                      />
+
+                      <p-button
+                        icon="pi pi-ellipsis-v"
+                        class="p-button-text p-button-icon-only menu-button"
+                        (click)="enumOverlayPanels?.open($event)"
+                        aria-label="Options"
+                      ></p-button>
+                      <app-enum-overlay-panel
+                        #enumOverlayPanels
+                        [index]="i"
+                        [value]="value"
+                        [markedAsExample]="this.enumExample"
+                        [markedAsDefault]="this.enumDefault"
+                        (markAsExample)="onMarkAsExample(i)"
+                        (markAsDefault)="onMarkAsDefault(i)"
+                      >
+                      </app-enum-overlay-panel>
+
+                      <p-button
+                        icon="pi pi-trash"
+                        class="p-button-text p-button-icon-only delete-button"
+                        (click)="removeEnumValue(i)"
+                        aria-label="Remove value"
+                        pTooltip="Remove this value"
+                      ></p-button>
+                    </div>
+
+                    <p-button
+                      label="Add"
+                      icon="pi pi-plus"
+                      class="p-button-text add-button"
+                      (click)="addEnumValue()"
+                    ></p-button>
+
+                    <div class="form-group">
+                      <label for="behavior">Behavior</label>
+                      <p-dropdown
+                        id="behavior"
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedEnumBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                        [style]="{ width: '100%' }"
+                        (onChange)="
+                          onEnumFieldChange(
+                            'selectedEnumBehavior',
+                            $event.value
+                          )
+                        "
+                      ></p-dropdown>
+                    </div>
+                  </div>
+                  <div class="toggle-group">
+                    <label for="deprecatedSwitch">deprecated</label>
+                    <p-inputSwitch
+                      [(ngModel)]="deprecatedEnum"
+                      id="deprecated"
+                      (onChange)="
+                        onEnumFieldChange('deprecatedEnum', $event.checked)
+                      "
+                    ></p-inputSwitch>
+                  </div>
+                </div>
+              </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="selectedType?.name === 'dictionary'">
+              <p-panel
+                header="Properties"
+                [toggleable]="true"
+                [collapsed]="false"
+              >
+                <div class="properties-content">
+                  <div class="dictionary-properties-container">
+                    <div class="form-group">
+                      <label for="minProperties">minProperties</label>
+                      <input
+                        id="minProperties"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="minProperties"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="maxProperties">maxProperties</label>
+                      <input
+                        id="maxProperties"
+                        type="number"
+                        pInputText
+                        placeholder=">= 0"
+                        [(ngModel)]="maxProperties"
+                      />
+                    </div>
+
+                    <div class="toggle-group">
+                      <label for="deprecatedSwitch">deprecated</label>
+                      <p-inputSwitch
+                        id="deprecatedSwitch"
+                        [(ngModel)]="deprecated"
+                      ></p-inputSwitch>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="behavior">behavior</label>
+                      <p-dropdown
+                        id="behavior"
+                        [options]="behaviorOptions"
+                        [(ngModel)]="selectedBehavior"
+                        optionLabel="name"
+                        placeholder="Read/Write"
+                      ></p-dropdown>
+                    </div>
+                  </div>
+                </div>
+                <app-sub-scheme-type></app-sub-scheme-type>
+              </p-panel>
+            </ng-container>
           </div>
-
-          <p-divider />
-
-          <ng-container *ngIf="selectedType?.name === 'object'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="object-properties-container">
-                  <div class="form-group">
-                    <label for="minProperties">minProperties</label>
-                    <input
-                      id="minProperties"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="minProperties"
-                      (blur)="onFieldBlur('minProperties', $event)"
-                      (keydown.enter)="onFieldBlur('minProperties', $event)"
-                      [style]="{ width: '100%' }"
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maxProperties">maxProperties</label>
-                    <input
-                      id="maxProperties"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="maxProperties"
-                      (blur)="onFieldBlur('maxProperties', $event)"
-                      (keydown.enter)="onFieldBlur('maxProperties', $event)"
-                      [style]="{ width: '100%' }"
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="allow_additional_properties"
-                      >allow additional properties</label
-                    >
-                    <p-inputSwitch
-                      id="allow_additional_properties"
-                      [(ngModel)]="allowAdditionalProperties"
-                      (onChange)="
-                        onFieldChange(
-                          'allowAdditionalProperties',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="deprecatedSwitch">deprecated</label>
-                    <p-inputSwitch
-                      id="deprecatedSwitch"
-                      [(ngModel)]="deprecated"
-                      (onChange)="onFieldChange('deprecated', $event.checked)"
-                    ></p-inputSwitch>
-
-                    <p-inputSwitch
-                      id="isNullableObject"
-                      [(ngModel)]="isNullableObject"
-                      [pTooltip]="
-                        isNullableObject ? 'Nullable' : 'Not nullable'
-                      "
-                      (onChange)="
-                        onFieldChange('isNullableObject', $event.checked)
-                      "
-                      class="not-nullable-button"
-                    ></p-inputSwitch>
-                  </div>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'array'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="array-properties-container">
-                  <div class="form-group">
-                    <label for="behavior">Behavior</label>
-                    <p-dropdown
-                      id="behavior"
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                      [style]="{ width: '100%' }"
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="minItems">minItems</label>
-                    <input
-                      id="minItems"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="minItems"
-                      [style]="{ width: '100%' }"
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maxItems">maxItems</label>
-                    <input
-                      id="maxItems"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="maxItems"
-                      [style]="{ width: '100%' }"
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="uniqe_items">uniqe items</label>
-                    <p-inputSwitch
-                      id="uniqe_items"
-                      [(ngModel)]="deprecated"
-                    ></p-inputSwitch>
-
-                    <label for="deprecatedSwitch">deprecated</label>
-                    <p-inputSwitch
-                      id="deprecated"
-                      [(ngModel)]="deprecated"
-                    ></p-inputSwitch>
-                  </div>
-                </div>
-              </div>
-              <app-sub-scheme-type></app-sub-scheme-type>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'integer'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="properties-container">
-                  <div class="form-group">
-                    <label for="format">Format</label>
-                    <p-dropdown
-                      id="format"
-                      [options]="intFormats"
-                      [(ngModel)]="selectedIntegerFormat"
-                      placeholder="Select integer format"
-                      [style]="{ width: '100%' }"
-                      optionLabel="name"
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'selectedIntegerFormat',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="behavior">Behavior</label>
-                    <p-dropdown
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedIntegerBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'selectedIntegerBehavior',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="default">Default</label>
-                    <input
-                      id="default"
-                      type="text"
-                      pInputText
-                      placeholder="defaultInteger"
-                      [(ngModel)]="defaultInteger"
-                      [style]="{ width: '100%' }"
-                      (blur)="onIntegerFieldBlur('defaultInteger', $event)"
-                      (keydown.enter)="
-                        onIntegerFieldBlur('defaultInteger', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="example">Example</label>
-                    <input
-                      id="example"
-                      type="text"
-                      pInputText
-                      placeholder="exampleInteger"
-                      [(ngModel)]="exampleInteger"
-                      [style]="{ width: '100%' }"
-                      (blur)="onIntegerFieldBlur('exampleInteger', $event)"
-                      (keydown.enter)="
-                        onIntegerFieldBlur('exampleInteger', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="minimum">Minimum</label>
-                    <input
-                      id="minimum"
-                      type="number"
-                      pInputText
-                      placeholder="0"
-                      [(ngModel)]="minimumInteger"
-                      [style]="{ width: '100%' }"
-                      (blur)="onIntegerFieldBlur('minimumInteger', $event)"
-                      (keydown.enter)="
-                        onIntegerFieldBlur('minimumInteger', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maximum">Maximum</label>
-                    <input
-                      id="maximum"
-                      type="number"
-                      pInputText
-                      placeholder="100"
-                      [(ngModel)]="maximumInteger"
-                      [style]="{ width: '100%' }"
-                      (blur)="onIntegerFieldBlur('maximumInteger', $event)"
-                      (keydown.enter)="
-                        onIntegerFieldBlur('maximumInteger', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="multipleOf">Multiple Of</label>
-                    <input
-                      id="multipleOf"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="multipleOfInteger"
-                      [style]="{ width: '100%' }"
-                      (blur)="onIntegerFieldBlur('multipleOfInteger', $event)"
-                      (keydown.enter)="
-                        onIntegerFieldBlur('multipleOfInteger', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="exclusiveMin">exclusiveMin</label>
-
-                    <p-inputSwitch
-                      id="exclusiveMin"
-                      [(ngModel)]="exclusiveMinInteger"
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'exclusiveMinInteger',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-                    <label for="exclusiveMax">exclusiveMax</label>
-
-                    <p-inputSwitch
-                      id="exclusiveMax"
-                      [(ngModel)]="exclusiveMaxInteger"
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'exclusiveMaxInteger',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-                    <label for="deprecated">deprecated</label>
-
-                    <p-inputSwitch
-                      id="deprecated"
-                      [(ngModel)]="deprecatedInteger"
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'deprecatedInteger',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-
-                    <p-inputSwitch
-                      id="isNullableInteger"
-                      [(ngModel)]="isNullableInteger"
-                      [pTooltip]="
-                        isNullableInteger ? 'Nullable' : 'Not nullable'
-                      "
-                      (onChange)="
-                        onIntegerFieldChange(
-                          'isNullableInteger',
-                          $event.checked
-                        )
-                      "
-                      class="not-nullable-button"
-                    ></p-inputSwitch>
-                  </div>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'number'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="properties-container">
-                  <div class="form-group">
-                    <label for="format">Format</label>
-                    <p-dropdown
-                      id="format"
-                      [options]="numberFormats"
-                      [(ngModel)]="selectedNumberFormat"
-                      optionLabel="name"
-                      placeholder="Select a value"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onNumberFieldChange(
-                          'selectedNumberFormat',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="behaviorNumber">Behavior</label>
-                    <p-dropdown
-                      id="behaviorNumber"
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedNumberBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onNumberFieldChange(
-                          'selectedNumberBehavior',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="defaultNumber">Default</label>
-                    <input
-                      id="defaultNumber"
-                      type="text"
-                      pInputText
-                      placeholder="default"
-                      [(ngModel)]="defaultNumber"
-                      [style]="{ width: '100%' }"
-                      (blur)="onNumberFieldBlur('defaultNumber', $event)"
-                      (keydown.enter)="
-                        onNumberFieldBlur('defaultNumber', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="exampleNumber">Example</label>
-                    <input
-                      id="exampleNumber"
-                      type="text"
-                      pInputText
-                      placeholder="example"
-                      [(ngModel)]="exampleNumber"
-                      [style]="{ width: '100%' }"
-                      (blur)="onNumberFieldBlur('exampleNumber', $event)"
-                      (keydown.enter)="
-                        onNumberFieldBlur('exampleNumber', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="minimumNumber">Minimum</label>
-                    <input
-                      id="minimumNumber"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="minimumNumber"
-                      [style]="{ width: '100%' }"
-                      (blur)="onNumberFieldBlur('minimumNumber', $event)"
-                      (keydown.enter)="
-                        onNumberFieldBlur('minimumNumber', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maximumNumber">Maximum</label>
-                    <input
-                      id="maximumNumber"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="maximumNumber"
-                      [style]="{ width: '100%' }"
-                      (blur)="onNumberFieldBlur('maximumNumber', $event)"
-                      (keydown.enter)="
-                        onNumberFieldBlur('maximumNumber', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="multipleOfNumber">Multiple Of</label>
-                    <input
-                      id="multipleOfNumber"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="multipleOfNumber"
-                      [style]="{ width: '100%' }"
-                      (blur)="onNumberFieldBlur('multipleOfNumber', $event)"
-                      (keydown.enter)="
-                        onNumberFieldBlur('multipleOfNumber', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="exclusiveMinSwitch">exclusiveMin</label>
-                    <p-inputSwitch
-                      id="exclusiveMinSwitch"
-                      [(ngModel)]="exclusiveMinNumber"
-                      (onChange)="
-                        onNumberFieldChange(
-                          'exclusiveMinNumber',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-
-                    <label for="exclusiveMaxSwitch">exclusiveMax</label>
-                    <p-inputSwitch
-                      id="exclusiveMaxSwitch"
-                      [(ngModel)]="exclusiveMaxNumber"
-                      (onChange)="
-                        onNumberFieldChange(
-                          'exclusiveMaxNumber',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-
-                    <label for="deprecatedSwitch">deprecated</label>
-                    <p-inputSwitch
-                      id="deprecatedSwitch"
-                      [(ngModel)]="deprecatedNumber"
-                      (onChange)="
-                        onNumberFieldChange('deprecatedNumber', $event.checked)
-                      "
-                    ></p-inputSwitch>
-
-                    <p-inputSwitch
-                      id="isNullableNumber"
-                      [(ngModel)]="isNullableNumber"
-                      [pTooltip]="
-                        isNullableNumber ? 'Nullable' : 'Not nullable'
-                      "
-                      (onChange)="
-                        onNumberFieldChange('isNullableNumber', $event.checked)
-                      "
-                      class="not-nullable-button"
-                    ></p-inputSwitch>
-                  </div>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'string'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="string-properties-container">
-                  <div class="form-group">
-                    <label for="format">Format</label>
-                    <p-dropdown
-                      [options]="stringFormats"
-                      [(ngModel)]="selectedStringFormat"
-                      optionLabel="name"
-                      placeholder="Select a value"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onStringFormatSelect(
-                          'selectedStringFormat',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="behavior">Behavior</label>
-                    <p-dropdown
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedStringBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onBehaviorOptionsSelect(
-                          'selectedStringBehavior',
-                          $event.value
-                        )
-                      "
-                    ></p-dropdown>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="default">Default</label>
-                    <input
-                      id="default"
-                      type="text"
-                      pInputText
-                      placeholder="default"
-                      [(ngModel)]="defaultString"
-                      [style]="{ width: '100%' }"
-                      (blur)="onStringFieldBlur('defaultString', $event)"
-                      (keydown.enter)="
-                        onStringFieldBlur('defaultString', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="example">Example</label>
-                    <input
-                      id="example"
-                      type="text"
-                      pInputText
-                      placeholder="example"
-                      [(ngModel)]="exampleString"
-                      [style]="{ width: '100%' }"
-                      (blur)="onStringFieldBlur('exampleString', $event)"
-                      (keydown.enter)="
-                        onStringFieldBlur('exampleString', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="pattern">Pattern</label>
-                    <input
-                      id="pattern"
-                      type="text"
-                      pInputText
-                      placeholder="^[A-Za-z0-9 _-]+$"
-                      [(ngModel)]="stringPattern"
-                      [style]="{ width: '100%' }"
-                      (blur)="onStringFieldBlur('stringPattern', $event)"
-                      (keydown.enter)="
-                        onStringFieldBlur('stringPattern', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="minLength">minLength</label>
-                    <input
-                      id="minLength"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="stringMinLength"
-                      [style]="{ width: '100%' }"
-                      (blur)="onStringFieldBlur('stringMinLength', $event)"
-                      (keydown.enter)="
-                        onStringFieldBlur('stringMinLength', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maxLength">maxLength</label>
-                    <input
-                      id="maxLength"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="stringMaxLength"
-                      [style]="{ width: '100%' }"
-                      (blur)="onStringFieldBlur('stringMaxLength', $event)"
-                      (keydown.enter)="
-                        onStringFieldBlur('stringMaxLength', $event)
-                      "
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="isStringDeprecated">deprecated</label>
-                    <p-inputSwitch
-                      [(ngModel)]="isStringDeprecated"
-                      id="isStringDeprecated"
-                      (onChange)="
-                        onStringFieldChange(
-                          'isStringDeprecated',
-                          $event.checked
-                        )
-                      "
-                    ></p-inputSwitch>
-
-                    <p-inputSwitch
-                      id="isNullableString"
-                      [(ngModel)]="isNullableString"
-                      [pTooltip]="
-                        isNullableString ? 'Nullable' : 'Not nullable'
-                      "
-                      (onChange)="
-                        onStringFieldChange('isNullableString', $event.checked)
-                      "
-                      class="not-nullable-button"
-                    ></p-inputSwitch>
-                  </div>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'boolean'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="boolean-properties-container">
-                <div class="form-group">
-                  <label for="behavior">Behavior</label>
-                  <p-dropdown
-                    id="behavior"
-                    [options]="behaviorOptions"
-                    [(ngModel)]="selectedBooleanBehavior"
-                    optionLabel="name"
-                    placeholder="Read/Write"
-                    [style]="{ width: '100%' }"
-                    (onChange)="
-                      onBooleanFieldChange(
-                        'selectedBooleanBehavior',
-                        $event.value
-                      )
-                    "
-                  ></p-dropdown>
-                </div>
-
-                <div class="form-group">
-                  <label for="default">default</label>
-                  <p-dropdown
-                    id="default"
-                    [options]="booleanDefaults"
-                    [(ngModel)]="defaultBoolean"
-                    optionLabel="name"
-                    placeholder="Select a value"
-                    [style]="{ width: '100%' }"
-                    (onChange)="
-                      onBooleanFieldChange('defaultBoolean', $event.value)
-                    "
-                  ></p-dropdown>
-                </div>
-
-                <p-divider />
-
-                <div class="toggle-group">
-                  <label for="deprecatedSwitch">deprecated</label>
-                  <p-inputSwitch
-                    [(ngModel)]="deprecatedBoolean"
-                    id="deprecated"
-                    (onChange)="
-                      onBooleanFieldChange('deprecatedBoolean', $event.checked)
-                    "
-                  ></p-inputSwitch>
-                  <p-inputSwitch
-                    id="isNullableBoolean"
-                    [(ngModel)]="isNullableBoolean"
-                    [pTooltip]="isNullableBoolean ? 'Nullable' : 'Not nullable'"
-                    (onChange)="
-                      onBooleanFieldChange('isNullableBoolean', $event.checked)
-                    "
-                    class="not-nullable-button"
-                  ></p-inputSwitch>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'enum'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="enum-properties-container">
-                <div class="form-group">
-                  <label for="enumValues">enum</label>
-                  <div
-                    *ngFor="let value of enumValues; let i = index"
-                    class="enum-input-row"
-                  >
-                    <input
-                      type="text"
-                      pInputText
-                      [(ngModel)]="enumValues[i]"
-                      placeholder="Enter value"
-                      class="enum-input-field"
-                    />
-
-                    <p-button
-                      icon="pi pi-ellipsis-v"
-                      class="p-button-text p-button-icon-only menu-button"
-                      (click)="enumOverlayPanels?.open($event)"
-                      aria-label="Options"
-                    ></p-button>
-                    <app-enum-overlay-panel
-                      #enumOverlayPanels
-                      [index]="i"
-                      [value]="value"
-                      [markedAsExample]="this.enumExample"
-                      [markedAsDefault]="this.enumDefault"
-                      (markAsExample)="onMarkAsExample(i)"
-                      (markAsDefault)="onMarkAsDefault(i)"
-                    >
-                    </app-enum-overlay-panel>
-
-                    <p-button
-                      icon="pi pi-trash"
-                      class="p-button-text p-button-icon-only delete-button"
-                      (click)="removeEnumValue(i)"
-                      aria-label="Remove value"
-                      pTooltip="Remove this value"
-                    ></p-button>
-                  </div>
-
-                  <p-button
-                    label="Add"
-                    icon="pi pi-plus"
-                    class="p-button-text add-button"
-                    (click)="addEnumValue()"
-                  ></p-button>
-
-                  <div class="form-group">
-                    <label for="behavior">Behavior</label>
-                    <p-dropdown
-                      id="behavior"
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedEnumBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                      [style]="{ width: '100%' }"
-                      (onChange)="
-                        onEnumFieldChange('selectedEnumBehavior', $event.value)
-                      "
-                    ></p-dropdown>
-                  </div>
-                </div>
-                <div class="toggle-group">
-                  <label for="deprecatedSwitch">deprecated</label>
-                  <p-inputSwitch
-                    [(ngModel)]="deprecatedEnum"
-                    id="deprecated"
-                    (onChange)="
-                      onEnumFieldChange('deprecatedEnum', $event.checked)
-                    "
-                  ></p-inputSwitch>
-                </div>
-              </div>
-            </p-panel>
-          </ng-container>
-
-          <ng-container *ngIf="selectedType?.name === 'dictionary'">
-            <p-panel
-              header="Properties"
-              [toggleable]="true"
-              [collapsed]="false"
-            >
-              <div class="properties-content">
-                <div class="dictionary-properties-container">
-                  <div class="form-group">
-                    <label for="minProperties">minProperties</label>
-                    <input
-                      id="minProperties"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="minProperties"
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="maxProperties">maxProperties</label>
-                    <input
-                      id="maxProperties"
-                      type="number"
-                      pInputText
-                      placeholder=">= 0"
-                      [(ngModel)]="maxProperties"
-                    />
-                  </div>
-
-                  <div class="toggle-group">
-                    <label for="deprecatedSwitch">deprecated</label>
-                    <p-inputSwitch
-                      id="deprecatedSwitch"
-                      [(ngModel)]="deprecated"
-                    ></p-inputSwitch>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="behavior">behavior</label>
-                    <p-dropdown
-                      id="behavior"
-                      [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
-                      optionLabel="name"
-                      placeholder="Read/Write"
-                    ></p-dropdown>
-                  </div>
-                </div>
-              </div>
-              <app-sub-scheme-type></app-sub-scheme-type>
-            </p-panel>
-          </ng-container>
         </div>
       </div>
-    </div>
 
-    <div *ngIf="activeItem?.label === 'Components'">
-      <div class="p-toolbar-group-start">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search"></i>
-          <input pInputText placeholder="Search" />
-        </span>
-        <p-divider />
+      <div *ngIf="activeItem?.label === 'Components'">
+        <div class="p-toolbar-group-start">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText placeholder="Search" />
+          </span>
+          <p-divider />
 
-        <p-scroller
-          [items]="apiSchemas"
-          [itemSize]="50"
-          [scrollHeight]="scrollHeight"
-          class="border-1 surface-border"
-        >
-          <ng-template pTemplate="item" let-item let-options="options">
-            <div
-              class="flex align-items-center p-2 clickable-item"
-              [ngClass]="{ 'surface-ground': options.odd }"
-              style="height: 50px; cursor: pointer"
-              (click)="onSchemeSelect(item)"
-            >
-              <p-button
-                label="{{ item.name }}"
-                [text]="true"
-                severity="secondary"
-                [style]="{ width: '100%' }"
-              />
-            </div>
-          </ng-template>
-        </p-scroller>
+          <p-scroller
+            [items]="apiSchemas"
+            [itemSize]="50"
+            [scrollHeight]="scrollHeight"
+            class="border-1 surface-border"
+          >
+            <ng-template pTemplate="item" let-item let-options="options">
+              <div
+                class="flex align-items-center p-2 clickable-item"
+                [ngClass]="{ 'surface-ground': options.odd }"
+                style="height: 50px; cursor: pointer"
+                (click)="onSchemeSelect(item)"
+              >
+                <p-button
+                  label="{{ item.name }}"
+                  [text]="true"
+                  severity="secondary"
+                  [style]="{ width: '100%' }"
+                />
+              </div>
+            </ng-template>
+          </p-scroller>
+        </div>
       </div>
-    </div>
 
-    <div *ngIf="activeItem?.label === 'Combine Schemas'">
-      <span>Select an option below to combine your schemas</span>
+      <div *ngIf="activeItem?.label === 'Combine Schemas'">
+        <span>Select an option below to combine your schemas</span>
 
-      <div class="card flex">
-        <p>AND = all of</p>
+        <div class="card flex">
+          <p>AND = all of</p>
+          <p-divider />
+          <p>XOR = one of</p>
+          <p-divider />
+          <p>OR = any of</p>
+        </div>
         <p-divider />
-        <p>XOR = one of</p>
+
         <p-divider />
-        <p>OR = any of</p>
+        <p-dropdown
+          [options]="combineTypes"
+          [(ngModel)]="selectedCombineType"
+          optionLabel="name"
+          placeholder="Select combine type"
+          styleClass="combine-dropdown"
+          [showClear]="true"
+          (onChange)="onCombineTypeChange()"
+        ></p-dropdown>
       </div>
-      <p-divider />
-
-      <p-divider />
-      <p-dropdown
-        [options]="combineTypes"
-        [(ngModel)]="selectedCombineType"
-        optionLabel="name"
-        placeholder="Select combine type"
-        styleClass="combine-dropdown"
-        [showClear]="true"
-        (onChange)="onCombineTypeChange()"
-      ></p-dropdown>
     </div>
   </div>
 </p-overlayPanel>

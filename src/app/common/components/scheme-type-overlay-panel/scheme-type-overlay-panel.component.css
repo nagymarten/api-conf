@@ -148,3 +148,47 @@
   color: #333;
   margin-top: 0.5rem;
 }
+
+/* Wrapper to limit the size and handle overflow */
+.overlay-wrapper {
+  max-height: 70vh;
+  /* Limit to 70% of the viewport height */
+  max-width: 100%;
+  /* Ensure it doesn't overflow horizontally */
+  overflow-y: auto;
+  /* Enable vertical scrolling */
+  overflow-x: hidden;
+  /* Disable horizontal scrolling */
+  padding: 1rem;
+  /* Optional padding */
+}
+
+/* Content container styles */
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Scrollbar styling (optional, for better appearance) */
+.overlay-wrapper::-webkit-scrollbar {
+  width: 10px;
+  /* Scrollbar width */
+}
+
+.overlay-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  /* Scrollbar track color */
+}
+
+.overlay-wrapper::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  /* Scrollbar thumb color */
+  border-radius: 6px;
+  /* Rounded corners */
+}
+
+.overlay-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+  /* Hover color for the scrollbar thumb */
+}
