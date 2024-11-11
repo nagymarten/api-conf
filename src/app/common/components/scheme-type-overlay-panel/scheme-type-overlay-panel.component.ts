@@ -150,6 +150,15 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   deprecatedBoolean: boolean = false;
   isNullableBoolean: boolean = false;
 
+  //Enum
+  selectedEnumBehavior: Type | undefined;
+  deprecatedEnum: boolean = false;
+  enumDefault: string | null = null;
+  enumExample: string | null = null;
+  enumValue: string = '';
+  enumValues: string[] = [];
+  showEnumInput: boolean = false;
+
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
   maxItems: number | null = null;
@@ -190,10 +199,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   booleanDefaults = [{ name: 'true' }, { name: 'false' }];
 
-  enumValue: string = '';
-  enumValues: string[] = [];
-  showEnumInput: boolean = false;
-
   constructor(private apiDataService: ApiDataService) {}
 
   ngOnInit() {
@@ -202,15 +207,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   toggleEnumInput() {
     this.showEnumInput = !this.showEnumInput;
-  }
-
-  logData() {
-    console.log('Selected Type:', this.selectedType);
-    console.log('Min Properties:', this.minProperties);
-    console.log('Max Properties:', this.maxProperties);
-    console.log('Allow Additional Properties:', this.allowAdditionalProperties);
-    console.log('Deprecated:', this.deprecated);
-    console.log('Original Row Data:', this.rowData);
   }
 
   addEnumValue() {
@@ -235,8 +231,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   toggleOverlay(event: Event, rowData: any, col: any) {
-    // this.logData();
-
     const cleanString = (value: string) =>
       value
         .replace(/\{\d+\}/g, '')
@@ -511,6 +505,28 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       }
       this.deprecatedBoolean = boolean.deprecated || false;
       this.isNullableBoolean = true;
+    }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name]?.enum
+    ) {
+      console.log(this.selectedSchema?.properties[rowData.name]);
+      const enumValue = this.selectedSchema.properties[rowData.name];
+
+      this.enumValues = enumValue.enum;
+
+      if (enumValue.writeOnly) {
+        this.selectedEnumBehavior = { name: 'WriteOnly' };
+      } else if (enumValue.readOnly) {
+        this.selectedEnumBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedEnumBehavior = { name: 'Read/Write' };
+      }
+      this.enumDefault = enumValue.default || '';
+      console.log(enumValue.default);
+      this.enumExample = enumValue.example || '';
+      console.log(enumValue.example);
+      this.deprecatedEnum = enumValue.deprecated || false;
     }
 
     this.op.toggle(event);
@@ -841,7 +857,52 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           }
 
           break;
+        case 'deprecatedBoolean':
+          boolean.deprecated = !!value;
+          break;
 
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onEnumFieldChange(field: string, value: any): void {
+    if (this.selectedSchema && this.selectedSchema.properties) {
+      const enumValue = this.selectedSchema?.properties[this.rowData.name];
+
+      if (!enumValue) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedEnumBehavior':
+          if (value.name === 'WriteOnly') {
+            enumValue.writeOnly = true;
+            delete enumValue.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            enumValue.readOnly = true;
+            delete enumValue.writeOnly;
+          } else {
+            delete enumValue.readOnly;
+            delete enumValue.writeOnly;
+          }
+          break;
+        case 'enumExample':
+          enumValue.enumExample = value;
+          console.log(enumValue.enumExample);
+          break;
+        case 'enumDefault':
+          enumValue.enumDefault = value;
+          console.log(enumValue.enumDefault);
+          break;
+        case 'deprecatedEnum':
+          enumValue.deprecated = !!value;
+          break;
         default:
           console.warn(`Unhandled field: ${field}`);
       }
@@ -1004,16 +1065,20 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onMarkAsExample(index: number) {
-    console.log(
-      `Marking value at index ${index} as example: ${this.enumValues[index]}`
-    );
-    // TODO: Add logic for marking the value as an example
+    console.log('onMarkAsExample');
+
+    const value = this.enumValues[index];
+    console.log('value', value);
+    this.enumExample = this.enumExample === value ? null : value;
+    this.onEnumFieldChange('enumExample', value || null);
+  
   }
 
   onMarkAsDefault(index: number) {
-    console.log(
-      `Marking value at index ${index} as default: ${this.enumValues[index]}`
-    );
-    // TODO: Add logic for marking the value as default
+    const value = this.enumValues[index];
+    console.log('onMarkAsDefault');
+    console.log('value', value);
+    this.enumDefault = this.enumDefault === value ? null : value;
+     this.onEnumFieldChange('enumDefault', value || null);
   }
 }

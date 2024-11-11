@@ -710,7 +710,7 @@
                     "
                   ></p-dropdown>
                 </div>
-                
+
                 <p-divider />
 
                 <div class="toggle-group">
@@ -718,6 +718,9 @@
                   <p-inputSwitch
                     [(ngModel)]="deprecatedBoolean"
                     id="deprecated"
+                    (onChange)="
+                      onBooleanFieldChange('deprecatedBoolean', $event.checked)
+                    "
                   ></p-inputSwitch>
                   <p-inputSwitch
                     id="isNullableBoolean"
@@ -757,12 +760,15 @@
                     <p-button
                       icon="pi pi-ellipsis-v"
                       class="p-button-text p-button-icon-only menu-button"
-                      (click)="enumOverlayPanel.open($event)"
+                      (click)="enumOverlayPanels?.open($event)"
                       aria-label="Options"
                     ></p-button>
                     <app-enum-overlay-panel
-                      #enumOverlayPanel
+                      #enumOverlayPanels
                       [index]="i"
+                      [value]="value"
+                      [markedAsExample]="this.enumExample"
+                      [markedAsDefault]="this.enumDefault"
                       (markAsExample)="onMarkAsExample(i)"
                       (markAsDefault)="onMarkAsDefault(i)"
                     >
@@ -789,18 +795,24 @@
                     <p-dropdown
                       id="behavior"
                       [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
+                      [(ngModel)]="selectedEnumBehavior"
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
+                      (onChange)="
+                        onEnumFieldChange('selectedEnumBehavior', $event.value)
+                      "
                     ></p-dropdown>
                   </div>
                 </div>
                 <div class="toggle-group">
                   <label for="deprecatedSwitch">deprecated</label>
                   <p-inputSwitch
-                    [(ngModel)]="deprecated"
+                    [(ngModel)]="deprecatedEnum"
                     id="deprecated"
+                    (onChange)="
+                      onEnumFieldChange('deprecatedEnum', $event.checked)
+                    "
                   ></p-inputSwitch>
                 </div>
               </div>

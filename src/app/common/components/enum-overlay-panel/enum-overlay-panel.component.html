@@ -1,8 +1,10 @@
 <p-overlayPanel #optionsMenu>
-  <div (click)="selectOption('example', index)" class="menu-option">
+  <div (click)="selectOption('example')" class="menu-option">
+    <i class="pi pi-check" *ngIf="isMarked('example')"></i>
     Mark as example
   </div>
-  <div (click)="selectOption('default', index)" class="menu-option">
+  <div (click)="selectOption('default')" class="menu-option">
+    <i class="pi pi-check" *ngIf="isMarked('default')"></i>
     Mark as default
   </div>
 </p-overlayPanel>
