@@ -180,8 +180,8 @@
                       placeholder="Select integer format"
                       [style]="{ width: '100%' }"
                       optionLabel="name"
-                       (onChange)="
-                        onStringFormatSelect(
+                      (onChange)="
+                        onIntegerFieldChange(
                           'selectedIntegerFormat',
                           $event.value
                         )
@@ -197,8 +197,8 @@
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
-                       (onChange)="
-                        onStringFormatSelect(
+                      (onChange)="
+                        onIntegerFieldChange(
                           'selectedIntegerBehavior',
                           $event.value
                         )
@@ -215,9 +215,9 @@
                       placeholder="defaultInteger"
                       [(ngModel)]="defaultInteger"
                       [style]="{ width: '100%' }"
-                       (blur)="onStringFieldBlur('defaultInteger', $event)"
+                      (blur)="onIntegerFieldBlur('defaultInteger', $event)"
                       (keydown.enter)="
-                        onStringFieldBlur('defaultInteger', $event)
+                        onIntegerFieldBlur('defaultInteger', $event)
                       "
                     />
                   </div>
@@ -231,9 +231,9 @@
                       placeholder="exampleInteger"
                       [(ngModel)]="exampleInteger"
                       [style]="{ width: '100%' }"
-                       (blur)="onStringFieldBlur('exampleInteger', $event)"
+                      (blur)="onIntegerFieldBlur('exampleInteger', $event)"
                       (keydown.enter)="
-                        onStringFieldBlur('exampleInteger', $event)
+                        onIntegerFieldBlur('exampleInteger', $event)
                       "
                     />
                   </div>
@@ -247,9 +247,9 @@
                       placeholder="0"
                       [(ngModel)]="minimumInteger"
                       [style]="{ width: '100%' }"
-                       (blur)="onStringFieldBlur('minimumInteger', $event)"
+                      (blur)="onIntegerFieldBlur('minimumInteger', $event)"
                       (keydown.enter)="
-                        onStringFieldBlur('minimumInteger', $event)
+                        onIntegerFieldBlur('minimumInteger', $event)
                       "
                     />
                   </div>
@@ -263,9 +263,9 @@
                       placeholder="100"
                       [(ngModel)]="maximumInteger"
                       [style]="{ width: '100%' }"
-                       (blur)="onStringFieldBlur('maximumInteger', $event)"
+                      (blur)="onIntegerFieldBlur('maximumInteger', $event)"
                       (keydown.enter)="
-                        onStringFieldBlur('maximumInteger', $event)
+                        onIntegerFieldBlur('maximumInteger', $event)
                       "
                     />
                   </div>
@@ -279,9 +279,9 @@
                       placeholder=">= 0"
                       [(ngModel)]="multipleOfInteger"
                       [style]="{ width: '100%' }"
-                       (blur)="onStringFieldBlur('multipleOfInteger', $event)"
+                      (blur)="onIntegerFieldBlur('multipleOfInteger', $event)"
                       (keydown.enter)="
-                        onStringFieldBlur('multipleOfInteger', $event)
+                        onIntegerFieldBlur('multipleOfInteger', $event)
                       "
                     />
                   </div>
@@ -292,8 +292,8 @@
                     <p-inputSwitch
                       id="exclusiveMin"
                       [(ngModel)]="exclusiveMinInteger"
-                       (onChange)="
-                        onStringFieldChange(
+                      (onChange)="
+                        onIntegerFieldChange(
                           'exclusiveMinInteger',
                           $event.checked
                         )
@@ -304,8 +304,8 @@
                     <p-inputSwitch
                       id="exclusiveMax"
                       [(ngModel)]="exclusiveMaxInteger"
-                       (onChange)="
-                        onStringFieldChange(
+                      (onChange)="
+                        onIntegerFieldChange(
                           'exclusiveMaxInteger',
                           $event.checked
                         )
@@ -316,15 +316,25 @@
                     <p-inputSwitch
                       id="deprecated"
                       [(ngModel)]="deprecatedInteger"
-                       (onChange)="
-                        onStringFieldChange(
-                          'isStringDeprecated',
+                      (onChange)="
+                        onIntegerFieldChange(
+                          'deprecatedInteger',
                           $event.checked
                         )
                       "
                     ></p-inputSwitch>
 
-                    //TODO: NULLABLE button
+                    <p-inputSwitch
+                      id="isNullableInteger"
+                      [(ngModel)]="isNullableInteger"
+                      [pTooltip]="
+                        isNullableInteger ? 'Nullable' : 'Not nullable'
+                      "
+                      (onChange)="
+                        onIntegerFieldChange('isNullableInteger', $event.checked)
+                      "
+                      class="not-nullable-button"
+                    ></p-inputSwitch>
                   </div>
                 </div>
               </div>
@@ -581,7 +591,7 @@
                         )
                       "
                     ></p-inputSwitch>
-                    
+
                     <p-inputSwitch
                       id="isNullableString"
                       [(ngModel)]="isNullableString"

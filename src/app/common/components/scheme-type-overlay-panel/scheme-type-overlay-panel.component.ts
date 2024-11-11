@@ -444,6 +444,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.onStringFieldChange(field, value);
   }
 
+  onIntegerFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onIntegerFieldChange(field, value);
+  }
+
   onStringFormatSelect(field: string, event: any) {
     const value = event.target?.value || event;
     this.onStringFieldChange(field, value.name);
@@ -528,6 +533,118 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         default:
           console.warn(`Unhandled field: ${field}`);
       }
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onIntegerFieldChange(field: string, value: any): void {
+    if (this.selectedSchema && this.selectedSchema.properties) {
+      const integer = this.selectedSchema?.properties[this.rowData.name];
+
+      if (!integer) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedIntegerFormat':
+          integer.format = value || null;
+          break;
+        case 'selectedIntegerBehavior':
+          if (value === 'WriteOnly') {
+            integer.writeOnly = true;
+            delete integer.readOnly;
+          } else if (value === 'ReadOnly') {
+            integer.readOnly = true;
+            delete integer.writeOnly;
+          } else {
+            delete integer.readOnly;
+            delete integer.writeOnly;
+          }
+          break;
+        case 'defaultInteger':
+          integer.default = value || '';
+          break;
+        case 'exampleInteger':
+          integer.example = value || '';
+          break;
+        case 'minimumInteger':
+          console.log('Minimum Integer:', value);
+          console.log(integer);
+          if (integer.minimum) {
+            integer.minimum = value ? Number(value) : null;
+          } else if (integer.exclusiveMinimum) {
+            integer.exclusiveMinimum = value ? Number(value) : null;
+          }
+          break;
+        case 'maximumInteger':
+          console.log('Max Integer:', value);
+          console.log(integer);
+          if (integer.maximum) {
+            integer.minimum = value ? Number(value) : null;
+          } else if (integer.exclusiveMaximum) {
+            integer.exclusiveMaximum = value ? Number(value) : null;
+          }
+          break;
+        case 'multipleOfInteger':
+          integer.maxLength = value ? Number(value) : null;
+          break;
+        case 'exclusiveMinInteger':
+          if (!!value === true && integer.minimum) {
+            integer.exclusiveMinimum = integer.minimum;
+            delete integer.minimum;
+          } else if (!!value === false && integer.exclusiveMinimum) {
+            integer.minimum = integer.exclusiveMinimum;
+            delete integer.exclusiveMinimum;
+          }
+          break;
+
+        case 'exclusiveMaxInteger':
+          if (!!value === true && integer.maximum) {
+            integer.exclusiveMaximum = integer.maximum;
+            delete integer.maximum;
+          } else if (!!value === false && integer.exclusiveMaximum) {
+            integer.maximum = integer.exclusiveMaximum;
+            delete integer.exclusiveMaximum;
+          }
+          break;
+
+        case 'deprecatedInteger':
+          integer.deprecated = !!value;
+          break;
+        case 'isNullableInteger':
+          if (value) {
+            if (Array.isArray(integer.type)) {
+              if (!integer.type.includes('null')) {
+                integer.type.push('null');
+              }
+            } else if (typeof integer.type === 'string') {
+              integer.type = [integer.type, 'null'];
+            } else {
+              console.warn('Unexpected type, resetting to ["string", "null"]');
+              integer.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(integer.type)) {
+              integer.type = integer.type.filter((t: string) => t !== 'null');
+              if (integer.type.length === 1) {
+                integer.type = integer.type[0];
+              }
+            } else if (typeof integer.type === 'string') {
+              console.log('Type is already not nullable');
+            } else {
+              console.warn('Unexpected type, resetting to "string"');
+              integer.type = 'string';
+            }
+          }
+
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
 
       this.updateSwaggerSpec();
     }
