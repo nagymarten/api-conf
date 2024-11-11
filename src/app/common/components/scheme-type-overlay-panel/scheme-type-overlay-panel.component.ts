@@ -118,7 +118,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   //Integer
   selectedIntegerFormat: Type | undefined;
-  selectedIntegerBehavior: any;
+  selectedIntegerBehavior: Type | undefined;
   defaultInteger: string = '';
   exampleInteger: string = '';
   minimumInteger: number | null = null;
@@ -552,10 +552,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           integer.format = value || null;
           break;
         case 'selectedIntegerBehavior':
-          if (value === 'WriteOnly') {
+          if (value.name === 'WriteOnly') {
             integer.writeOnly = true;
             delete integer.readOnly;
-          } else if (value === 'ReadOnly') {
+          } else if (value.name === 'ReadOnly') {
             integer.readOnly = true;
             delete integer.writeOnly;
           } else {

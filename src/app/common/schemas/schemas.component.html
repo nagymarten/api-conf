@@ -115,6 +115,8 @@
                     >
                       <p-treeTableCellEditor>
                         <ng-template pTemplate="input">
+                          <!-- TODO: update only default not scheme name -->
+
                           <input
                             pInputText
                             type="text"
@@ -295,7 +297,7 @@
                         col.field === 'type' &&
                         rowNode.parent &&
                         !rowData.isReferenceChild
-                        "
+                      "
                     >
                       <p-button
                         type="button"
