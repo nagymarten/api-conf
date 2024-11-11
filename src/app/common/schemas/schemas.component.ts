@@ -334,6 +334,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
+        } else if (property?.enum) {
+          
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: 'enum',
+              showReferenceButton: !!property?.$ref,
+              editDisabled: !!property?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+
         } else if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         }
