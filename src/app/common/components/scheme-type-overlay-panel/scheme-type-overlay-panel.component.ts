@@ -105,6 +105,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   maxProperties: number | null = null;
   allowAdditionalProperties: boolean = false;
   deprecatedObject: boolean = false;
+  isNullableObject: boolean = false;
 
   //String
   selectedStringFormat: Type | undefined;
@@ -115,6 +116,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   stringMinLength: number | null = null;
   stringMaxLength: number | null = null;
   isStringDeprecated: boolean = false;
+  isNullableString: boolean = false;
 
   //Integer
   selectedIntegerFormat: Type | undefined;
@@ -128,6 +130,19 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMaxInteger: boolean = false;
   deprecatedInteger: boolean = false;
   isNullableInteger: boolean = false;
+
+  //Number
+  selectedNumberFormat: Type | undefined;
+  selectedNumberBehavior: Type | undefined;
+  defaultNumber: string = '';
+  exampleNumber: string = '';
+  minimumNumber: number | null = null;
+  maximumNumber: number | null = null;
+  multipleOfNumber: number | null = null;
+  exclusiveMinNumber: boolean = false;
+  exclusiveMaxNumber: boolean = false;
+  deprecatedNumber: boolean = false;
+  isNullableNumber: boolean = false;
 
   selectedBehaviorArray: string = '';
   minItems: number | null = null;
@@ -164,20 +179,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { name: 'ReadOnly' },
     { name: 'WriteOnly' },
   ];
-
-  selectedNumberFormat: string = '';
-  selectedBehaviorNumber: string = '';
-  defaultNumber: string = '';
-  exampleNumber: string = '';
-  minimumNumber: number | null = null;
-  maximumNumber: number | null = null;
-  multipleOfNumber: number | null = null;
-  exclusiveMinNumber: boolean = false;
-  exclusiveMaxNumber: boolean = false;
-  deprecatedNumber: boolean = false;
-
-  isNullableObject: boolean = false;
-  isNullableString: boolean = false;
 
   numberFormats = [{ name: 'float' }, { name: 'double' }];
 
@@ -386,6 +387,71 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.exclusiveMaxInteger = !!integer.exclusiveMaximum || false;
       this.isNullableInteger = true;
     }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'number'
+    ) {
+      this.selectedNumberFormat = {
+        name: this.selectedSchema?.properties[rowData.name].format || null,
+      };
+      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+        this.selectedNumberBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+        this.selectedNumberBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedNumberBehavior = { name: 'Read/Write' };
+      }
+      this.defaultNumber =
+        this.selectedSchema?.properties[rowData.name].default || '';
+      this.exampleNumber =
+        this.selectedSchema?.properties[rowData.name].example || '';
+      this.minimumNumber =
+        this.selectedSchema?.properties[rowData.name].minimum ||
+        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+        null;
+      this.maximumNumber =
+        this.selectedSchema?.properties[rowData.name].maximum ||
+        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+        null;
+      this.multipleOfNumber =
+        this.selectedSchema?.properties[rowData.name].multipleOf || null;
+      this.exclusiveMinNumber =
+        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+        false;
+      this.exclusiveMaxNumber =
+        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+        false;
+      this.deprecatedNumber =
+        this.selectedSchema?.properties[rowData.name].deprecated || false;
+      this.isNullableNumber = false;
+    } else if (
+      col.field === 'type' &&
+      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+      this.selectedSchema?.properties[rowData.name].type.includes('number') &&
+      this.selectedSchema?.properties[rowData.name].type.includes('null')
+    ) {
+      const number = this.selectedSchema.properties[rowData.name];
+
+      this.selectedNumberFormat = { name: number.format || null };
+
+      if (number.writeOnly) {
+        this.selectedNumberBehavior = { name: 'WriteOnly' };
+      } else if (number.readOnly) {
+        this.selectedNumberBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedNumberBehavior = { name: 'Read/Write' };
+      }
+
+      this.defaultNumber = number.default || '';
+      this.exampleNumber = number.example || '';
+      this.minimumNumber = number.exclusiveMinimum || number.minimum || null;
+      this.maximumNumber = number.exclusiveMaximum || number.maximum || null;
+      this.multipleOfNumber = number.multipleOf || null;
+      this.deprecatedNumber = number.deprecated || false;
+      this.exclusiveMinNumber = !!number.exclusiveMinimum || false;
+      this.exclusiveMaxNumber = !!number.exclusiveMaximum || false;
+      this.isNullableNumber = true;
+    }
 
     this.op.toggle(event);
   }
@@ -588,7 +654,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           }
           break;
         case 'multipleOfInteger':
-          integer.maxLength = value ? Number(value) : null;
+          integer.multipleOf = value ? Number(value) : null;
           break;
         case 'exclusiveMinInteger':
           if (!!value === true && integer.minimum) {
@@ -636,6 +702,121 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
             } else {
               console.warn('Unexpected type, resetting to "string"');
               integer.type = 'string';
+            }
+          }
+
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onNumberFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onNumberFieldChange(field, value);
+  }
+
+  onNumberFieldChange(field: string, value: any): void {
+    if (this.selectedSchema && this.selectedSchema.properties) {
+      const number = this.selectedSchema?.properties[this.rowData.name];
+
+      if (!number) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedNumberFormat':
+          console.log(value.name);
+          console.log('asdsasd');
+          number.format = value.name || null;
+          break;
+        case 'selectedNumberBehavior':
+          if (value.name === 'WriteOnly') {
+            number.writeOnly = true;
+            delete number.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            number.readOnly = true;
+            delete number.writeOnly;
+          } else {
+            delete number.readOnly;
+            delete number.writeOnly;
+          }
+          break;
+        case 'defaultNumber':
+          number.default = value || '';
+          break;
+        case 'exampleNumber':
+          number.example = value || '';
+          break;
+        case 'minimumNumber':
+          if (number.minimum) {
+            number.minimum = value ? Number(value) : null;
+          } else if (number.exclusiveMinimum) {
+            number.exclusiveMinimum = value ? Number(value) : null;
+          }
+          break;
+        case 'maximumNumber':
+          if (number.maximum) {
+            number.minimum = value ? Number(value) : null;
+          } else if (number.exclusiveMaximum) {
+            number.exclusiveMaximum = value ? Number(value) : null;
+          }
+          break;
+        case 'multipleOfNumber':
+          number.multipleOf = value ? Number(value) : null;
+          break;
+        case 'exclusiveMinNumber':
+          if (!!value === true && number.minimum) {
+            number.exclusiveMinimum = number.minimum;
+            delete number.minimum;
+          } else if (!!value === false && number.exclusiveMinimum) {
+            number.minimum = number.exclusiveMinimum;
+            delete number.exclusiveMinimum;
+          }
+          break;
+
+        case 'exclusiveMaxNumber':
+          if (!!value === true && number.maximum) {
+            number.exclusiveMaximum = number.maximum;
+            delete number.maximum;
+          } else if (!!value === false && number.exclusiveMaximum) {
+            number.maximum = number.exclusiveMaximum;
+            delete number.exclusiveMaximum;
+          }
+          break;
+
+        case 'deprecatedNumber':
+          number.deprecated = !!value;
+          break;
+        case 'isNullableNumber':
+          if (value) {
+            if (Array.isArray(number.type)) {
+              if (!number.type.includes('null')) {
+                number.type.push('null');
+              }
+            } else if (typeof number.type === 'string') {
+              number.type = [number.type, 'null'];
+            } else {
+              console.warn('Unexpected type, resetting to ["string", "null"]');
+              number.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(number.type)) {
+              number.type = number.type.filter((t: string) => t !== 'null');
+              if (number.type.length === 1) {
+                number.type = number.type[0];
+              }
+            } else if (typeof number.type === 'string') {
+              console.log('Type is already not nullable');
+            } else {
+              console.warn('Unexpected type, resetting to "string"');
+              number.type = 'string';
             }
           }
 
