@@ -165,10 +165,15 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   maxArrayItems: number | null = null;
   uniqueArrayItems: boolean = false;
   deprecatedArray: boolean = false;
-  arrayItens: any = null;
+  arrayItems: any = null;
   isNullableArray: boolean = false;
 
-  selectedBehaviorArray: string = '';
+  //Dictionary
+  selectedDictionaryBehavior: Type | undefined;
+  minDictionaryProperties: number | null = null;
+  maxDictionaryProperties: number | null = null;
+  deprecatedDictionary: boolean = false;
+
   minItems: number | null = null;
   maxItems: number | null = null;
   uniqueItems: boolean = false;
@@ -552,9 +557,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.maxArrayItems = arrayValue.maxItems || null;
       this.uniqueArrayItems = arrayValue.uniqueItems || false;
       this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItens = arrayValue.items || false;
+      this.arrayItems = arrayValue.items || false;
+
+      //TODO: handle items
       console.log('this.arrayItens in obj');
-      console.log(this.arrayItens);
+      console.log(this.arrayItems);
       this.isNullableArray = false;
     } else if (
       col.field === 'type' &&
@@ -577,10 +584,22 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.maxArrayItems = arrayValue.maxItems || null;
       this.uniqueArrayItems = arrayValue.uniqueItems || false;
       this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItens = arrayValue.items || false;
+      this.arrayItems = arrayValue.items || false;
+
+      //TODO: handle items
       console.log('this.arrayItens in obj or null');
-      console.log(this.arrayItens);
+      console.log(this.arrayItems);
       this.isNullableArray = true;
+    }
+    if (
+      col.field === 'type' &&
+      this.selectedSchema?.properties[rowData.name].type === 'dictionary'
+    ) {
+      const dictionaryValue = this.selectedSchema.properties[rowData.name];
+      console.log(this.selectedSchema?.properties[rowData.name]);
+
+     console.log('dictionaryValue', dictionaryValue);
+     //TODO: inicialize dictionary
     }
 
     this.op.toggle(event);

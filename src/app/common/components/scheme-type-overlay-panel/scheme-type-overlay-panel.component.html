@@ -172,7 +172,15 @@
                     </div>
                   </div>
                 </div>
-                <app-sub-scheme-type></app-sub-scheme-type>
+                <app-sub-scheme-type
+                  [rowData]="rowData"
+                  [col]="col"
+                  [apiSchemas]="apiSchemas"
+                  [selectedSchema]="selectedSchema"
+                  [selectedSchemaName]="selectedSchemaName"
+                  [arrayItems]="arrayItems"
+                >
+                </app-sub-scheme-type>
               </p-panel>
             </ng-container>
 
@@ -861,41 +869,41 @@
                 <div class="properties-content">
                   <div class="dictionary-properties-container">
                     <div class="form-group">
-                      <label for="minProperties">minProperties</label>
+                      <label for="minDictionaryProperties">minProperties</label>
                       <input
-                        id="minProperties"
+                        id="minDictionaryProperties"
                         type="number"
                         pInputText
                         placeholder=">= 0"
-                        [(ngModel)]="minProperties"
+                        [(ngModel)]="minDictionaryProperties"
                       />
                     </div>
 
                     <div class="form-group">
-                      <label for="maxProperties">maxProperties</label>
+                      <label for="maxDictionaryProperties">maxDictionaryProperties</label>
                       <input
-                        id="maxProperties"
+                        id="maxDictionaryProperties"
                         type="number"
                         pInputText
                         placeholder=">= 0"
-                        [(ngModel)]="maxProperties"
+                        [(ngModel)]="maxDictionaryProperties"
                       />
                     </div>
 
                     <div class="toggle-group">
-                      <label for="deprecatedSwitch">deprecated</label>
+                      <label for="deprecatedDictionarySwitch">deprecated</label>
                       <p-inputSwitch
-                        id="deprecatedSwitch"
-                        [(ngModel)]="deprecated"
+                        id="deprecatedDictionarySwitch"
+                        [(ngModel)]="deprecatedDictionary"
                       ></p-inputSwitch>
                     </div>
 
                     <div class="form-group">
-                      <label for="behavior">behavior</label>
+                      <label for="behaviorDictionary">behavior</label>
                       <p-dropdown
-                        id="behavior"
+                        id="behaviorDictionary"
                         [options]="behaviorOptions"
-                        [(ngModel)]="selectedBehavior"
+                        [(ngModel)]="selectedDictionaryBehavior"
                         optionLabel="name"
                         placeholder="Read/Write"
                       ></p-dropdown>

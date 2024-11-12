@@ -335,7 +335,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
             }
           }
         } else if (property?.enum) {
-          
           const childNode: TreeNode = {
             label: propertyKey,
             data: {
@@ -351,7 +350,23 @@ export class SchemasComponent implements OnInit, OnDestroy {
             parent: rootNode,
           };
           rootNode.children!.push(childNode);
-
+        } else if (property?.additionalProperties) {
+             const childNode: TreeNode = {
+               label: propertyKey,
+               data: {
+                 name: propertyKey,
+                 description: property?.description || '',
+                 type: 'dictionary',
+                 showReferenceButton: !!property?.$ref,
+                 editDisabled: !!property?.$ref,
+                 isReferenceChild: false,
+                 isRootNode: false,
+               },
+               children: [],
+               parent: rootNode,
+             };
+             rootNode.children!.push(childNode);
+          
         } else if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         }

@@ -59,6 +59,7 @@ export class SubSchemeTypeComponent implements OnInit {
   @Input() apiSchemas: any;
   @Input() selectedSchema: any;
   @Input() selectedSchemaName: any;
+  @Input() arrayItems!: any;
 
   @ViewChild('op') op!: OverlayPanel;
   @Output() updateRow = new EventEmitter<string>();
