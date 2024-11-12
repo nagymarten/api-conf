@@ -243,23 +243,45 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.col = col;
   }
 
-  toggleOverlay(event: Event, rowData: any, col: any) {
-    const cleanString = (value: string) =>
-      value
-        .replace(/\{\d+\}/g, '')
-        .replace(/\s*or\s+null\s*$/i, '')
-        .replace(/<[^>]*>/g, '')
-        .trim();
+toggleOverlay(event: Event, rowData: any, col: any) {
+  // Helper to clean strings by removing unwanted patterns
+  const cleanString = (value: string) =>
+    value
+      .replace(/\{\d+\}/g, '') // Remove `{x}` patterns
+      .replace(/\s*or\s+null\s*$/i, '') // Remove "or null" at the end
+      .replace(/<[^>]*>/g, '') // Remove `<format>` patterns
+      .trim();
 
-    const originalType = { name: cleanString(rowData[col.field]) };
-
-    this.setRowData(rowData);
-    this.setCol(col);
-    if (!this.types.some((type) => type.name === originalType.name)) {
-      this.types.unshift(originalType);
+  // Extract root type from a string
+  const extractRootType = (value: string): string => {
+    const match = value.match(/^(\w+)\[/); // Match the root type before `[`
+    if (match) {
+      return match[1].trim(); // Return root type (e.g., "array" or "dictionary")
     }
+    return value.split(' or ')[0].trim(); // Fallback for "type or null" cases
+  };
 
-    this.selectedType = originalType;
+  // Clean and extract type from the provided data
+  const cleanedValue = cleanString(rowData[col.field]);
+  const rootType = extractRootType(cleanedValue);
+
+  // Prepare the type object
+  const originalType = { name: rootType };
+
+  // Update the rowData and col in the component
+  this.setRowData(rowData);
+  this.setCol(col);
+
+  // Check and add the type to the `types` array if not already present
+  if (!this.types.some((type) => type.name === originalType.name)) {
+    this.types.unshift(originalType);
+  }
+
+  // Set the selected type
+  this.selectedType = originalType;
+
+  // Debugging: Log the selected type
+  console.log('this.selectedType', this.selectedType);
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;

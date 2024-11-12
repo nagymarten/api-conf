@@ -250,7 +250,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
-        } else {
+        } //TODO: array & dictionary in subschemes
+        else {
           const resolvedSubSchemas = this.schemaToTreeNode(
             subSchema,
             null,
@@ -281,6 +282,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
+        console.log('property', property);
 
         const childNode: TreeNode = {
           label: propertyKey,
@@ -349,24 +351,50 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
+
           rootNode.children!.push(childNode);
         } else if (property?.additionalProperties) {
-             const childNode: TreeNode = {
-               label: propertyKey,
-               data: {
-                 name: propertyKey,
-                 description: property?.description || '',
-                 type: 'dictionary',
-                 showReferenceButton: !!property?.$ref,
-                 editDisabled: !!property?.$ref,
-                 isReferenceChild: false,
-                 isRootNode: false,
-               },
-               children: [],
-               parent: rootNode,
-             };
-             rootNode.children!.push(childNode);
-          
+          console.log('this.handleAdditionalProperties');
+          console.log(this.handleAdditionalProperties(property));
+          const discType = this.handleAdditionalProperties(property);
+
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: discType,
+              showReferenceButton: !!property?.$ref,
+              editDisabled: !!property?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+          //TODO: handle disconary object items
+        } else if (property?.type === 'array' && property?.items) {
+          console.log('this.handleAdditionalProperties');
+          console.log(this.handleArray(property));
+          const arrayType = this.handleArray(property);
+
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: arrayType,
+              showReferenceButton: !!property?.$ref,
+              editDisabled: !!property?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+          //TODO: handle array object items
         } else if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         }
@@ -414,6 +442,47 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const cleanedSchemaName = this.cleanSchemaName(schemaName);
     console.log(`Navigating to schema: ${cleanedSchemaName}`);
     this.router.navigate(['/schemas', cleanedSchemaName]);
+  }
+
+  handleAdditionalProperties(property: any): string {
+    const additionalProps = property.additionalProperties;
+
+    const types = Array.isArray(additionalProps.type)
+      ? additionalProps.type.join(' or ')
+      : additionalProps.type || 'unknown';
+
+    const additionalFormat = additionalProps.format
+      ? `<${additionalProps.format}>`
+      : '';
+
+    return `dictionary[string, ${types}${additionalFormat}]`;
+    //TODO: Handle deeper nesting
+  }
+
+  handleArray(property: any): string {
+    // Extract `items` from the property
+    const items = property.items;
+
+    if (!items) {
+      return 'array[unknown]'; // Default when no items are defined
+    }
+
+    // Check if items have multiple types or a single type
+    const types = Array.isArray(items.type)
+      ? items.type.join(' or ')
+      : items.type || 'unknown';
+
+    // Check for additional formats in the items
+    const itemFormat = items.format ? `<${items.format}>` : '';
+
+    // Handle nested arrays or dictionaries
+    if (types === 'array') {
+      return `array[${this.handleArray(items)}]`; // Recursive handling for nested arrays
+    } else if (types === 'dictionary') {
+      return `array[${this.handleAdditionalProperties(items)}]`; // Handle nested dictionaries
+    }
+
+    return `array[${types}${itemFormat}]`; // Default case
   }
 
   isValidType(type: any): boolean {
@@ -853,38 +922,73 @@ export class SchemasComponent implements OnInit, OnDestroy {
       'null',
     ];
 
-    // Helper function to clean and handle type<format> format
     const cleanType = (typeStr: string): string => {
       const baseType = typeStr.split('<')[0].trim(); // Extract base type
       return baseType.replace(/ or null$/, '').trim(); // Remove " or null" suffix
     };
 
-    // If type is a single string, clean it and check if it matches a special type
+    const validateUnionTypes = (typeStr: string): boolean => {
+      const unionTypes = typeStr.split(' or ').map((t) => t.trim());
+      const hasNull = unionTypes.includes('null');
+      const validTypes = unionTypes.filter((t) =>
+        specialTypes.includes(cleanType(t))
+      );
+      return (
+        validTypes.length === unionTypes.length &&
+        (hasNull || unionTypes.length > 1)
+      );
+    };
+
+    const validateArrayType = (typeStr: string): boolean => {
+      const match = typeStr.match(/^array\[(.+)\]$/);
+      if (match) {
+        const innerType = match[1];
+        const cleanInnerType = cleanType(innerType);
+        // Support union types or special types inside arrays
+        return (
+          validateUnionTypes(innerType) || specialTypes.includes(cleanInnerType)
+        );
+      }
+      return false;
+    };
+
+    const validateDictionaryType = (typeStr: string): boolean => {
+      const match = typeStr.match(/^dictionary\[string,\s*(.+)\]$/);
+      if (match) {
+        const innerType = match[1];
+        return (
+          validateUnionTypes(innerType) ||
+          validateArrayType(innerType) || // Check if the inner type is an array
+          specialTypes.includes(cleanType(innerType))
+        );
+      }
+      return false;
+    };
+
+    // If type is a single string
     if (typeof type === 'string') {
+      if (type.startsWith('dictionary')) {
+        return validateDictionaryType(type);
+      }
+      if (type.startsWith('array')) {
+        return validateArrayType(type);
+      }
+      if (type.includes(' or ')) {
+        return validateUnionTypes(type);
+      }
       return specialTypes.includes(cleanType(type));
     }
 
-    // If type is an array of strings, check if every cleaned type is a special type
-    if (Array.isArray(type) && type.every((t) => typeof t === 'string')) {
-      if ((type as string[]).includes('null')) {
-        const nonNullTypes = type.filter((t) => t !== 'null');
-        return nonNullTypes.every(
-          (t) => typeof t === 'string' && specialTypes.includes(cleanType(t))
-        );
-      }
-      return type.every(
-        (t) => typeof t === 'string' && specialTypes.includes(cleanType(t))
-      );
-    }
-
-    // If type is an array of objects with a `type` property, check if any cleaned type matches a special type
-    if (
-      Array.isArray(type) &&
-      type.every((t) => typeof t === 'object' && 'type' in t)
-    ) {
-      return type.some((t) =>
-        specialTypes.includes(cleanType((t as { type: string }).type))
-      );
+    // If type is an array of strings
+    if (Array.isArray(type)) {
+      return type.every((t) => {
+        if (typeof t === 'string') {
+          return specialTypes.includes(cleanType(t));
+        } else if (typeof t === 'object' && 'type' in t) {
+          return specialTypes.includes(cleanType(t.type));
+        }
+        return false;
+      });
     }
 
     return false; // If none of the above cases match
