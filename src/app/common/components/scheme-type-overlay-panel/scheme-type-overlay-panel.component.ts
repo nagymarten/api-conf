@@ -243,47 +243,105 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.col = col;
   }
 
-toggleOverlay(event: Event, rowData: any, col: any) {
-  // Helper to clean strings by removing unwanted patterns
-  const cleanString = (value: string) =>
-    value
-      .replace(/\{\d+\}/g, '') // Remove `{x}` patterns
-      .replace(/\s*or\s+null\s*$/i, '') // Remove "or null" at the end
-      .replace(/<[^>]*>/g, '') // Remove `<format>` patterns
-      .trim();
+  toggleOverlay(event: Event, rowData: any, col: any) {
+    const cleanString = (value: string) =>
+      value
+        .replace(/\{\d+\}/g, '')
+        .replace(/\s*or\s+null\s*$/i, '')
+        .replace(/<[^>]*>/g, '')
+        .trim();
 
-  // Extract root type from a string
-  const extractRootType = (value: string): string => {
-    const match = value.match(/^(\w+)\[/); // Match the root type before `[`
-    if (match) {
-      return match[1].trim(); // Return root type (e.g., "array" or "dictionary")
+    // Extract root type from a string
+    const extractRootType = (value: string): string => {
+      const match = value.match(/^(\w+)\[/);
+      if (match) {
+        return match[1].trim();
+      }
+      return value.split(' or ')[0].trim();
+    };
+
+    const cleanedValue = cleanString(rowData[col.field]);
+    const rootType = extractRootType(cleanedValue);
+
+    const originalType = { name: rootType };
+
+    this.setRowData(rowData);
+    this.setCol(col);
+
+    if (!this.types.some((type) => type.name === originalType.name)) {
+      this.types.unshift(originalType);
     }
-    return value.split(' or ')[0].trim(); // Fallback for "type or null" cases
-  };
 
-  // Clean and extract type from the provided data
-  const cleanedValue = cleanString(rowData[col.field]);
-  const rootType = extractRootType(cleanedValue);
+    this.selectedType = originalType;
 
-  // Prepare the type object
-  const originalType = { name: rootType };
+    // console.log('this.selectedType', this.selectedType);
+    // console.log('this.selectedSchema', this.selectedSchema);
+    // console.log('this.col', this.col);
+    // console.log('this.rowData', this.rowData);
+    // console.log('apischemas', this.apiSchemas);
 
-  // Update the rowData and col in the component
-  this.setRowData(rowData);
-  this.setCol(col);
+    const updateSchemaWithCol = (rowData: any, col: any): void => {
+      const findAndUpdate = (
+        schema: any,
+        key: string,
+        newValue: any
+      ): boolean => {
+        if (!schema || typeof schema !== 'object') return false;
 
-  // Check and add the type to the `types` array if not already present
-  if (!this.types.some((type) => type.name === originalType.name)) {
-    this.types.unshift(originalType);
-  }
+        if (schema[key] !== undefined) {
+          schema[key] = newValue; // Update the value
+          return true;
+        }
 
-  // Set the selected type
-  this.selectedType = originalType;
+        // Check properties
+        if (schema.properties) {
+          for (const propKey in schema.properties) {
+            if (findAndUpdate(schema.properties[propKey], key, newValue)) {
+              return true;
+            }
+          }
+        }
 
-  // Debugging: Log the selected type
-  console.log('this.selectedType', this.selectedType);
-  console.log(this.selectedSchema?.properties[rowData.name].type);
-  console.log(this.col);
+        // Check allOf, oneOf, anyOf
+        const schemasArrayKeys = ['allOf', 'oneOf', 'anyOf'];
+        for (const arrayKey of schemasArrayKeys) {
+          if (Array.isArray(schema[arrayKey])) {
+            for (const subSchema of schema[arrayKey]) {
+              if (findAndUpdate(subSchema, key, newValue)) {
+                return true;
+              }
+            }
+          }
+        }
+
+        // Check additionalProperties
+        if (schema.additionalProperties) {
+          if (findAndUpdate(schema.additionalProperties, key, newValue)) {
+            return true;
+          }
+        }
+
+        // Check items (for arrays)
+        if (schema.items) {
+          if (findAndUpdate(schema.items, key, newValue)) {
+            return true;
+          }
+        }
+
+        return false; // Not found
+      };
+
+      const newValue = cleanString(rowData[col.field]);
+      const updated = findAndUpdate(this.selectedSchema, col.field, newValue);
+
+      if (updated) {
+        console.log(`Updated schema for ${col.field}:`, this.selectedSchema);
+      } else {
+        console.warn(`Could not find ${col.field} in schema to update.`);
+      }
+    };
+
+    // updateSchemaWithCol(rowData, col);
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;
@@ -622,9 +680,11 @@ toggleOverlay(event: Event, rowData: any, col: any) {
       const dictionaryValue = this.selectedSchema.properties[rowData.name];
       console.log(this.selectedSchema?.properties[rowData.name]);
 
-     console.log('dictionaryValue', dictionaryValue);
-     //TODO: inicialize dictionary
+      console.log('dictionaryValue', dictionaryValue);
+      //TODO: inicialize dictionary
     }
+
+    updateSchemaWithCol(rowData, col);
 
     this.op.toggle(event);
 

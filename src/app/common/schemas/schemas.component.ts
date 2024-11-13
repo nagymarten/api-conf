@@ -181,6 +181,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
       : schema?.type || 'unknown';
 
     if (!rootNode) {
+      this.modifyExtensions(schema);
+
       rootNode = {
         label: schema?.title || 'No schema',
         data: {
@@ -191,6 +193,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           editDisabled: false,
           isReferenceChild: false,
           isRootNode: false,
+          uniqeId: schema['x-myappika']?.id || 'no-id',
         },
         children: [],
         expanded: true,
@@ -222,6 +225,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
       ];
 
       subSchemas.forEach((subSchema: any) => {
+        this.modifyExtensions(subSchema);
+
         if (subSchema?.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
 
@@ -238,6 +243,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   type: this.formatType(referencedSchema.type || ''),
                   showReferenceButton: true,
                   editDisabled: true,
+                  uniqeId: subSchema['x-myappika']?.id || 'no-id',
                 },
                 children: [],
                 parent: rootNode,
@@ -271,6 +277,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: subSchema['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -289,6 +296,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: subSchema['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -298,10 +306,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
           (subSchema?.type && validTypes.includes(subSchema.type)) ||
           Array.isArray(subSchema?.type)
         ) {
-          let typeLabel: string | string[] = subSchema.type; 
+          let typeLabel: string | string[] = subSchema.type;
 
           const itemsType = Array.isArray(subSchema.items?.type)
-            ? subSchema.items?.type 
+            ? subSchema.items?.type
             : subSchema.items?.type
             ? [subSchema.items.type]
             : [];
@@ -336,6 +344,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: subSchema['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -354,6 +363,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
       });
     };
 
+    this.modifyExtensions(schema);
+    console.log('schema', schema);
+
     if (schema?.allOf) {
       processSubSchemas(schema.allOf, 'allOf');
     }
@@ -368,10 +380,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
+    this.modifyExtensions(schema);
+
         if (!property) {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
+    this.modifyExtensions(schema);
+
 
         const childNode: TreeNode = {
           label: propertyKey,
@@ -383,6 +399,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             editDisabled: !!property?.$ref,
             isReferenceChild: false,
             isRootNode: false,
+            uniqeId: property['x-myappika']?.id || 'no-id',
           },
           children: [],
           parent: rootNode,
@@ -390,6 +407,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
         if (property.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
+    this.modifyExtensions(schema);
+
           const childNode: TreeNode = {
             label: refSchemaName,
             data: {
@@ -400,6 +419,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: property['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -426,6 +446,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
             }
           }
         } else if (property?.enum) {
+    this.modifyExtensions(schema);
+
           const childNode: TreeNode = {
             label: propertyKey,
             data: {
@@ -436,6 +458,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: property['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -443,6 +466,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (property?.additionalProperties) {
+    this.modifyExtensions(schema);
+
           const discType = this.handleAdditionalProperties(property);
 
           const childNode: TreeNode = {
@@ -455,6 +480,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: property['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -462,6 +488,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
           rootNode.children!.push(childNode);
           //TODO: handle disconary object items
         } else if (property?.type === 'array' && property?.items) {
+    this.modifyExtensions(schema);
+
           const arrayType = this.handleArray(property);
 
           const childNode: TreeNode = {
@@ -474,6 +502,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              uniqeId: property['x-myappika']?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -485,12 +514,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
     } else if (schema?.enum) {
+    this.modifyExtensions(schema);
+
       rootNode!.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
         data: {
           name: enumValue,
           type: '',
           editDisabled: true,
+          uniqeId: schema['x-myappika']?.id || 'no-id',
         },
         children: [],
       }));
@@ -513,6 +545,40 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
 
     return 'unknown';
+  };
+
+  modifyExtensions = (schema: any): any => {
+    if (!schema || typeof schema !== 'object') return schema;
+    const appName = 'myappika';
+    // Traverse all keys in the schema
+    for (const key in schema) {
+      // Check for extensions starting with `x-` but not matching `x-${appName}`
+      if (key.startsWith('x-') && key !== `x-${appName}`) {
+        delete schema[key]; // Remove the custom extension
+      }
+
+      // If x-stoplight exists, replace it with x-myapp
+      if (key === 'x-stoplight') {
+        delete schema[key]; // Remove x-stoplight
+        schema[`x-${appName}`] = { id: this.generateUniqueId() }; // Add custom extension
+      }
+
+      // Leave x-internal untouched
+      if (key === 'x-internal' && schema[key] === true) {
+        continue;
+      }
+
+      // Recursively traverse nested objects
+      if (typeof schema[key] === 'object') {
+        this.modifyExtensions(schema[key]);
+      }
+    }
+
+    return schema;
+  };
+
+  generateUniqueId = (): string => {
+    return Math.random().toString(36).substring(2, 15);
   };
 
   cleanSchemaName(value: string): string {
@@ -706,11 +772,139 @@ export class SchemasComponent implements OnInit, OnDestroy {
     });
     return mergedProperties;
   }
+  isRowDataMatching(
+    rowData: any,
+    schemaField: any,
+    fieldName: string = ''
+  ): boolean {
+    if (!rowData || !schemaField) {
+      return false;
+    }
+
+    // Match by name
+    if (rowData.name && fieldName && rowData.name === fieldName) {
+      return true;
+    }
+
+    // Match by description
+    if (
+      rowData.description &&
+      schemaField.description &&
+      rowData.description === schemaField.description
+    ) {
+      return true;
+    }
+
+    // Match by type
+    if (rowData.type && schemaField.type && rowData.type === schemaField.type) {
+      return true;
+    }
+
+    // Match by other fields in rowData (if applicable)
+    for (const key of Object.keys(rowData)) {
+      if (schemaField[key] && rowData[key] === schemaField[key]) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   toggleChildOverlay(event: Event, rowData: any, col: any): void {
-    console.log('Selected Row Data:', rowData);
-    console.log('Selected Column Data:', col);
+    // Save the selected row data
+    this.selectedRowData = rowData;
+
+    // Find the corresponding field in the schema and set it as selectedCol
+    this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
+
+    // Log the results for debugging
+    console.log('Selected Row Data:', this.selectedRowData);
+    console.log('Matched Schema Field (selectedCol):', this.selectedCol);
+
+    // Trigger the overlay with the selected data
     this.childComponent.toggleOverlay(event, rowData, col);
+  }
+
+  findFieldInSchema(
+    rowData: any,
+    schema: any,
+    resolvedRefs: Set<string> = new Set()
+  ): any {
+    if (!schema || !rowData) {
+      console.warn('Schema or rowData is not defined.');
+      return null;
+    }
+
+    // Check for properties
+    if (schema.properties) {
+      for (const [key, value] of Object.entries(schema.properties)) {
+        if (this.isRowDataMatching(rowData, value, key)) {
+          return value;
+        }
+      }
+    }
+
+    // Match directly within allOf, anyOf, or oneOf
+    const compositeConstructs = ['allOf', 'anyOf', 'oneOf'];
+    for (const construct of compositeConstructs) {
+      if (schema[construct] && Array.isArray(schema[construct])) {
+        for (const subSchema of schema[construct]) {
+          // Check if the rowData matches directly with the subSchema
+          if (this.isRowDataMatching(rowData, subSchema)) {
+            return subSchema;
+          }
+
+          // Recursively search within the subSchema
+          const field = this.findFieldInSchema(
+            rowData,
+            subSchema,
+            resolvedRefs
+          );
+          if (field) return field;
+        }
+      }
+    }
+
+    // Check for enums
+    if (schema.enum && Array.isArray(schema.enum)) {
+      if (schema.enum.includes(rowData.name)) {
+        return {
+          enum: schema.enum,
+          description: schema.description || '',
+        };
+      }
+    }
+
+    // Check for additionalProperties
+    if (
+      schema.additionalProperties &&
+      typeof schema.additionalProperties === 'object'
+    ) {
+      if (this.isRowDataMatching(rowData, schema.additionalProperties)) {
+        return schema.additionalProperties;
+      }
+    }
+
+    // Check for items in arrays
+    if (schema.type === 'array' && schema.items) {
+      if (this.isRowDataMatching(rowData, schema.items)) {
+        return schema.items;
+      }
+    }
+
+    // Follow $ref if available
+    if (schema.$ref) {
+      const refSchemaName = this.extractSchemaNameFromRef(schema.$ref);
+
+      if (!resolvedRefs.has(refSchemaName)) {
+        resolvedRefs.add(refSchemaName);
+        const referencedSchema = this.getSchemaByRef(schema.$ref);
+        return this.findFieldInSchema(rowData, referencedSchema, resolvedRefs);
+      }
+    }
+
+    console.warn(`RowData did not match any fields in the schema.`);
+    return null;
   }
 
   extractSchemaNameFromRef(ref: string): string {
@@ -770,6 +964,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     const schemaName = this.getSchemaName(this.selectedSchema);
 
+    this.modifyExtensions(this.selectedSchema);
+
     const rootNode: TreeNode = {
       label: this.selectedSchema.title,
       data: {
@@ -780,6 +976,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         editDisabled: false,
         isReferenceChild: false,
         isRootNode: true,
+        uniqeId: this.selectedSchema['x-myappika']?.id || 'no-id',
       },
       children: [],
       expanded: true,
