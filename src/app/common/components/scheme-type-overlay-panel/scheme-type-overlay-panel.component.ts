@@ -282,6 +282,8 @@ toggleOverlay(event: Event, rowData: any, col: any) {
 
   // Debugging: Log the selected type
   console.log('this.selectedType', this.selectedType);
+  console.log(this.selectedSchema?.properties[rowData.name].type);
+  console.log(this.col);
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;

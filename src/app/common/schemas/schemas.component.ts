@@ -135,7 +135,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   getSchemaName(schema: any): string {
     if (Array.isArray(schema?.type)) {
-      // Handle array of types, e.g., ["object", "null"]
       const nonNullTypes = schema.type.filter((t: string) => t !== 'null');
       const formattedType =
         nonNullTypes.join(' or ') +
@@ -212,10 +211,19 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     const processSubSchemas = (subSchemas: any[], _typeLabel: string) => {
+      const validTypes = [
+        'array',
+        'integer',
+        'number',
+        'string',
+        'boolean',
+        'dictionary',
+        'null',
+      ];
+
       subSchemas.forEach((subSchema: any) => {
         if (subSchema?.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
-          // console.log(refSchemaName);
 
           if (!resolvedRefs.has(refSchemaName)) {
             resolvedRefs.add(refSchemaName);
@@ -250,8 +258,90 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
-        } //TODO: array & dictionary in subschemes
-        else {
+        } else if (subSchema?.type === 'array' && subSchema?.items) {
+          const arrayType = this.handleArray(subSchema);
+
+          const childNode: TreeNode = {
+            label: arrayType,
+            data: {
+              name: arrayType,
+              description: subSchema?.description || '',
+              type: '',
+              showReferenceButton: !!subSchema?.$ref,
+              editDisabled: !!subSchema?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+        } else if (subSchema?.additionalProperties) {
+          const discType = this.handleAdditionalProperties(subSchema);
+
+          const childNode: TreeNode = {
+            label: discType,
+            data: {
+              name: discType,
+              description: subSchema?.description || '',
+              type: '',
+              showReferenceButton: !!subSchema?.$ref,
+              editDisabled: !!subSchema?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+        } else if (
+          (subSchema?.type && validTypes.includes(subSchema.type)) ||
+          Array.isArray(subSchema?.type)
+        ) {
+          let typeLabel: string | string[] = subSchema.type; 
+
+          const itemsType = Array.isArray(subSchema.items?.type)
+            ? subSchema.items?.type 
+            : subSchema.items?.type
+            ? [subSchema.items.type]
+            : [];
+
+          if (subSchema.type === 'array' && itemsType.length > 0) {
+            typeLabel = itemsType.includes('null')
+              ? [
+                  'array',
+                  ...itemsType.filter((t: string) => t !== 'null'),
+                  'null',
+                ]
+              : ['array', ...itemsType];
+          } else if (
+            subSchema.type === 'dictionary' &&
+            subSchema.additionalProperties
+          ) {
+            const dictionaryType = this.handleAdditionalProperties(subSchema);
+            typeLabel = `dictionary[string, ${dictionaryType}]`;
+          }
+
+          const childNode: TreeNode = {
+            label: Array.isArray(typeLabel)
+              ? typeLabel.join(' or ')
+              : typeLabel,
+            data: {
+              name: Array.isArray(typeLabel)
+                ? typeLabel.join(' or ')
+                : typeLabel,
+              description: subSchema?.description || '',
+              type: '',
+              showReferenceButton: !!subSchema?.$ref,
+              editDisabled: !!subSchema?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+            },
+            children: [],
+            parent: rootNode,
+          };
+          rootNode.children!.push(childNode);
+        } else {
           const resolvedSubSchemas = this.schemaToTreeNode(
             subSchema,
             null,
@@ -282,7 +372,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
-        console.log('property', property);
 
         const childNode: TreeNode = {
           label: propertyKey,
@@ -354,8 +443,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (property?.additionalProperties) {
-          console.log('this.handleAdditionalProperties');
-          console.log(this.handleAdditionalProperties(property));
           const discType = this.handleAdditionalProperties(property);
 
           const childNode: TreeNode = {
@@ -375,8 +462,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           rootNode.children!.push(childNode);
           //TODO: handle disconary object items
         } else if (property?.type === 'array' && property?.items) {
-          console.log('this.handleAdditionalProperties');
-          console.log(this.handleArray(property));
           const arrayType = this.handleArray(property);
 
           const childNode: TreeNode = {
