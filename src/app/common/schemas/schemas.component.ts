@@ -98,6 +98,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   focusNewSchemaInput = false;
   selectedRowData: any;
   selectedCol: any;
+  nameOfId: string = 'myappika';
 
   constructor(
     private route: ActivatedRoute,
@@ -193,7 +194,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           editDisabled: false,
           isReferenceChild: false,
           isRootNode: false,
-          uniqeId: schema['x-myappika']?.id || 'no-id',
+          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
         },
         children: [],
         expanded: true,
@@ -243,7 +244,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   type: this.formatType(referencedSchema.type || ''),
                   showReferenceButton: true,
                   editDisabled: true,
-                  uniqeId: subSchema['x-myappika']?.id || 'no-id',
+                  uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
                 },
                 children: [],
                 parent: rootNode,
@@ -277,7 +278,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: subSchema['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -296,11 +297,33 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: subSchema['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
           };
+          if (subSchema.additionalProperties.properties) {
+            console.log(
+              `Recursively processing properties within additionalProperties for ${discType}`
+            );
+
+            const resolvedChildren = this.schemaToTreeNode(
+              subSchema.additionalProperties,
+              null,
+              resolvedRefs
+            );
+
+            resolvedChildren.forEach((resolvedChild) => {
+              if (resolvedChild.children && resolvedChild.children.length > 0) {
+                resolvedChild.children.forEach((nestedChild) => {
+                  // disableEditOnAllChildren(nestedChild);
+                  // referenceChildren(nestedChild);
+                  childNode.children!.push(nestedChild);
+                });
+              }
+            });
+          }
+
           rootNode.children!.push(childNode);
         } else if (
           (subSchema?.type && validTypes.includes(subSchema.type)) ||
@@ -344,7 +367,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: subSchema['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -364,7 +387,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     this.modifyExtensions(schema);
-    console.log('schema', schema);
 
     if (schema?.allOf) {
       processSubSchemas(schema.allOf, 'allOf');
@@ -380,14 +402,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
-    this.modifyExtensions(schema);
+        this.modifyExtensions(schema);
 
         if (!property) {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
-    this.modifyExtensions(schema);
-
+        this.modifyExtensions(schema);
 
         const childNode: TreeNode = {
           label: propertyKey,
@@ -399,7 +420,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             editDisabled: !!property?.$ref,
             isReferenceChild: false,
             isRootNode: false,
-            uniqeId: property['x-myappika']?.id || 'no-id',
+            uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
           },
           children: [],
           parent: rootNode,
@@ -407,7 +428,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
         if (property.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
-    this.modifyExtensions(schema);
+          this.modifyExtensions(schema);
 
           const childNode: TreeNode = {
             label: refSchemaName,
@@ -419,7 +440,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: property['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -445,8 +466,39 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
+        } else if (property?.properties) {
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: this.formatPropertyType(property) || '',
+              showReferenceButton: !!property?.$ref,
+              editDisabled: !!property?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+            },
+            children: [],
+            parent: rootNode,
+          };
+
+          const resolvedChildren = this.schemaToTreeNode(
+            property,
+            null,
+            resolvedRefs
+          );
+
+          resolvedChildren.forEach((resolvedChild) => {
+            if (resolvedChild.children && resolvedChild.children.length > 0) {
+              resolvedChild.children.forEach((nestedChild) => {
+                childNode.children!.push(nestedChild);
+              });
+            }
+          });
+          rootNode.children!.push(childNode);
         } else if (property?.enum) {
-    this.modifyExtensions(schema);
+          this.modifyExtensions(schema);
 
           const childNode: TreeNode = {
             label: propertyKey,
@@ -458,7 +510,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: property['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -466,9 +518,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (property?.additionalProperties) {
-    this.modifyExtensions(schema);
+          this.modifyExtensions(schema);
 
           const discType = this.handleAdditionalProperties(property);
+          console.log(`property:`, property);
+          console.log(
+            `property additionalProperties:`,
+            property.additionalProperties
+          );
 
           const childNode: TreeNode = {
             label: propertyKey,
@@ -480,15 +537,38 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: property['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
           };
           rootNode.children!.push(childNode);
-          //TODO: handle disconary object items
+
+          // Iterate through additionalProperties' properties if they exist
+          if (property.additionalProperties.properties) {
+            console.log(
+              `Recursively processing properties within additionalProperties for ${discType}`
+            );
+
+            const resolvedChildren = this.schemaToTreeNode(
+              property.additionalProperties,
+              null,
+              resolvedRefs
+            );
+            console.log(`resolvedChildren:`, resolvedChildren);
+
+            resolvedChildren.forEach((resolvedChild) => {
+              if (resolvedChild.children && resolvedChild.children.length > 0) {
+                resolvedChild.children.forEach((nestedChild) => {
+                  // disableEditOnAllChildren(nestedChild);
+                  // referenceChildren(nestedChild);
+                  childNode.children!.push(nestedChild);
+                });
+              }
+            });
+          }
         } else if (property?.type === 'array' && property?.items) {
-    this.modifyExtensions(schema);
+          this.modifyExtensions(schema);
 
           const arrayType = this.handleArray(property);
 
@@ -502,19 +582,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqeId: property['x-myappika']?.id || 'no-id',
+              uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
           };
           rootNode.children!.push(childNode);
+
           //TODO: handle array object items
         } else if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         }
       });
     } else if (schema?.enum) {
-    this.modifyExtensions(schema);
+      this.modifyExtensions(schema);
 
       rootNode!.children = schema.enum.map((enumValue: string) => ({
         label: enumValue,
@@ -522,7 +603,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           name: enumValue,
           type: '',
           editDisabled: true,
-          uniqeId: schema['x-myappika']?.id || 'no-id',
+          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
         },
         children: [],
       }));
@@ -549,18 +630,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   modifyExtensions = (schema: any): any => {
     if (!schema || typeof schema !== 'object') return schema;
-    const appName = 'myappika';
     // Traverse all keys in the schema
     for (const key in schema) {
       // Check for extensions starting with `x-` but not matching `x-${appName}`
-      if (key.startsWith('x-') && key !== `x-${appName}`) {
+      if (key.startsWith('x-') && key !== `x-${this.nameOfId}`) {
         delete schema[key]; // Remove the custom extension
       }
 
       // If x-stoplight exists, replace it with x-myapp
       if (key === 'x-stoplight') {
         delete schema[key]; // Remove x-stoplight
-        schema[`x-${appName}`] = { id: this.generateUniqueId() }; // Add custom extension
+        schema[`x-${this.nameOfId}`] = { id: this.generateUniqueId() }; // Add custom extension
       }
 
       // Leave x-internal untouched
@@ -598,16 +678,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
   handleAdditionalProperties(property: any): string {
     const additionalProps = property.additionalProperties;
 
+    // Check if type exists, default to "any" if not provided
     const types = Array.isArray(additionalProps.type)
       ? additionalProps.type.join(' or ')
-      : additionalProps.type || 'unknown';
+      : additionalProps.type || 'any'; // Default to "any" if no type is provided
 
     const additionalFormat = additionalProps.format
       ? `<${additionalProps.format}>`
       : '';
 
     return `dictionary[string, ${types}${additionalFormat}]`;
-    //TODO: Handle deeper nesting
   }
 
   handleArray(property: any): string {
@@ -673,7 +753,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         : property.type;
     }
 
-    return 'unknown'; // Default case
+    return 'any';
   }
 
   isValidTypeWithNumber(input: string): {
@@ -976,7 +1056,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         editDisabled: false,
         isReferenceChild: false,
         isRootNode: true,
-        uniqeId: this.selectedSchema['x-myappika']?.id || 'no-id',
+        uniqeId: this.selectedSchema[`x-${this.nameOfId}`]?.id || 'no-id',
       },
       children: [],
       expanded: true,
@@ -1028,7 +1108,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Only patch individual fields, setting title to selectedSchemaName
     this.schemaDetailsForm.patchValue({
       title: selectedSchemaName || '',
       description: schema.description || '',
@@ -1202,6 +1281,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       'boolean',
       'dictionary',
       'null',
+      'any',
     ];
 
     const cleanType = (typeStr: string): string => {
