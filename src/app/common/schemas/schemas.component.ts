@@ -99,6 +99,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedRowData: any;
   selectedCol: any;
   nameOfId: string = 'myappika';
+  examplesSubscheema: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -183,6 +184,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (!rootNode) {
       this.modifyExtensions(schema);
+      // console.log('schema', schema);
 
       rootNode = {
         label: schema?.title || 'No schema',
@@ -194,12 +196,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
           editDisabled: false,
           isReferenceChild: false,
           isRootNode: false,
-          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-idsss',
         },
         children: [],
         expanded: true,
       };
     }
+    // console.log('rootNode', rootNode);
 
     const disableEditOnAllChildren = (node: TreeNode) => {
       node.data.editDisabled = true;
@@ -223,6 +226,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         'boolean',
         'dictionary',
         'null',
+        'any',
       ];
 
       subSchemas.forEach((subSchema: any) => {
@@ -265,7 +269,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               rootNode.children!.push(childNode);
             }
           }
-        } else if (subSchema?.type === 'array' && subSchema?.items) {
+        } else if (subSchema?.items) {
           const arrayType = this.handleArray(subSchema);
 
           const childNode: TreeNode = {
@@ -283,6 +287,28 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
+
+          console.log('subSchema', subSchema);
+          console.log(subSchema.items);
+          console.log(Object.keys(subSchema.items).length > 0);
+
+          if (//TODO: Only go if there are items additionalProperties or properties
+            subSchema.items != null &&
+            Object.keys(subSchema.items).length > 0
+          ) {
+            const resolvedChildren = this.schemaToTreeNode(
+              subSchema.items,
+              null,
+              resolvedRefs
+            );
+
+            const deepestItems = this.getDeepestItems(resolvedChildren);
+
+            deepestItems.forEach((deepestItem) => {
+              childNode.children!.push(deepestItem);
+            });
+          }
+
           rootNode.children!.push(childNode);
         } else if (subSchema?.additionalProperties) {
           const discType = this.handleAdditionalProperties(subSchema);
@@ -302,27 +328,28 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
-          if (subSchema.additionalProperties.properties) {
-            console.log(
-              `Recursively processing properties within additionalProperties for ${discType}`
-            );
+        const additionalProps = subSchema.additionalProperties;
 
-            const resolvedChildren = this.schemaToTreeNode(
-              subSchema.additionalProperties,
-              null,
-              resolvedRefs
-            );
+        const hasType = !!additionalProps.type;
+        const hasProperties =
+          additionalProps.properties &&
+          Object.keys(additionalProps.properties).length > 0;
+        const hasNestedAdditionalProperties =
+          !!additionalProps.additionalProperties;
 
-            resolvedChildren.forEach((resolvedChild) => {
-              if (resolvedChild.children && resolvedChild.children.length > 0) {
-                resolvedChild.children.forEach((nestedChild) => {
-                  // disableEditOnAllChildren(nestedChild);
-                  // referenceChildren(nestedChild);
-                  childNode.children!.push(nestedChild);
-                });
-              }
-            });
-          }
+        if (hasType || hasProperties || hasNestedAdditionalProperties) {
+          const resolvedChildren = this.schemaToTreeNode(
+            subSchema.additionalProperties,
+            null,
+            resolvedRefs
+          );
+
+          const deepestItems = this.getDeepestItems(resolvedChildren);
+
+          deepestItems.forEach((deepestItem) => {
+            childNode.children!.push(deepestItem);
+          });
+        }
 
           rootNode.children!.push(childNode);
         } else if (
@@ -521,11 +548,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           this.modifyExtensions(schema);
 
           const discType = this.handleAdditionalProperties(property);
-          console.log(`property:`, property);
-          console.log(
-            `property additionalProperties:`,
-            property.additionalProperties
-          );
 
           const childNode: TreeNode = {
             label: propertyKey,
@@ -542,32 +564,32 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
-          rootNode.children!.push(childNode);
 
-          // Iterate through additionalProperties' properties if they exist
-          if (property.additionalProperties.properties) {
-            console.log(
-              `Recursively processing properties within additionalProperties for ${discType}`
-            );
+          const additionalProps = property.additionalProperties;
 
+          const hasType = !!additionalProps.type;
+          const hasProperties =
+            additionalProps.properties &&
+            Object.keys(additionalProps.properties).length > 0;
+          const hasNestedAdditionalProperties =
+            !!additionalProps.additionalProperties;
+
+          if (hasType || hasProperties || hasNestedAdditionalProperties) {
             const resolvedChildren = this.schemaToTreeNode(
               property.additionalProperties,
               null,
               resolvedRefs
             );
-            console.log(`resolvedChildren:`, resolvedChildren);
 
-            resolvedChildren.forEach((resolvedChild) => {
-              if (resolvedChild.children && resolvedChild.children.length > 0) {
-                resolvedChild.children.forEach((nestedChild) => {
-                  // disableEditOnAllChildren(nestedChild);
-                  // referenceChildren(nestedChild);
-                  childNode.children!.push(nestedChild);
-                });
-              }
+            const deepestItems = this.getDeepestItems(resolvedChildren);
+
+            deepestItems.forEach((deepestItem) => {
+              childNode.children!.push(deepestItem);
             });
           }
-        } else if (property?.type === 'array' && property?.items) {
+
+          rootNode.children!.push(childNode);
+        } else if (property.items) {
           this.modifyExtensions(schema);
 
           const arrayType = this.handleArray(property);
@@ -587,9 +609,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
             children: [],
             parent: rootNode,
           };
-          rootNode.children!.push(childNode);
 
-          //TODO: handle array object items
+          if (
+            property.items != null &&
+            Object.keys(property.items).length > 0
+          ) {
+            const resolvedChildren = this.schemaToTreeNode(
+              property.items,
+              null,
+              resolvedRefs
+            );
+            const deepestItems = this.getDeepestItems(resolvedChildren);
+
+            deepestItems.forEach((deepestItem) => {
+              childNode.children!.push(deepestItem);
+            });
+          }
+
+          rootNode.children!.push(childNode);
         } else if (this.isValidType(property?.type)) {
           rootNode.children!.push(childNode);
         }
@@ -607,6 +644,87 @@ export class SchemasComponent implements OnInit, OnDestroy {
         },
         children: [],
       }));
+    } else if (schema?.additionalProperties) {
+      this.modifyExtensions(schema);
+
+      const discType = this.handleAdditionalProperties(schema);
+
+      const childNode: TreeNode = {
+        label: 'asdqweqe',
+        data: {
+          name: 'propertyKey',
+          description: schema?.description || '',
+          type: discType,
+          showReferenceButton: !!schema?.$ref,
+          editDisabled: !!schema?.$ref,
+          isReferenceChild: false,
+          isRootNode: false,
+          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+        },
+        children: [],
+        parent: rootNode,
+      };
+
+      const resolvedChildren = this.schemaToTreeNode(
+        schema.additionalProperties,
+        null,
+        resolvedRefs
+      );
+
+      resolvedChildren.forEach((resolvedChild) => {
+        if (resolvedChild.children && resolvedChild.children.length > 0) {
+          resolvedChild.children.forEach((nestedChild) => {
+            // disableEditOnAllChildren(nestedChild);
+            // referenceChildren(nestedChild);
+            childNode.children!.push(nestedChild);
+          });
+        }
+      });
+      console.log('childnode', childNode);
+      rootNode.children!.push(childNode);
+    } else if (schema?.items) {
+      this.modifyExtensions(schema);
+
+      const arrayType = this.handleArray(schema);
+
+      const childNode: TreeNode = {
+        label: 'arrayasdf',
+        data: {
+          name: 'asaarayd',
+          description: schema?.description || '',
+          type: arrayType,
+          showReferenceButton: !!schema?.$ref,
+          editDisabled: !!schema?.$ref,
+          isReferenceChild: false,
+          isRootNode: false,
+          uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+        },
+        children: [],
+        parent: rootNode,
+      };
+
+      if (schema.items != null && Object.keys(schema.items).length > 0) {
+        const resolvedChildren = this.schemaToTreeNode(
+          schema.items,
+          null,
+          resolvedRefs
+        );
+        console.log(`resolvedChildren in schema?.items :`, resolvedChildren);
+
+        resolvedChildren.forEach((resolvedChild) => {
+          if (resolvedChild.children && resolvedChild.children.length > 0) {
+            resolvedChild.children.forEach((nestedChild) => {
+              // disableEditOnAllChildren(nestedChild);
+              // referenceChildren(nestedChild);
+              childNode.children!.push(nestedChild);
+            });
+          }
+        });
+      }
+      rootNode.children!.push(childNode);
+      //TODO: array & disc buttons
+      //TODO: array deepest child type
+      //TODO: check disc is not empty
     }
 
     nodes.push(rootNode);
@@ -678,10 +796,42 @@ export class SchemasComponent implements OnInit, OnDestroy {
   handleAdditionalProperties(property: any): string {
     const additionalProps = property.additionalProperties;
 
-    // Check if type exists, default to "any" if not provided
+    if (!additionalProps) {
+      return 'dictionary[string, any]'; // Default if additionalProperties is missing
+    }
+
+    // Check if additionalProperties is an array
+    if (additionalProps.type === 'array' && additionalProps.items) {
+      const arrayType = additionalProps.items.type || 'any'; // Default to 'any' if type is missing in items
+      const nestedType = additionalProps.items.additionalProperties
+        ? this.handleAdditionalProperties({
+            additionalProperties: additionalProps.items.additionalProperties,
+          })
+        : arrayType;
+
+      return `dictionary[string, array[${nestedType}]]`;
+    }
+
+    // Check if additionalProperties is a dictionary (object with additionalProperties)
+    if (
+      additionalProps.type === 'object' &&
+      additionalProps.additionalProperties
+    ) {
+      const nestedDictionaryType = this.handleAdditionalProperties({
+        additionalProperties: additionalProps.additionalProperties,
+      });
+      return `dictionary[string, ${nestedDictionaryType}]`;
+    }
+
+    // Check if additionalProperties is a regular object with properties
+    if (additionalProps.type === 'object' && additionalProps.properties) {
+      return 'dictionary[string, object]';
+    }
+
+    // Handle regular types and formats
     const types = Array.isArray(additionalProps.type)
       ? additionalProps.type.join(' or ')
-      : additionalProps.type || 'any'; // Default to "any" if no type is provided
+      : additionalProps.type || 'any'; // Default to 'any' if no type is provided
 
     const additionalFormat = additionalProps.format
       ? `<${additionalProps.format}>`
@@ -696,6 +846,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     if (!items) {
       return 'array[unknown]'; // Default when no items are defined
+    }
+
+    // If `items` is an empty object, return just `array`
+    if (Object.keys(items).length === 0) {
+      return 'array';
+    }
+
+    // Check if `additionalProperties` exists within `items`
+    if (items.additionalProperties) {
+      const additionalPropsType = items.additionalProperties.type || 'any'; // Default to 'any' if type is missing
+      const additionalPropsFormat = items.additionalProperties.format
+        ? `<${items.additionalProperties.format}>`
+        : '';
+      return `array[dictionary[string, ${additionalPropsType}${additionalPropsFormat}]]`;
     }
 
     // Check if items have multiple types or a single type
@@ -791,6 +955,22 @@ export class SchemasComponent implements OnInit, OnDestroy {
   getTypeStatus(input: string): boolean {
     const result = this.isValidTypeWithNumber(input);
     return result.isValidType && result.isTypeWithNumber;
+  }
+
+  getDeepestItems(nodes: TreeNode[]): TreeNode[] {
+    const deepestItems: TreeNode[] = [];
+
+    const traverse = (node: TreeNode, currentDepth: number) => {
+      if (!node.children || node.children.length === 0) {
+        deepestItems.push(node); // Store the node without adding the depth property
+      } else {
+        // Recursively traverse each child
+        node.children.forEach((child) => traverse(child, currentDepth + 1));
+      }
+    };
+
+    nodes.forEach((node) => traverse(node, 0)); // Start traversal from root nodes
+    return deepestItems;
   }
 
   handleAddScheme(_event: Event): void {
@@ -1302,13 +1482,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     const validateArrayType = (typeStr: string): boolean => {
+      if (typeStr === 'array') {
+        return true; // Accept plain 'array'
+      }
+
       const match = typeStr.match(/^array\[(.+)\]$/);
       if (match) {
         const innerType = match[1];
         const cleanInnerType = cleanType(innerType);
-        // Support union types or special types inside arrays
+        // Check if the inner type is valid, including nested types
         return (
-          validateUnionTypes(innerType) || specialTypes.includes(cleanInnerType)
+          validateUnionTypes(innerType) ||
+          validateDictionaryType(innerType) || // Handle dictionary inside array
+          validateArrayType(innerType) || // Handle nested arrays
+          specialTypes.includes(cleanInnerType)
         );
       }
       return false;
@@ -1318,9 +1505,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const match = typeStr.match(/^dictionary\[string,\s*(.+)\]$/);
       if (match) {
         const innerType = match[1];
+        // Check if the inner type is valid, including nested arrays or dictionaries
         return (
           validateUnionTypes(innerType) ||
-          validateArrayType(innerType) || // Check if the inner type is an array
+          validateArrayType(innerType) || // Handle arrays inside dictionaries
+          validateDictionaryType(innerType) || // Handle nested dictionaries
           specialTypes.includes(cleanType(innerType))
         );
       }
@@ -1329,6 +1518,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     // If type is a single string
     if (typeof type === 'string') {
+      if (type === 'array') {
+        return true; // Accept plain 'array'
+      }
       if (type.startsWith('dictionary')) {
         return validateDictionaryType(type);
       }
