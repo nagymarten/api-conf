@@ -214,9 +214,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   constructor(private apiDataService: ApiDataService) {}
 
-  ngOnInit() {
-    this.activeItem = this.responseExamples[0];
-  }
+  ngOnInit() {}
 
   toggleEnumInput() {
     this.showEnumInput = !this.showEnumInput;
@@ -272,76 +270,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.types.unshift(originalType);
     }
     this.selectedType = originalType;
-    console.log('types', this.selectedType);
-
-    // console.log('this.selectedType', this.selectedType);
-    // console.log('this.selectedSchema', this.selectedSchema);
-    // console.log('this.col', this.col);
-    // console.log('this.rowData', this.rowData);
-    // console.log('apischemas', this.apiSchemas);
-
-    const updateSchemaWithCol = (rowData: any, col: any): void => {
-      const findAndUpdate = (
-        schema: any,
-        key: string,
-        newValue: any
-      ): boolean => {
-        if (!schema || typeof schema !== 'object') return false;
-
-        if (schema[key] !== undefined) {
-          schema[key] = newValue; // Update the value
-          return true;
-        }
-
-        // Check properties
-        if (schema.properties) {
-          for (const propKey in schema.properties) {
-            if (findAndUpdate(schema.properties[propKey], key, newValue)) {
-              return true;
-            }
-          }
-        }
-
-        // Check allOf, oneOf, anyOf
-        const schemasArrayKeys = ['allOf', 'oneOf', 'anyOf'];
-        for (const arrayKey of schemasArrayKeys) {
-          if (Array.isArray(schema[arrayKey])) {
-            for (const subSchema of schema[arrayKey]) {
-              if (findAndUpdate(subSchema, key, newValue)) {
-                return true;
-              }
-            }
-          }
-        }
-
-        // Check additionalProperties
-        if (schema.additionalProperties) {
-          if (findAndUpdate(schema.additionalProperties, key, newValue)) {
-            return true;
-          }
-        }
-
-        // Check items (for arrays)
-        if (schema.items) {
-          if (findAndUpdate(schema.items, key, newValue)) {
-            return true;
-          }
-        }
-
-        return false; // Not found
-      };
-
-      const newValue = cleanString(rowData[col.field]);
-      const updated = findAndUpdate(this.selectedSchema, col.field, newValue);
-
-      if (updated) {
-        console.log(`Updated schema for ${col.field}:`, this.selectedSchema);
-      } else {
-        console.warn(`Could not find ${col.field} in schema to update.`);
-      }
-    };
-
-    // updateSchemaWithCol(rowData, col);
+    console.log('selected types', this.selectedType);
+    this.checkAndInitializeSelectedType();
 
     if (this.selectedSchema?.type === 'object') {
       this.minProperties = this.selectedSchema.minProperties || null;
@@ -684,13 +614,102 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       //TODO: inicialize dictionary
     }
 
-    updateSchemaWithCol(rowData, col);
-
     this.op.toggle(event);
 
     setTimeout(() => {
       this.op.align();
     }, 0);
+  }
+
+  checkAndInitializeSelectedType() {
+    console.log(this.selectedType);
+    if (!this.selectedType) {
+      console.warn('No type selected.');
+      return;
+    }
+
+    const selectedTypeName = this.selectedType.name;
+
+    const isInCombineTypes = ['allOf', 'anyOf', 'oneOf'].includes(
+      selectedTypeName
+    );
+
+    const isSpecialType = [
+      'array',
+      'boolean',
+      'integer',
+      'disconary',
+      'number',
+      'string',
+      'enum',
+      'object',
+    ].includes(selectedTypeName);
+
+    const isInReferences = this.apiSchemas.some(
+      (schema: any) => schema.name === selectedTypeName
+    );
+
+    if (isInCombineTypes) {
+      console.log(`${selectedTypeName} found in combineTypes.`);
+      this.activeItem = this.responseExamples[2];
+      this.selectedCombineType = selectedTypeName;
+      this.handleSpecialType(selectedTypeName);
+    } else if (isSpecialType) {
+      console.log(`${selectedTypeName} is a special OpenAPI construct.`);
+      this.activeItem = this.responseExamples[0];
+      this.selectedType.name = selectedTypeName;
+    } else if (isInReferences) {
+      console.log(`${selectedTypeName} found in references.`);
+      const matchedSchema = this.apiSchemas.find(
+        (schema: any) => schema.name === selectedTypeName
+      );
+      if (matchedSchema) {
+        this.initializeFromSchema(matchedSchema);
+        this.activeItem = this.responseExamples[1];
+      }
+    } else {
+      console.warn(
+        `${selectedTypeName} is neither in combineTypes, references, nor a special type.`
+      );
+    }
+  }
+
+  handleSpecialType(type: string) {
+    switch (type) {
+      case 'allOf':
+        console.log('Processing allOf...');
+        this.selectedCombineType =
+          this.combineTypes.find((t) => t.name === 'AND')?.name || '';
+        break;
+      case 'anyOf':
+        console.log('Processing anyOf...');
+        this.selectedCombineType =
+          this.combineTypes.find((t) => t.name === 'OR')?.name || '';
+        break;
+      case 'oneOf':
+        console.log('Processing oneOf...');
+        this.selectedCombineType =
+          this.combineTypes.find((t) => t.name === 'XOR')?.name || '';
+        break;
+      default:
+        console.warn(`Unhandled special type: ${type}`);
+        this.selectedCombineType = '';
+    }
+
+    if (this.selectedCombineType) {
+      console.log(`Selected Combine Type: ${this.selectedCombineType}`);
+    } else {
+      console.warn('No matching combine type found.');
+    }
+  }
+
+  initializeFromSchema(schema: any) {
+    console.log('Initializing from schema:', schema);
+
+    this.minProperties = schema.minProperties || null;
+    this.maxProperties = schema.maxProperties || null;
+    this.allowAdditionalProperties = schema.allowAdditionalProperties || false;
+    this.deprecated = schema.deprecated || false;
   }
 
   onFieldBlur(field: string, event: any): void {

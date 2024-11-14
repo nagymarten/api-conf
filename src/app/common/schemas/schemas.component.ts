@@ -282,6 +282,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              isObjArrOrDisc: true,
               uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -365,6 +366,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!subSchema?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              isObjArrOrDisc: true,
               uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -646,6 +648,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              isObjArrOrDisc: true,
               uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -735,6 +738,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
+              isObjArrOrDisc: true,
               uniqeId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -1676,7 +1680,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       );
       return (
         validTypes.length === unionTypes.length &&
-        (hasNull || unionTypes.length > 1)
+        (hasNull || validTypes.length > 1)
       );
     };
 
@@ -1713,25 +1717,25 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return false;
     };
 
-    // If type is a single string
+    // Handle plain strings
     if (typeof type === 'string') {
       const cleanedType = cleanString(type); // Clean the string
       if (cleanedType === 'array') {
         return true; // Accept plain 'array'
       }
       if (cleanedType.startsWith('dictionary')) {
-        return validateDictionaryType(cleanedType);
+        return validateDictionaryType(cleanedType); // Validate dictionary type
       }
       if (cleanedType.startsWith('array')) {
-        return validateArrayType(cleanedType);
+        return validateArrayType(cleanedType); // Validate array type
       }
       if (cleanedType.includes(' or ')) {
-        return validateUnionTypes(cleanedType);
+        return validateUnionTypes(cleanedType); // Validate union types
       }
-      return specialTypes.includes(cleanType(cleanedType));
+      return specialTypes.includes(cleanType(cleanedType)); // Validate against special types
     }
 
-    // If type is an array of strings
+    // Handle arrays of strings
     if (Array.isArray(type)) {
       return type.every((t) => {
         if (typeof t === 'string') {
