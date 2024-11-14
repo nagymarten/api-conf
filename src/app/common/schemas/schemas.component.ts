@@ -902,9 +902,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         });
       }
       rootNode.children!.push(childNode);
-      //TODO: array & disc buttons
-      //TODO: array deepest child type
-      //TODO: check disc is not empty
     }
 
     nodes.push(rootNode);

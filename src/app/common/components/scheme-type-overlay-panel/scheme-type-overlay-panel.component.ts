@@ -6,6 +6,7 @@ import {
   OnInit,
   Output,
   EventEmitter,
+  ElementRef,
 } from '@angular/core';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { InputGroupModule } from 'primeng/inputgroup';
@@ -63,6 +64,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   @Input() selectedSchemaName: any;
 
   @ViewChild('op') op!: OverlayPanel;
+  @ViewChild('scroller') scroller!: ElementRef;
+
   @Output() updateRow = new EventEmitter<string>();
   @Output() schemaUpdated: EventEmitter<any> = new EventEmitter<any>();
 
@@ -87,8 +90,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   selectedIntType: any;
   combineTypes: Type[] = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
   showAddPropertyForm: boolean = false;
-  scrollHeight: string = '200px';
-  selectedCombineType!: string;
+  scrollHeight: string = '250px';
+  selectedCombineType: Type | undefined;
+  selectedRefSchema: string = '';
   selectedBehavior: any;
   default: string = '';
   example: string = '';
@@ -99,6 +103,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMax: boolean = false;
   deprecated: boolean = false;
   allow_additional_properties: boolean = false;
+  apiSchemasS = Array.from({ length: 50 }, (_, i) => ({
+    name: `Item ${i + 1}`,
+  }));
 
   //Object
   minProperties: number | null = null;
@@ -240,6 +247,52 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   setCol(col: any) {
     this.col = col;
   }
+//TODO: Do id search in selectedSchema
+  getSelectedSchemaObject(): any {
+    if (
+      this.selectedSchema &&
+      this.selectedSchema['x-myappika'] &&
+      this.selectedSchema['x-myappika'].id
+    ) {
+      console.log('rowData.uniqueId:', this.rowData.uniqueId);
+      console.log(
+        'selectedSchema[x-myappika].id:',
+        this.selectedSchema['x-myappika'].id
+      );
+
+      // Check top-level x-myappika.id
+      if (this.selectedSchema['x-myappika'].id === this.rowData.uniqueId) {
+        console.log('Matching top-level selectedSchema:', this.selectedSchema);
+        return this.selectedSchema; // Return the matching top-level schema
+      }
+
+      // If top-level doesn't match, iterate through properties
+      if (this.selectedSchema.properties) {
+        Object.keys(this.selectedSchema.properties).forEach((propertyKey) => {
+          const property = this.selectedSchema.properties[propertyKey];
+          if (property['x-myappika'] && property['x-myappika'].id) {
+            console.log(
+              `Checking property ${propertyKey}, x-myappika.id:`,
+              property['x-myappika'].id
+            );
+
+            if (property['x-myappika'].id === this.rowData.uniqueId) {
+              console.log('Matching property found:', property);
+              return property; // Return the matching property
+            }
+          }
+        });
+      }
+
+      console.warn(
+        'No match found for rowData.uniqueId in selectedSchema or its properties'
+      );
+      return null;
+    } else {
+      console.warn('The selected schema does not contain x-myappika.id');
+      return null;
+    }
+  }
 
   toggleOverlay(event: Event, rowData: any, col: any) {
     const cleanString = (value: string) =>
@@ -265,6 +318,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     this.setRowData(rowData);
     this.setCol(col);
+
+    console.log('rowData', rowData);
+    console.log('selected schema', this.selectedSchema);
+    const myappikaIdPart = this.getSelectedSchemaObject();
+    console.log(myappikaIdPart);
 
     if (!this.types.some((type) => type.name === originalType.name)) {
       this.types.unshift(originalType);
@@ -618,6 +676,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     setTimeout(() => {
       this.op.align();
+      this.scrollToSelected();
     }, 0);
   }
 
@@ -638,7 +697,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       'array',
       'boolean',
       'integer',
-      'disconary',
+      'dictionary',
       'number',
       'string',
       'enum',
@@ -650,22 +709,21 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     );
 
     if (isInCombineTypes) {
-      console.log(`${selectedTypeName} found in combineTypes.`);
       this.activeItem = this.responseExamples[2];
-      this.selectedCombineType = selectedTypeName;
       this.handleSpecialType(selectedTypeName);
     } else if (isSpecialType) {
-      console.log(`${selectedTypeName} is a special OpenAPI construct.`);
       this.activeItem = this.responseExamples[0];
       this.selectedType.name = selectedTypeName;
     } else if (isInReferences) {
-      console.log(`${selectedTypeName} found in references.`);
       const matchedSchema = this.apiSchemas.find(
         (schema: any) => schema.name === selectedTypeName
       );
       if (matchedSchema) {
+        this.selectedRefSchema = selectedTypeName;
+        console.log(`${selectedTypeName} found in references.`);
         this.initializeFromSchema(matchedSchema);
         this.activeItem = this.responseExamples[1];
+        this.scrollToSelected();
       }
     } else {
       console.warn(
@@ -674,32 +732,32 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     }
   }
 
+  scrollToSelected(): void {
+    if (this.selectedRefSchema) {
+      const selectedElement = document.getElementById(
+        `item-${this.selectedRefSchema}`
+      );
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+
   handleSpecialType(type: string) {
     switch (type) {
       case 'allOf':
-        console.log('Processing allOf...');
-        this.selectedCombineType =
-          this.combineTypes.find((t) => t.name === 'AND')?.name || '';
+        this.selectedCombineType = { name: 'AND' };
+
         break;
       case 'anyOf':
-        console.log('Processing anyOf...');
-        this.selectedCombineType =
-          this.combineTypes.find((t) => t.name === 'OR')?.name || '';
+        this.selectedCombineType = { name: 'OR' };
         break;
       case 'oneOf':
-        console.log('Processing oneOf...');
-        this.selectedCombineType =
-          this.combineTypes.find((t) => t.name === 'XOR')?.name || '';
+        this.selectedCombineType = { name: 'XOR' };
         break;
       default:
         console.warn(`Unhandled special type: ${type}`);
-        this.selectedCombineType = '';
-    }
-
-    if (this.selectedCombineType) {
-      console.log(`Selected Combine Type: ${this.selectedCombineType}`);
-    } else {
-      console.warn('No matching combine type found.');
+        this.selectedCombineType = { name: '' };
     }
   }
 
@@ -1240,6 +1298,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   onSchemeSelect(scheme: any) {
     console.log('Selected scheme in overlay:', scheme);
+    this.selectedRefSchema = scheme.name;
+    this.scrollToSelected();
   }
 
   onCombineTypeChange() {

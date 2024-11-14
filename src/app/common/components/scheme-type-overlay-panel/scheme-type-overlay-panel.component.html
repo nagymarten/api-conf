@@ -922,36 +922,59 @@
         </div>
       </div>
 
-      <div *ngIf="activeItem?.label === 'Components'">
-        <div class="p-toolbar-group-start">
-          <span class="p-input-icon-left">
-            <i class="pi pi-search"></i>
-            <input pInputText placeholder="Search" />
-          </span>
-          <p-divider />
+      <div
+        *ngIf="activeItem?.label === 'Components'"
+        class="p-toolbar-group-start"
+      >
+        <!-- Search Input -->
+        <span
+          class="p-input-icon-left"
+          style="margin-bottom: 1rem; display: flex; align-items: center"
+        >
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            placeholder="Search"
+            style="width: 100%; max-width: 300px"
+          />
+        </span>
 
-          <p-scroller
-            [items]="apiSchemas"
-            [itemSize]="50"
-            [scrollHeight]="scrollHeight"
-            class="border-1 surface-border"
+        <!-- Divider -->
+        <p-divider class="custom-divider"></p-divider>
+
+        <div
+          style="height: 300px; overflow-y: auto; border: 1px solid #ccc"
+          #scroller
+        >
+          <div
+            *ngFor="let item of apiSchemas"
+            [id]="'item-' + item.name"
+            style="
+              height: 50px;
+              padding: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
           >
-            <ng-template pTemplate="item" let-item let-options="options">
-              <div
-                class="flex align-items-center p-2 clickable-item"
-                [ngClass]="{ 'surface-ground': options.odd }"
-                style="height: 50px; cursor: pointer"
-                (click)="onSchemeSelect(item)"
-              >
-                <p-button
-                  label="{{ item.name }}"
-                  [text]="true"
-                  severity="secondary"
-                  [style]="{ width: '100%' }"
-                />
-              </div>
-            </ng-template>
-          </p-scroller>
+            <p-button
+              label="{{ item.name }}"
+              (click)="onSchemeSelect(item)"
+              [ngClass]="{ 'selected-button': item.name === selectedRefSchema }"
+              [style]="{
+                'background-color':
+                  item.name === selectedRefSchema ? '#d4edda' : '',
+                color: item.name === selectedRefSchema ? '#155724' : '',
+                border:
+                  item.name === selectedRefSchema ? '1px solid #c3e6cb' : ''
+              }"
+            ></p-button>
+            <i
+              *ngIf="item.name === selectedRefSchema"
+              class="pi pi-check"
+              style="color: green; margin-left: 8px"
+            ></i>
+          </div>
         </div>
       </div>
 
