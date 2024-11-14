@@ -347,6 +347,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           processItemsRecursively(subSchema.items, childNode);
 
+          if (childNode.children && childNode.children.length > 0) {
+            childNode.data.showAddButton = true;
+          }
+
           rootNode.children!.push(childNode);
         } else if (subSchema?.additionalProperties) {
           const discType = this.handleAdditionalProperties(subSchema);
@@ -428,6 +432,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 });
               }
             });
+          }
+
+          if (childNode.children && childNode.children.length > 0) {
+            childNode.data.showAddButton = true;
           }
 
           rootNode.children!.push(childNode);
@@ -673,6 +681,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   editDisabled: !!subProperty?.$ref,
                   isReferenceChild: false,
                   isRootNode: false,
+                  showAddButton: true,
                   uniqeId: subProperty[`x-${this.nameOfId}`]?.id || 'no-id',
                 },
                 children: [],
@@ -705,6 +714,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 });
               }
             });
+          }
+          if (childNode.children && childNode.children.length > 0) {
+            childNode.data.showAddButton = true;
           }
 
           rootNode.children!.push(childNode);
@@ -787,6 +799,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
           };
 
           processItemsRecursively(property.items, childNode);
+
+          if (childNode.children && childNode.children.length > 0) {
+            childNode.data.showAddButton = true;
+          }
 
           rootNode.children!.push(childNode);
         } else if (this.isValidType(property?.type)) {
@@ -1648,6 +1664,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return baseType.replace(/ or null$/, '').trim(); // Remove " or null" suffix
     };
 
+    const cleanString = (typeStr: string): string => {
+      // Handle cases like "object{2}"
+      return typeStr.replace(/\{.*\}$/, '').trim(); // Remove "{...}" from the end
+    };
+
     const validateUnionTypes = (typeStr: string): boolean => {
       const unionTypes = typeStr.split(' or ').map((t) => t.trim());
       const hasNull = unionTypes.includes('null');
@@ -1669,7 +1690,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       if (match) {
         const innerType = match[1];
         const cleanInnerType = cleanType(innerType);
-        // Check if the inner type is valid, including nested types
         return (
           validateUnionTypes(innerType) ||
           validateDictionaryType(innerType) || // Handle dictionary inside array
@@ -1684,7 +1704,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const match = typeStr.match(/^dictionary\[string,\s*(.+)\]$/);
       if (match) {
         const innerType = match[1];
-        // Check if the inner type is valid, including nested arrays or dictionaries
         return (
           validateUnionTypes(innerType) ||
           validateArrayType(innerType) || // Handle arrays inside dictionaries
@@ -1697,19 +1716,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     // If type is a single string
     if (typeof type === 'string') {
-      if (type === 'array') {
+      const cleanedType = cleanString(type); // Clean the string
+      if (cleanedType === 'array') {
         return true; // Accept plain 'array'
       }
-      if (type.startsWith('dictionary')) {
-        return validateDictionaryType(type);
+      if (cleanedType.startsWith('dictionary')) {
+        return validateDictionaryType(cleanedType);
       }
-      if (type.startsWith('array')) {
-        return validateArrayType(type);
+      if (cleanedType.startsWith('array')) {
+        return validateArrayType(cleanedType);
       }
-      if (type.includes(' or ')) {
-        return validateUnionTypes(type);
+      if (cleanedType.includes(' or ')) {
+        return validateUnionTypes(cleanedType);
       }
-      return specialTypes.includes(cleanType(type));
+      return specialTypes.includes(cleanType(cleanedType));
     }
 
     // If type is an array of strings

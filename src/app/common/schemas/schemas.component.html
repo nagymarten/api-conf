@@ -130,7 +130,8 @@
                           <ng-container
                             *ngIf="
                               (rowData.showReferenceButton ||
-                                rowData.showAddButton) &&
+                                (rowData.showAddButton &&
+                                  isSpecialType(rowData[col.field]))) &&
                                 col.field === 'name';
                               else defaultOutput
                             "
@@ -154,6 +155,8 @@
                           </ng-container>
                           <ng-template #defaultOutput>
                             {{ rowData[col.field] }}
+                            {{isSpecialType(rowData[col.field])}}
+                            {{rowData[col.field]}}
                           </ng-template>
                         </ng-template>
                       </p-treeTableCellEditor>
@@ -165,7 +168,8 @@
                           isSpecialType(rowData[col.field]) &&
                           !rowData.isReferenceChild &&
                           !rowData.isRootNode &&
-                          !rowData.showReferenceButton
+                          !rowData.showReferenceButton &&
+                          !rowData.showAddButton
                         "
                       >
                         <p-button
