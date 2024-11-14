@@ -271,8 +271,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     if (!this.types.some((type) => type.name === originalType.name)) {
       this.types.unshift(originalType);
     }
-
     this.selectedType = originalType;
+    console.log('types', this.selectedType);
 
     // console.log('this.selectedType', this.selectedType);
     // console.log('this.selectedSchema', this.selectedSchema);

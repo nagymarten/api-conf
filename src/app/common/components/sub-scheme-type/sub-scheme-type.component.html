@@ -18,6 +18,7 @@
               [showClear]="true"
               [style]="{ width: '100%' }"
               (onChange)="onTypeSelect()"
+              [appendTo]="'body'"
             ></p-dropdown>
           </div>
 
@@ -703,6 +704,7 @@
                         $event.value
                       )
                     "
+                    [appendTo]="'body'"
                   ></p-dropdown>
                 </div>
 
@@ -812,6 +814,7 @@
                       (onChange)="
                         onEnumFieldChange('selectedEnumBehavior', $event.value)
                       "
+                      [appendTo]="'body'"
                     ></p-dropdown>
                   </div>
                 </div>
@@ -940,6 +943,7 @@
         styleClass="combine-dropdown"
         [showClear]="true"
         (onChange)="onCombineTypeChange()"
+        [appendTo]="'body'"
       ></p-dropdown>
     </div>
   </div>

@@ -19,6 +19,7 @@
                 [showClear]="true"
                 [style]="{ width: '100%' }"
                 (onChange)="onTypeSelect()"
+                [appendTo]="'body'"
               ></p-dropdown>
             </div>
 
@@ -723,6 +724,7 @@
                           $event.value
                         )
                       "
+                      [appendTo]="'body'"
                     ></p-dropdown>
                   </div>
 
@@ -843,6 +845,7 @@
                             $event.value
                           )
                         "
+                        [appendTo]="'body'"
                       ></p-dropdown>
                     </div>
                   </div>
@@ -880,7 +883,9 @@
                     </div>
 
                     <div class="form-group">
-                      <label for="maxDictionaryProperties">maxDictionaryProperties</label>
+                      <label for="maxDictionaryProperties"
+                        >maxDictionaryProperties</label
+                      >
                       <input
                         id="maxDictionaryProperties"
                         type="number"
@@ -971,6 +976,7 @@
           styleClass="combine-dropdown"
           [showClear]="true"
           (onChange)="onCombineTypeChange()"
+          [appendTo]="'body'"
         ></p-dropdown>
       </div>
     </div>

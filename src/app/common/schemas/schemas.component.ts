@@ -1665,7 +1665,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     const cleanString = (typeStr: string): string => {
-      // Handle cases like "object{2}"
       return typeStr.replace(/\{.*\}$/, '').trim(); // Remove "{...}" from the end
     };
 

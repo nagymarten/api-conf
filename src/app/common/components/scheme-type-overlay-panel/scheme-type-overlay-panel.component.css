@@ -12,15 +12,10 @@
   border: 1px solid #e0e0e0;
   border-radius: 5px;
   background-color: #f9f9f9;
-
-  /* Make content scrollable if it overflows */
   max-height: 60vh;
-  /* Set a maximum height */
   overflow-y: auto;
-  /* Enable vertical scrolling */
 }
 
-/* Custom scrollbar styling for all scrollable containers */
 .properties-container::-webkit-scrollbar,
 .object-properties-container::-webkit-scrollbar,
 .string-properties-container::-webkit-scrollbar,
@@ -29,7 +24,6 @@
 .dictionary-properties-container::-webkit-scrollbar,
 .enum-properties-container::-webkit-scrollbar {
   width: 12px;
-  /* Width of the scrollbar */
 }
 
 .properties-container::-webkit-scrollbar-track,
@@ -40,7 +34,6 @@
 .dictionary-properties-container::-webkit-scrollbar-track,
 .enum-properties-container::-webkit-scrollbar-track {
   background: #f1f1f1;
-  /* Background of the scrollbar track */
 }
 
 .properties-container::-webkit-scrollbar-thumb,
@@ -51,11 +44,8 @@
 .dictionary-properties-container::-webkit-scrollbar-thumb,
 .enum-properties-container::-webkit-scrollbar-thumb {
   background-color: #c1c1c1;
-  /* Color of the scrollbar thumb */
   border-radius: 6px;
-  /* Rounded corners for the thumb */
   border: 3px solid #f1f1f1;
-  /* Adds padding around the thumb */
 }
 
 .properties-container::-webkit-scrollbar-thumb:hover,
@@ -66,10 +56,8 @@
 .dictionary-properties-container::-webkit-scrollbar-thumb:hover,
 .enum-properties-container::-webkit-scrollbar-thumb:hover {
   background-color: #a8a8a8;
-  /* Darker color on hover */
 }
 
-/* Firefox-specific styling for scrollbars */
 .properties-container,
 .object-properties-container,
 .string-properties-container,
@@ -78,12 +66,9 @@
 .dictionary-properties-container,
 .enum-properties-container {
   scrollbar-width: thin;
-  /* Thin scrollbar width for Firefox */
   scrollbar-color: #c1c1c1 #f1f1f1;
-  /* Thumb and track colors for Firefox */
 }
 
-/* Additional element styling */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -121,7 +106,6 @@
   margin-left: auto;
 }
 
-/* Enum Specific Styling */
 .enum-input-row {
   display: flex;
   align-items: center;
@@ -149,46 +133,38 @@
   margin-top: 0.5rem;
 }
 
-/* Wrapper to limit the size and handle overflow */
 .overlay-wrapper {
   max-height: 70vh;
-  /* Limit to 70% of the viewport height */
   max-width: 100%;
-  /* Ensure it doesn't overflow horizontally */
   overflow-y: auto;
-  /* Enable vertical scrolling */
   overflow-x: hidden;
-  /* Disable horizontal scrolling */
   padding: 1rem;
-  /* Optional padding */
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Content container styles */
-.content-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Scrollbar styling (optional, for better appearance) */
 .overlay-wrapper::-webkit-scrollbar {
   width: 10px;
-  /* Scrollbar width */
 }
 
 .overlay-wrapper::-webkit-scrollbar-track {
   background: #f1f1f1;
-  /* Scrollbar track color */
 }
 
 .overlay-wrapper::-webkit-scrollbar-thumb {
   background-color: #c1c1c1;
-  /* Scrollbar thumb color */
   border-radius: 6px;
-  /* Rounded corners */
 }
 
 .overlay-wrapper::-webkit-scrollbar-thumb:hover {
   background-color: #a8a8a8;
-  /* Hover color for the scrollbar thumb */
+}
+
+.p-overlaypanel {
+  z-index: 1000 !important;
+}
+
+.p-dropdown {
+  z-index: 1100 !important;
 }
