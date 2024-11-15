@@ -1,371 +1,369 @@
 <div *ngIf="apiSchemas.length > 0">
-  <form [formGroup]="schemaDetailsForm" (ngSubmit)="onUpdateSchema()">
-    <div class="schema-details">
-      <h1>
-        <input
-          *ngIf="schemaDetailsForm.get('isEditingTitle')?.value"
-          formControlName="title"
-          (blur)="stopEditingTitle()"
-          placeholder="Schema Title"
-          class="title-editor"
-        />
+  <div class="schema-details">
+    <h1>
+      <input
+        *ngIf="schemaDetailsForm.get('isEditingTitle')?.value"
+        formControlName="title"
+        (blur)="stopEditingTitle()"
+        placeholder="Schema Title"
+        class="title-editor"
+      />
 
-        <span
-          *ngIf="!schemaDetailsForm.get('isEditingTitle')?.value"
-          (click)="startEditingTitle()"
-          class="title-text"
+      <span
+        *ngIf="!schemaDetailsForm.get('isEditingTitle')?.value"
+        (click)="startEditingTitle()"
+        class="title-text"
+      >
+        {{
+          schemaDetailsForm.get("title")?.value ||
+            selectedSchemaName ||
+            "Click to add a title"
+        }}
+      </span>
+    </h1>
+
+    <div class="description-section">
+      <p
+        *ngIf="!schemaDetailsForm.get('isEditingDescription')?.value"
+        (click)="startEditingDescription()"
+        class="description-text"
+      >
+        {{
+          schemaDetailsForm.get("description")?.value ||
+            "Click to add a description"
+        }}
+      </p>
+
+      <textarea
+        *ngIf="schemaDetailsForm.get('isEditingDescription')?.value"
+        formControlName="description"
+        (blur)="stopEditingDescription()"
+        placeholder="Description"
+        class="description-editor"
+      ></textarea>
+    </div>
+
+    <div class="tabs">
+      <ul>
+        <li
+          [ngClass]="{ active: activeTab === 'schema' }"
+          (click)="setActiveTab('schema')"
         >
-          {{
-            schemaDetailsForm.get("title")?.value ||
-              selectedSchemaName ||
-              "Click to add a title"
-          }}
-        </span>
-      </h1>
-
-      <div class="description-section">
-        <p
-          *ngIf="!schemaDetailsForm.get('isEditingDescription')?.value"
-          (click)="startEditingDescription()"
-          class="description-text"
+          <button type="button">Schema</button>
+        </li>
+        <li
+          [ngClass]="{ active: activeTab === 'examples' }"
+          (click)="setActiveTab('examples')"
         >
-          {{
-            schemaDetailsForm.get("description")?.value ||
-              "Click to add a description"
-          }}
-        </p>
+          <button type="button">Examples</button>
+        </li>
+        <li
+          [ngClass]="{ active: activeTab === 'extensions' }"
+          (click)="setActiveTab('extensions')"
+        >
+          <button type="button">Extensions</button>
+        </li>
+      </ul>
+    </div>
 
-        <textarea
-          *ngIf="schemaDetailsForm.get('isEditingDescription')?.value"
-          formControlName="description"
-          (blur)="stopEditingDescription()"
-          placeholder="Description"
-          class="description-editor"
-        ></textarea>
-      </div>
+    <div *ngIf="activeTab === 'schema'" class="api-details">
+      <div class="properties-section">
+        <div *ngIf="selectedSchema">
+          <p-treeTable
+            [value]="jsonTree"
+            [columns]="cols"
+            [scrollable]="true"
+            [tableStyle]="{ 'min-width': '50rem' }"
+          >
+            <ng-template pTemplate="header" let-columns>
+              <tr>
+                <th *ngFor="let col of columns">
+                  {{ col.header }}
+                </th>
+              </tr>
+            </ng-template>
 
-      <div class="tabs">
-        <ul>
-          <li
-            [ngClass]="{ active: activeTab === 'schema' }"
-            (click)="setActiveTab('schema')"
-          >
-            <button type="button">Schema</button>
-          </li>
-          <li
-            [ngClass]="{ active: activeTab === 'examples' }"
-            (click)="setActiveTab('examples')"
-          >
-            <button type="button">Examples</button>
-          </li>
-          <li
-            [ngClass]="{ active: activeTab === 'extensions' }"
-            (click)="setActiveTab('extensions')"
-          >
-            <button type="button">Extensions</button>
-          </li>
-        </ul>
-      </div>
-
-      <div *ngIf="activeTab === 'schema'" class="api-details">
-        <div class="properties-section">
-          <div *ngIf="selectedSchema">
-            <p-treeTable
-              [value]="jsonTree"
-              [columns]="cols"
-              [scrollable]="true"
-              [tableStyle]="{ 'min-width': '50rem' }"
+            <ng-template
+              pTemplate="body"
+              let-rowNode
+              let-rowData="rowData"
+              let-columns="columns"
             >
-              <ng-template pTemplate="header" let-columns>
-                <tr>
-                  <th *ngFor="let col of columns">
-                    {{ col.header }}
-                  </th>
-                </tr>
-              </ng-template>
+              <tr [ttRow]="rowNode">
+                <td
+                  *ngFor="let col of columns; let i = index"
+                  [ttEditableColumn]="
+                    (col.field === 'name' && rowNode.parent) ||
+                    !rowData.editDisabled
+                  "
+                  [ttEditableColumnDisabled]="
+                    !rowNode.parent ||
+                    rowData.editDisabled ||
+                    (rowData.showAddButton && col.field === 'name')
+                  "
+                  [ngClass]="{ 'p-toggler-column': i === 0 }"
+                >
+                  <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
 
-              <ng-template
-                pTemplate="body"
-                let-rowNode
-                let-rowData="rowData"
-                let-columns="columns"
-              >
-                <tr [ttRow]="rowNode">
-                  <td
-                    *ngFor="let col of columns; let i = index"
-                    [ttEditableColumn]="
-                      (col.field === 'name' && rowNode.parent) ||
-                      !rowData.editDisabled
+                  <ng-container
+                    *ngIf="
+                      col.field === 'name' &&
+                      rowNode.parent &&
+                      !isSpecialType(rowData[col.field])
                     "
-                    [ttEditableColumnDisabled]="
-                      !rowNode.parent ||
-                      rowData.editDisabled ||
-                      (rowData.showAddButton && col.field === 'name')
-                    "
-                    [ngClass]="{ 'p-toggler-column': i === 0 }"
                   >
-                    <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
+                    <p-treeTableCellEditor>
+                      <ng-template pTemplate="input">
+                        <!-- TODO: update only default not scheme name -->
 
+                        <input
+                          pInputText
+                          type="text"
+                          [(ngModel)]="rowData[col.field]"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="Enter schema name"
+                          (blur)="onFieldBlur(rowData[col.field], $event, rowData)"
+                          (keydown.enter)="
+                            onFieldEnter(rowData[col.field], $event, rowData)
+                          "
+                        />
+                      </ng-template>
+
+                      <ng-template pTemplate="output">
+                        <ng-container
+                          *ngIf="
+                            (rowData.showReferenceButton ||
+                              (rowData.showAddButton &&
+                                isSpecialType(rowData[col.field]))) &&
+                              col.field === 'name';
+                            else defaultOutput
+                          "
+                        >
+                          <p-button
+                            label="{{ rowData[col.field] }}"
+                            [outlined]="true"
+                            (click)="toggleChildOverlay($event, rowData)"
+                            class="no-border-button"
+                          ></p-button>
+                          <app-scheme-type-overlay-panel
+                            #overlayPanel
+                            [rowData]="rowData"
+                            [selectedCol]="selectedCol"
+                            [apiSchemas]="apiSchemas"
+                            [selectedSchema]="selectedSchema"
+                            [selectedSchemaName]="selectedSchemaName"
+                            (updateRow)="updateButtonLabel($event)"
+                            (schemaUpdated)="onSchemaUpdated($event)"
+                          ></app-scheme-type-overlay-panel>
+                        </ng-container>
+                        <ng-template #defaultOutput>
+                          {{ rowData[col.field] }}
+                        </ng-template>
+                      </ng-template>
+                    </p-treeTableCellEditor>
+                  </ng-container>
+
+                  <ng-container *ngIf="col.field !== 'name'">
                     <ng-container
                       *ngIf="
-                        col.field === 'name' &&
-                        rowNode.parent &&
-                        !isSpecialType(rowData[col.field])
-                      "
-                    >
-                      <p-treeTableCellEditor>
-                        <ng-template pTemplate="input">
-                          <!-- TODO: update only default not scheme name -->
-
-                          <input
-                            pInputText
-                            type="text"
-                            [(ngModel)]="rowData[col.field]"
-                            [ngModelOptions]="{ standalone: true }"
-                            placeholder="Enter schema name"
-                          />
-                        </ng-template>
-
-                        <ng-template pTemplate="output">
-                          <ng-container
-                            *ngIf="
-                              (rowData.showReferenceButton ||
-                                (rowData.showAddButton &&
-                                  isSpecialType(rowData[col.field]))) &&
-                                col.field === 'name';
-                              else defaultOutput
-                            "
-                          >
-                            <p-button
-                              label="{{ rowData[col.field] }}"
-                              [outlined]="true"
-                              (click)="toggleChildOverlay($event, rowData)"
-                              class="no-border-button"
-                            ></p-button>
-                            <app-scheme-type-overlay-panel
-                              #overlayPanel
-                              [rowData]="rowData"
-                              [col]="selectedCol"
-                              [apiSchemas]="apiSchemas"
-                              [selectedSchema]="selectedSchema"
-                              [selectedSchemaName]="selectedSchemaName"
-                              (updateRow)="updateButtonLabel($event)"
-                              (schemaUpdated)="onSchemaUpdated($event)"
-                            ></app-scheme-type-overlay-panel>
-                          </ng-container>
-                          <ng-template #defaultOutput>
-                            {{ rowData[col.field] }}
-                          </ng-template>
-                        </ng-template>
-                      </p-treeTableCellEditor>
-                    </ng-container>
-
-                    <ng-container *ngIf="col.field !== 'name'">
-                      <ng-container
-                        *ngIf="
-                          (isSpecialType(rowData[col.field]) &&
-                            !rowData.isReferenceChild &&
-                            !rowData.isRootNode &&
-                            !rowData.showReferenceButton &&
-                            !rowData.showAddButton) ||
-                          (rowData.isObjArrOrDisc &&
-                            isSpecialType(rowData[col.field]))
-                        "
-                      >
-                        <p-button
-                          label="{{ rowData[col.field] }}"
-                          [outlined]="true"
-                          (click)="toggleChildOverlay($event, rowData)"
-                          class="no-border-button"
-                        ></p-button>
-                        <app-scheme-type-overlay-panel
-                          #overlayPanel
-                          [rowData]="rowData"
-                          [col]="selectedCol"
-                          [apiSchemas]="apiSchemas"
-                          [selectedSchema]="selectedSchema"
-                          (updateRow)="updateButtonLabel($event)"
-                          (schemaUpdated)="onSchemaUpdated($event)"
-                        ></app-scheme-type-overlay-panel>
-                      </ng-container>
-                      <ng-container
-                        *ngIf="
-                          !isSpecialType(rowData[col.field]) &&
+                        (isSpecialType(rowData[col.field]) &&
+                          !rowData.isReferenceChild &&
                           !rowData.isRootNode &&
-                          getTypeStatus(
-                            rowData[col.field] || rowData.isReferenceChild
-                          )
-                        "
-                      >
-                        {{ rowData[col.field] }}
-                      </ng-container>
-                    </ng-container>
-
-                    <ng-container
-                      *ngIf="
-                        col.field == 'name' &&
-                        rowNode.parent &&
-                        !rowData.isReferenceChild
-                      "
-                    >
-                      <ng-container *ngIf="isSpecialType(rowData[col.field])">
-                        <p-button
-                          label="{{ rowData[col.field] }}"
-                          [outlined]="true"
-                          (click)="toggleChildOverlay($event, rowData)"
-                          class="no-border-button"
-                        ></p-button>
-                        <app-scheme-type-overlay-panel
-                          #overlayPanel
-                          [rowData]="rowData"
-                          [col]="selectedCol"
-                          [apiSchemas]="apiSchemas"
-                          [selectedSchema]="selectedSchema"
-                          (updateRow)="updateButtonLabel($event)"
-                          (schemaUpdated)="onSchemaUpdated($event)"
-                        ></app-scheme-type-overlay-panel>
-                      </ng-container>
-                      <ng-container
-                        *ngIf="
-                          isSpecialType(rowData[col.field]) &&
-                          rowData.isReferenceChild
-                        "
-                      >
-                        {{ rowData[col.field] }}
-                      </ng-container>
-                    </ng-container>
-
-                    <ng-container
-                      *ngIf="col.field === 'name' && !rowNode.parent"
-                    >
-                      <ng-container *ngIf="isSpecialType(rowData[col.field])">
-                        <p-button
-                          label="{{ rowData[col.field] }}"
-                          [outlined]="true"
-                          (click)="toggleChildOverlay($event, rowData)"
-                          class="no-border-button"
-                        ></p-button>
-                        <app-scheme-type-overlay-panel
-                          #overlayPanel
-                          [rowData]="rowData"
-                          [col]="selectedCol"
-                          [apiSchemas]="apiSchemas"
-                          [selectedSchema]="selectedSchema"
-                          (updateRow)="updateButtonLabel($event)"
-                          (schemaUpdated)="onSchemaUpdated($event)"
-                        ></app-scheme-type-overlay-panel>
-                      </ng-container>
-                      <ng-container *ngIf="!isSpecialType(rowData[col.field])">
-                        <p-button
-                          label="{{ rowData[col.field] }}"
-                          [outlined]="true"
-                          (click)="toggleChildOverlay($event, rowData)"
-                          class="no-border-button"
-                        ></p-button>
-                        <app-scheme-type-overlay-panel
-                          #overlayPanel
-                          [rowData]="rowData"
-                          [col]="selectedCol"
-                          [apiSchemas]="apiSchemas"
-                          [selectedSchema]="selectedSchema"
-                          (updateRow)="updateButtonLabel($event)"
-                          (schemaUpdated)="onSchemaUpdated($event)"
-                        ></app-scheme-type-overlay-panel>
-                      </ng-container>
-                      <ng-container
-                        *ngIf="
-                          isSpecialType(rowData[col.field]) &&
-                          rowData.isReferenceChild
-                        "
-                      >
-                        {{ rowData[col.field] }}
-                      </ng-container>
-                    </ng-container>
-
-                    <ng-container
-                      *ngIf="col.field == 'name' && rowData.isReferenceChild"
-                    >
-                      <ng-container
-                        *ngIf="
-                          isSpecialType(rowData[col.field]) &&
-                          rowData.isReferenceChild
-                        "
-                      >
-                        {{ rowData[col.field] }}
-                      </ng-container>
-                    </ng-container>
-
-                    <div
-                      class="button-container"
-                      *ngIf="
-                        col.field === 'type' &&
-                        rowNode.parent &&
-                        !rowData.isReferenceChild
+                          !rowData.showReferenceButton &&
+                          !rowData.showAddButton) ||
+                        (rowData.isObjArrOrDisc &&
+                          isSpecialType(rowData[col.field]))
                       "
                     >
                       <p-button
-                        type="button"
-                        icon="pi pi-info-circle"
-                        (click)="onInfoClick()"
+                        label="{{ rowData[col.field] }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
                       ></p-button>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
+                    <ng-container
+                      *ngIf="
+                        !isSpecialType(rowData[col.field]) &&
+                        !rowData.isRootNode &&
+                        getTypeStatus(
+                          rowData[col.field] || rowData.isReferenceChild
+                        )
+                      "
+                    >
+                      {{ rowData[col.field] }}
+                    </ng-container>
+                  </ng-container>
+
+                  <ng-container
+                    *ngIf="
+                      col.field == 'name' &&
+                      rowNode.parent &&
+                      !rowData.isReferenceChild
+                    "
+                  >
+                    <ng-container *ngIf="isSpecialType(rowData[col.field])">
                       <p-button
-                        type="button"
-                        icon="pi pi-book"
-                        (click)="onBookClick()"
+                        label="{{ rowData[col.field] }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
                       ></p-button>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
+                    <ng-container
+                      *ngIf="
+                        isSpecialType(rowData[col.field]) &&
+                        rowData.isReferenceChild
+                      "
+                    >
+                      {{ rowData[col.field] }}
+                    </ng-container>
+                  </ng-container>
+
+                  <ng-container *ngIf="col.field === 'name' && !rowNode.parent">
+                    <ng-container *ngIf="isSpecialType(rowData[col.field])">
                       <p-button
-                        type="button"
-                        icon="pi pi-trash"
-                        (click)="onDeleteClick()"
+                        label="{{ rowData[col.field] }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
                       ></p-button>
-                    </div>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
+                    <ng-container *ngIf="!isSpecialType(rowData[col.field])">
+                      <p-button
+                        label="{{ rowData[col.field] }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
+                      ></p-button>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
+                    <ng-container
+                      *ngIf="
+                        isSpecialType(rowData[col.field]) &&
+                        rowData.isReferenceChild
+                      "
+                    >
+                      {{ rowData[col.field] }}
+                    </ng-container>
+                  </ng-container>
 
-                    <app-add-scheme-button
-                      [rowData]="rowData"
-                      [col]="col"
-                      [jsonTree]="jsonTree"
-                      (addScheme)="handleAddScheme($event)"
-                    ></app-add-scheme-button>
+                  <ng-container
+                    *ngIf="col.field == 'name' && rowData.isReferenceChild"
+                  >
+                    <ng-container
+                      *ngIf="
+                        isSpecialType(rowData[col.field]) &&
+                        rowData.isReferenceChild
+                      "
+                    >
+                      {{ rowData[col.field] }}
+                    </ng-container>
+                  </ng-container>
 
-                    <app-ref-button
-                      [rowData]="rowData"
-                      [col]="col"
-                      (onGoRefSchemeClick)="handleGoRefScheme($event)"
-                    ></app-ref-button>
-                  </td>
-                </tr>
-              </ng-template>
-            </p-treeTable>
-          </div>
-          <div *ngIf="selectedSchema.enum">
-            <h4>Enum Reference:</h4>
-            <a href="#">{{ selectedSchemaName }}</a>
-          </div>
+                  <div
+                    class="button-container"
+                    *ngIf="
+                      col.field === 'type' &&
+                      rowNode.parent &&
+                      !rowData.isReferenceChild
+                    "
+                  >
+                    <p-button
+                      type="button"
+                      icon="pi pi-info-circle"
+                      (click)="onInfoClick()"
+                    ></p-button>
+                    <p-button
+                      type="button"
+                      icon="pi pi-book"
+                      (click)="onBookClick()"
+                    ></p-button>
+                    <p-button
+                      type="button"
+                      icon="pi pi-trash"
+                      (click)="onDeleteClick()"
+                    ></p-button>
+                  </div>
 
-          <div
-            *ngIf="
-              !selectedSchema.properties &&
-              !selectedSchema.enum &&
-              !selectedSchema.allOf
-            "
-          >
-            <p>No properties available for this schema.</p>
-          </div>
+                  <app-add-scheme-button
+                    [rowData]="rowData"
+                    [col]="col"
+                    [jsonTree]="jsonTree"
+                    (addScheme)="handleAddScheme($event, rowData)"
+                  ></app-add-scheme-button>
+
+                  <app-ref-button
+                    [rowData]="rowData"
+                    [col]="col"
+                    (onGoRefSchemeClick)="handleGoRefScheme($event)"
+                  ></app-ref-button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-treeTable>
+        </div>
+        <div *ngIf="selectedSchema.enum">
+          <h4>Enum Reference:</h4>
+          <a href="#">{{ selectedSchemaName }}</a>
+        </div>
+
+        <div
+          *ngIf="
+            !selectedSchema.properties &&
+            !selectedSchema.enum &&
+            !selectedSchema.allOf
+          "
+        >
+          <p>No properties available for this schema.</p>
         </div>
       </div>
-
-      <div *ngIf="activeTab === 'examples'" class="api-details">
-        <app-schema-examples
-          [selectedSchema]="selectedSchema"
-        ></app-schema-examples>
-      </div>
-      <div *ngIf="activeTab === 'extensions'" class="api-details">
-        extensions
-      </div>
-
-      <button type="submit" [disabled]="!schemaDetailsForm.valid">
-        Update Schema
-      </button>
     </div>
-  </form>
+
+    <div *ngIf="activeTab === 'examples'" class="api-details">
+      <app-schema-examples
+        [selectedSchema]="selectedSchema"
+      ></app-schema-examples>
+    </div>
+    <div *ngIf="activeTab === 'extensions'" class="api-details">extensions</div>
+
+    <button type="submit" [disabled]="!schemaDetailsForm.valid">
+      Update Schema
+    </button>
+  </div>
 </div>

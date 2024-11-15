@@ -58,6 +58,5 @@ export class AddSchemeButtonComponent {
 
   onAddSchemeClick(event: Event) {
     this.addScheme.emit(event);
-    console.log('Button clicked');
   }
 }

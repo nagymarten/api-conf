@@ -165,6 +165,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         label: 'New {type}',
         icon: 'pi pi-plus',
         command: () => this.createNewPath(),
+        //TODO: do it for method
       },
       {
         separator: true,

@@ -100,6 +100,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   selectedCol: any;
   nameOfId: string = 'myappika';
   examplesSubscheema: any;
+  rowData: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -522,7 +523,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
-
+        this.modifyExtensions(property);
         const childNode: TreeNode = {
           label: propertyKey,
           data: {
@@ -533,7 +534,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             editDisabled: !!property?.$ref,
             isReferenceChild: false,
             isRootNode: false,
-            uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
+            uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-ids',
           },
           children: [],
           parent: rootNode,
@@ -1118,76 +1119,281 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
     const traverse = (node: TreeNode, currentDepth: number) => {
       if (!node.children || node.children.length === 0) {
-        deepestItems.push(node); // Store the node without adding the depth property
+        deepestItems.push(node);
       } else {
-        // Recursively traverse each child
         node.children.forEach((child) => traverse(child, currentDepth + 1));
       }
     };
 
-    nodes.forEach((node) => traverse(node, 0)); // Start traversal from root nodes
+    nodes.forEach((node) => traverse(node, 0));
     return deepestItems;
   }
 
-  handleAddScheme(_event: Event): void {
+  onFieldBlur(field: string, event: Event, rowData: any): void {
+    const value = (event.target as HTMLInputElement).value;
+    console.log(`Blur event triggered for field: ${field}, value: ${value}`);
+    this.updateSchemaField(value, rowData); // Update the schema field
+  }
+
+  onFieldEnter(field: string, event: Event, rowData: any): void {
+    if ((event as KeyboardEvent).key === 'Enter') {
+      const inputElement = event.target as HTMLInputElement;
+      const value = inputElement.value;
+
+      console.log(
+        `Enter keydown triggered for field: ${field}, value: ${value}`
+      );
+      this.updateSchemaField(value, rowData); // Update the schema field
+
+      // Programmatically trigger blur to unblur the field
+      inputElement.blur();
+    }
+  }
+
+  updateSchemaField(newName: string, rowData: any): void {
+    const updateInSchema = (
+      schema: any,
+      oldName: string,
+      newName: string
+    ): void => {
+      const propertyValue = schema[oldName]; // Retrieve the existing property value.
+
+      if (!propertyValue) {
+        console.warn(`Property '${oldName}' not found in schema.`); // Warn if the old property doesn't exist.
+        return;
+      }
+
+      // Remove the old property
+      delete schema[oldName];
+
+      // Add the new property with the updated name
+      schema[newName] = propertyValue;
+
+      console.log(`Updated schema property: '${oldName}' to '${newName}'`);
+    };
+
+    const findAndUpdate = (schema: any): void => {
+      if (!schema || typeof schema !== 'object') return;
+
+      // Check .properties
+      if (schema.properties) {
+        console.log('Checking .properties...');
+
+        const propertyKey = Object.keys(schema.properties).find((key) => {
+          const propertyId = schema.properties[key][`x-${this.nameOfId}`]?.id;
+          const isMatchingId = propertyId === rowData.uniqueId;
+
+          // Logging for debug
+          console.log(`Checking property: '${key}'`);
+          console.log(`Property ID: '${propertyId}'`);
+          console.log(`Row Data Unique ID: '${rowData.uniqueId}'`);
+          console.log(`Is Matching ID: ${isMatchingId}`);
+
+          return isMatchingId;
+        });
+
+        if (propertyKey !== undefined) {
+          console.log('Matched property key:', propertyKey || "'' (empty key)");
+          updateInSchema(schema.properties, propertyKey, newName);
+          return;
+        } else {
+          console.warn('No matching property found in .properties.');
+        }
+      }
+
+      // Check .allOf, .anyOf, .oneOf
+      ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
+        if (schema[composite] && Array.isArray(schema[composite])) {
+          console.log(`Checking ${composite}...`);
+          schema[composite].forEach((subSchema: any) => {
+            findAndUpdate(subSchema);
+          });
+        }
+      });
+
+      // Check .items
+      if (schema.items) {
+        if (Array.isArray(schema.items)) {
+          console.log('Checking items array...');
+          schema.items.forEach((item: any) => findAndUpdate(item));
+        } else {
+          console.log('Checking single items object...');
+          findAndUpdate(schema.items);
+        }
+      }
+
+      // Check .additionalItems
+      if (schema.additionalItems) {
+        console.log('Checking additionalItems...');
+        findAndUpdate(schema.additionalItems);
+      }
+    };
+
+    // Start processing the selected schema
+    if (this.selectedSchema) {
+      console.log('New Name:', newName);
+      findAndUpdate(this.selectedSchema);
+      this.updateSwaggerSpec(); // Save changes
+    } else {
+      console.warn('No schema found for updating.');
+    }
+  }
+
+  handleAddScheme(_event: Event, rowData: any): void {
+    console.log(rowData);
+    console.log(this.selectedSchema);
+
+    this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
+    console.log(this.selectedCol);
+
+    if (this.selectedCol) {
+      const newProperty = {
+        type: 'string',
+      };
+
+      this.modifyExtensions(newProperty);
+
+      // Handle `.properties`
+      if (this.selectedCol.properties) {
+        console.log('Adding to .properties');
+        this.selectedCol.properties[''] = newProperty;
+      }
+
+      // Handle `.allOf`, `.anyOf`, `.oneOf`
+      ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
+        if (
+          this.selectedCol[composite] &&
+          Array.isArray(this.selectedCol[composite])
+        ) {
+          console.log(`Adding to ${composite}`);
+          this.selectedCol[composite].push(newProperty);
+        }
+      });
+
+      // Handle `.items`
+      if (this.selectedCol.items) {
+        console.log('Adding to .items');
+        if (Array.isArray(this.selectedCol.items)) {
+          this.selectedCol.items.push(newProperty);
+        } else if (typeof this.selectedCol.items === 'object') {
+          this.selectedCol.items = [this.selectedCol.items, newProperty];
+        } else {
+          this.selectedCol.items = newProperty;
+        }
+      }
+
+      // Handle `.additionalItems`
+      if (this.selectedCol.additionalItems) {
+        console.log('Adding to .additionalItems');
+        if (typeof this.selectedCol.additionalItems === 'object') {
+          this.selectedCol.additionalItems = {
+            ...this.selectedCol.additionalItems,
+            ...newProperty,
+          };
+        } else {
+          this.selectedCol.additionalItems = newProperty;
+        }
+      }
+    } else {
+      console.warn(
+        'selectedCol does not have properties or valid structures to add a new field.'
+      );
+    }
+
     const newSchemaNode: TreeNode = {
       label: '',
       data: {
         name: '',
         description: '',
-        type: 'object',
+        type: 'string',
         showAddButton: false,
         showReferenceButton: false,
+        uniqueId: this.selectedCol?.[`x-${this.nameOfId}`]?.id || 'no-id',
       },
       children: [],
       expanded: true,
     };
 
-    this.jsonTree[0]?.children?.push(newSchemaNode);
+    const parentNode = this.findParentNode(this.jsonTree, rowData.uniqueId);
+
+    if (parentNode) {
+      if (!parentNode.children) {
+        parentNode.children = [];
+      }
+      parentNode.children.push(newSchemaNode);
+    } else {
+      console.warn('Parent node not found. Adding to root level.');
+      this.jsonTree.push(newSchemaNode);
+    }
+
+    // Ensure change detection picks up the update
     this.jsonTree = [...this.jsonTree];
     this.focusNewSchemaInput = true;
 
-    // Click the last editable cell before focusing on new schema input
     setTimeout(() => {
-      // Find the last editable cell in p-treeTableCellEditor
       const lastTreeTableCellEditors = document.querySelectorAll(
         'p-treeTableCellEditor'
       );
 
       if (lastTreeTableCellEditors.length > 0) {
-        // Get the last editable cell and click it
         const lastCell = lastTreeTableCellEditors[
           lastTreeTableCellEditors.length - 1
         ] as HTMLElement;
         lastCell.click();
-        // console.log('Last TreeTableCellEditor clicked:', lastCell);
         setTimeout(() => {
           if (this.newSchemaInput) {
             this.newSchemaInput.nativeElement.focus();
-            // console.log('Focusing on new schema input:', this.newSchemaInput);
-          } else {
-            // console.warn('newSchemaInput is not found.');
           }
         }, 0);
-      } else {
-        // console.warn('No TreeTableCellEditor elements found for clicking.');
       }
-      // Focus on the new schema input
 
-      // Reset focus flag
       this.focusNewSchemaInput = false;
     }, 0);
+
+    this.updateSwaggerSpec();
   }
 
-  mergeAllOfProperties(allOfArray: any[]): any {
-    const mergedProperties: any = {};
-    allOfArray.forEach((item) => {
-      if (item.properties) {
-        Object.assign(mergedProperties, item.properties);
+  findParentNode(tree: TreeNode[], uniqueId: string): TreeNode | null {
+    for (const node of tree) {
+      if (node.data.uniqueId === uniqueId) {
+        return node;
       }
-    });
-    return mergedProperties;
+      if (node.children) {
+        const foundNode = this.findParentNode(node.children, uniqueId);
+        if (foundNode) {
+          return foundNode;
+        }
+      }
+    }
+    return null;
   }
+
+  updateSwaggerSpec(): void {
+    if (this.selectedSchemaName && this.selectedSchema) {
+      console.log(
+        `Updating Swagger spec for schema: ${this.selectedSchemaName}`
+      );
+
+      this.apiDataService.getSwaggerSpec().subscribe(
+        (swaggerSpec: any) => {
+          if (swaggerSpec && swaggerSpec.components.schemas) {
+            swaggerSpec.components.schemas[this.selectedSchemaName] =
+              this.selectedSchema;
+
+            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+            console.log(swaggerSpec);
+            console.log('Swagger spec updated successfully.');
+          }
+        },
+        (error: any) => {
+          console.error('Error fetching Swagger spec:', error);
+        }
+      );
+    } else {
+      console.warn('No selected schema or schema name to update.');
+    }
+  }
+
   isRowDataMatching(rowData: any, schemaField: any): boolean {
     if (!rowData || !schemaField) {
       console.warn('RowData or SchemaField is undefined or null:', {
@@ -1196,7 +1402,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       });
       return false;
     }
-
     if (
       rowData.uniqueId &&
       schemaField[`x-${this.nameOfId}`] &&
@@ -1263,7 +1468,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         const property = schema.properties[propertyKey];
 
         if (this.isRowDataMatching(rowData, property)) {
-          return property; // Return the matching property
+          return property;
         }
 
         const nestedField = this.findFieldInSchema(
