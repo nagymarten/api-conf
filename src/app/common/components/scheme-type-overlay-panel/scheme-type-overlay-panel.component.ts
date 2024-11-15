@@ -247,430 +247,497 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   setCol(col: any) {
     this.col = col;
   }
-//TODO: Do id search in selectedSchema
+  //TODO: Do id search in selectedSchema
   getSelectedSchemaObject(): any {
+    console.log('rowData:', this.rowData);
+    console.log('selectedSchema:', this.selectedSchema);
+
+    const traverseSchema = (schema: any, level: number = 0): any => {
+      if (!schema) return null;
+
+      // Log the current level and schema
+      console.log(
+        `${' '.repeat(level * 2)}Traversing schema at level ${level}:`,
+        schema
+      );
+
+      // Check if the current schema has a matching x-myappika.id
+      if (
+        schema['x-myappika'] &&
+        schema['x-myappika'].id === this.rowData.uniqeId
+      ) {
+        console.log(
+          `${' '.repeat(level * 2)}Matching schema found at level ${level}:`,
+          schema
+        );
+        return schema;
+      }
+
+      // Check properties
+      if (schema.properties) {
+        for (const propertyKey of Object.keys(schema.properties)) {
+          const property = schema.properties[propertyKey];
+          console.log(
+            `${' '.repeat(
+              level * 2
+            )}Checking property ${propertyKey}, x-myappika.id:`,
+            property['x-myappika']?.id
+          );
+
+          const result = traverseSchema(property, level + 1);
+          if (result) return result;
+        }
+      }
+
+      // Check items (for arrays)
+      if (schema.items) {
+        console.log(
+          `${' '.repeat(level * 2)}Checking items, x-myappika.id:`,
+          schema.items['x-myappika']?.id
+        );
+        const result = traverseSchema(schema.items, level + 1);
+        if (result) return result;
+      }
+
+      // Check additionalProperties (for dictionaries)
+      if (schema.additionalProperties) {
+        console.log(
+          `${' '.repeat(
+            level * 2
+          )}Checking additionalProperties, x-myappika.id:`,
+          schema.additionalProperties['x-myappika']?.id
+        );
+        const result = traverseSchema(schema.additionalProperties, level + 1);
+        if (result) return result;
+      }
+
+      // Check allOf, oneOf, anyOf
+      for (const key of ['allOf', 'oneOf', 'anyOf']) {
+        if (schema[key] && Array.isArray(schema[key])) {
+          for (const subSchema of schema[key]) {
+            console.log(
+              `${' '.repeat(level * 2)}Checking ${key}, x-myappika.id:`,
+              subSchema['x-myappika']?.id
+            );
+            const result = traverseSchema(subSchema, level + 1);
+            if (result) return result;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    // Top-level schema check
     if (
       this.selectedSchema &&
       this.selectedSchema['x-myappika'] &&
       this.selectedSchema['x-myappika'].id
     ) {
-      console.log('rowData.uniqueId:', this.rowData.uniqueId);
+      console.log('rowData.uniqeId:', this.rowData.uniqeId);
       console.log(
         'selectedSchema[x-myappika].id:',
         this.selectedSchema['x-myappika'].id
       );
 
-      // Check top-level x-myappika.id
-      if (this.selectedSchema['x-myappika'].id === this.rowData.uniqueId) {
+      if (this.selectedSchema['x-myappika'].id === this.rowData.uniqeId) {
         console.log('Matching top-level selectedSchema:', this.selectedSchema);
-        return this.selectedSchema; // Return the matching top-level schema
+        return this.selectedSchema;
       }
-
-      // If top-level doesn't match, iterate through properties
-      if (this.selectedSchema.properties) {
-        Object.keys(this.selectedSchema.properties).forEach((propertyKey) => {
-          const property = this.selectedSchema.properties[propertyKey];
-          if (property['x-myappika'] && property['x-myappika'].id) {
-            console.log(
-              `Checking property ${propertyKey}, x-myappika.id:`,
-              property['x-myappika'].id
-            );
-
-            if (property['x-myappika'].id === this.rowData.uniqueId) {
-              console.log('Matching property found:', property);
-              return property; // Return the matching property
-            }
-          }
-        });
-      }
-
-      console.warn(
-        'No match found for rowData.uniqueId in selectedSchema or its properties'
-      );
-      return null;
     } else {
       console.warn('The selected schema does not contain x-myappika.id');
       return null;
     }
+
+    // Traverse the schema recursively
+    console.log('Starting schema traversal...');
+    const result = traverseSchema(this.selectedSchema);
+    if (!result) {
+      console.warn(
+        'No match found for rowData.uniqeId in selectedSchema or its properties'
+      );
+    }
+    return result;
   }
 
-  toggleOverlay(event: Event, rowData: any, col: any) {
-    const cleanString = (value: string) =>
-      value
-        .replace(/\{\d+\}/g, '')
-        .replace(/\s*or\s+null\s*$/i, '')
-        .replace(/<[^>]*>/g, '')
-        .trim();
+  toggleOverlay(event: Event, rowData: any, selectedCol: any) {
+    // const cleanString = (value: string) =>
+    //   value
+    //     .replace(/\{\d+\}/g, '')
+    //     .replace(/\s*or\s+null\s*$/i, '')
+    //     .replace(/<[^>]*>/g, '')
+    //     .trim();
 
-    // Extract root type from a string
-    const extractRootType = (value: string): string => {
-      const match = value.match(/^(\w+)\[/);
-      if (match) {
-        return match[1].trim();
-      }
-      return value.split(' or ')[0].trim();
-    };
+    // // Extract root type from a string
+    // const extractRootType = (value: string): string => {
+    //   const match = value.match(/^(\w+)\[/);
+    //   if (match) {
+    //     return match[1].trim();
+    //   }
+    //   return value.split(' or ')[0].trim();
+    // };
 
-    const cleanedValue = cleanString(rowData[col.field]);
-    const rootType = extractRootType(cleanedValue);
+    // const cleanedValue = cleanString(rowData[col.field]);
+    // const rootType = extractRootType(cleanedValue);
 
-    const originalType = { name: rootType };
+    // const originalType = { name: rootType };
+  
 
     this.setRowData(rowData);
-    this.setCol(col);
+    this.setCol(selectedCol);
 
-    console.log('rowData', rowData);
-    console.log('selected schema', this.selectedSchema);
-    const myappikaIdPart = this.getSelectedSchemaObject();
-    console.log(myappikaIdPart);
+    console.log('rowData', this.rowData);
+    console.log('selected schema', this.col);
+    // const myappikaIdPart = this.getSelectedSchemaObject();
+    // console.log(myappikaIdPart);
 
-    if (!this.types.some((type) => type.name === originalType.name)) {
-      this.types.unshift(originalType);
-    }
-    this.selectedType = originalType;
-    console.log('selected types', this.selectedType);
-    this.checkAndInitializeSelectedType();
+    // if (!this.types.some((type) => type.name === originalType.name)) {
+    //   this.types.unshift(originalType);
+    // }
+    // this.selectedType = originalType;
+    // console.log('selected types', this.selectedType);
+    // this.checkAndInitializeSelectedType();
 
-    if (this.selectedSchema?.type === 'object') {
-      this.minProperties = this.selectedSchema.minProperties || null;
-      this.maxProperties = this.selectedSchema.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedSchema.allowAdditionalProperties || false;
-      this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullableObject = false;
-    } else if (
-      Array.isArray(this.selectedSchema.type) &&
-      this.selectedSchema.type.includes('object') &&
-      this.selectedSchema.type.includes('null')
-    ) {
-      this.minProperties = this.selectedSchema.minProperties || null;
-      this.maxProperties = this.selectedSchema.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedSchema.allowAdditionalProperties || false;
-      this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullableObject = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'string'
-    ) {
-      this.selectedStringFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
-      this.defaultString =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleString =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.stringPattern =
-        this.selectedSchema?.properties[rowData.name].pattern || '';
-      this.stringMinLength =
-        this.selectedSchema?.properties[rowData.name].minLength || null;
-      this.stringMaxLength =
-        this.selectedSchema?.properties[rowData.name].maxLength || null;
-      this.isStringDeprecated =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableString = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('string') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const property = this.selectedSchema.properties[rowData.name];
+    // if (this.selectedSchema?.type === 'object') {
+    //   this.minProperties = this.selectedSchema.minProperties || null;
+    //   this.maxProperties = this.selectedSchema.maxProperties || null;
+    //   this.allowAdditionalProperties =
+    //     this.selectedSchema.allowAdditionalProperties || false;
+    //   this.deprecated = this.selectedSchema.deprecated || false;
+    //   this.isNullableObject = false;
+    // } else if (
+    //   Array.isArray(this.selectedSchema.type) &&
+    //   this.selectedSchema.type.includes('object') &&
+    //   this.selectedSchema.type.includes('null')
+    // ) {
+    //   this.minProperties = this.selectedSchema.minProperties || null;
+    //   this.maxProperties = this.selectedSchema.maxProperties || null;
+    //   this.allowAdditionalProperties =
+    //     this.selectedSchema.allowAdditionalProperties || false;
+    //   this.deprecated = this.selectedSchema.deprecated || false;
+    //   this.isNullableObject = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'string'
+    // ) {
+    //   this.selectedStringFormat = {
+    //     name: this.selectedSchema?.properties[rowData.name].format || null,
+    //   };
+    //   if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+    //     this.selectedStringBehavior = { name: 'WriteOnly' };
+    //   } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+    //     this.selectedStringBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedStringBehavior = { name: 'Read/Write' };
+    //   }
+    //   this.defaultString =
+    //     this.selectedSchema?.properties[rowData.name].default || '';
+    //   this.exampleString =
+    //     this.selectedSchema?.properties[rowData.name].example || '';
+    //   this.stringPattern =
+    //     this.selectedSchema?.properties[rowData.name].pattern || '';
+    //   this.stringMinLength =
+    //     this.selectedSchema?.properties[rowData.name].minLength || null;
+    //   this.stringMaxLength =
+    //     this.selectedSchema?.properties[rowData.name].maxLength || null;
+    //   this.isStringDeprecated =
+    //     this.selectedSchema?.properties[rowData.name].deprecated || false;
+    //   this.isNullableString = false;
+    // } else if (
+    //   col.field === 'type' &&
+    //   Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('string') &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('null')
+    // ) {
+    //   const property = this.selectedSchema.properties[rowData.name];
 
-      this.selectedStringFormat = { name: property.format || null };
+    //   this.selectedStringFormat = { name: property.format || null };
 
-      if (property.writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (property.readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
+    //   if (property.writeOnly) {
+    //     this.selectedStringBehavior = { name: 'WriteOnly' };
+    //   } else if (property.readOnly) {
+    //     this.selectedStringBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedStringBehavior = { name: 'Read/Write' };
+    //   }
 
-      this.defaultString = property.default || '';
-      this.exampleString = property.example || '';
-      this.stringPattern = property.pattern || '';
-      this.stringMinLength = property.minLength || null;
-      this.stringMaxLength = property.maxLength || null;
-      this.isStringDeprecated = property.deprecated || false;
-      this.isNullableString = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'integer'
-    ) {
-      this.selectedIntegerFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
-      this.defaultInteger =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleInteger =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.minimumInteger =
-        this.selectedSchema?.properties[rowData.name].minimum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        null;
-      this.maximumInteger =
-        this.selectedSchema?.properties[rowData.name].maximum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        null;
-      this.multipleOfInteger =
-        this.selectedSchema?.properties[rowData.name].multipleOf || null;
-      this.exclusiveMinInteger =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        false;
-      this.exclusiveMaxInteger =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        false;
-      this.deprecatedInteger =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableInteger = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('integer') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const integer = this.selectedSchema.properties[rowData.name];
+    //   this.defaultString = property.default || '';
+    //   this.exampleString = property.example || '';
+    //   this.stringPattern = property.pattern || '';
+    //   this.stringMinLength = property.minLength || null;
+    //   this.stringMaxLength = property.maxLength || null;
+    //   this.isStringDeprecated = property.deprecated || false;
+    //   this.isNullableString = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'integer'
+    // ) {
+    //   this.selectedIntegerFormat = {
+    //     name: this.selectedSchema?.properties[rowData.name].format || null,
+    //   };
+    //   if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+    //     this.selectedIntegerBehavior = { name: 'WriteOnly' };
+    //   } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+    //     this.selectedIntegerBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedIntegerBehavior = { name: 'Read/Write' };
+    //   }
+    //   this.defaultInteger =
+    //     this.selectedSchema?.properties[rowData.name].default || '';
+    //   this.exampleInteger =
+    //     this.selectedSchema?.properties[rowData.name].example || '';
+    //   this.minimumInteger =
+    //     this.selectedSchema?.properties[rowData.name].minimum ||
+    //     this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+    //     null;
+    //   this.maximumInteger =
+    //     this.selectedSchema?.properties[rowData.name].maximum ||
+    //     this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+    //     null;
+    //   this.multipleOfInteger =
+    //     this.selectedSchema?.properties[rowData.name].multipleOf || null;
+    //   this.exclusiveMinInteger =
+    //     !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+    //     false;
+    //   this.exclusiveMaxInteger =
+    //     !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+    //     false;
+    //   this.deprecatedInteger =
+    //     this.selectedSchema?.properties[rowData.name].deprecated || false;
+    //   this.isNullableInteger = false;
+    // } else if (
+    //   col.field === 'type' &&
+    //   Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('integer') &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('null')
+    // ) {
+    //   const integer = this.selectedSchema.properties[rowData.name];
 
-      this.selectedIntegerFormat = { name: integer.format || null };
+    //   this.selectedIntegerFormat = { name: integer.format || null };
 
-      if (integer.writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (integer.readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
+    //   if (integer.writeOnly) {
+    //     this.selectedIntegerBehavior = { name: 'WriteOnly' };
+    //   } else if (integer.readOnly) {
+    //     this.selectedIntegerBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedIntegerBehavior = { name: 'Read/Write' };
+    //   }
 
-      this.defaultInteger = integer.default || '';
-      this.exampleInteger = integer.example || '';
-      this.minimumInteger = integer.exclusiveMinimum || integer.minimum || null;
-      this.maximumInteger = integer.exclusiveMaximum || integer.maximum || null;
-      this.multipleOfInteger = integer.multipleOf || null;
-      this.deprecatedInteger = integer.deprecated || false;
-      this.exclusiveMinInteger = !!integer.exclusiveMinimum || false;
-      this.exclusiveMaxInteger = !!integer.exclusiveMaximum || false;
-      this.isNullableInteger = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'number'
-    ) {
-      this.selectedNumberFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedNumberBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedNumberBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedNumberBehavior = { name: 'Read/Write' };
-      }
-      this.defaultNumber =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleNumber =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.minimumNumber =
-        this.selectedSchema?.properties[rowData.name].minimum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        null;
-      this.maximumNumber =
-        this.selectedSchema?.properties[rowData.name].maximum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        null;
-      this.multipleOfNumber =
-        this.selectedSchema?.properties[rowData.name].multipleOf || null;
-      this.exclusiveMinNumber =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        false;
-      this.exclusiveMaxNumber =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        false;
-      this.deprecatedNumber =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableNumber = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('number') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const number = this.selectedSchema.properties[rowData.name];
+    //   this.defaultInteger = integer.default || '';
+    //   this.exampleInteger = integer.example || '';
+    //   this.minimumInteger = integer.exclusiveMinimum || integer.minimum || null;
+    //   this.maximumInteger = integer.exclusiveMaximum || integer.maximum || null;
+    //   this.multipleOfInteger = integer.multipleOf || null;
+    //   this.deprecatedInteger = integer.deprecated || false;
+    //   this.exclusiveMinInteger = !!integer.exclusiveMinimum || false;
+    //   this.exclusiveMaxInteger = !!integer.exclusiveMaximum || false;
+    //   this.isNullableInteger = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'number'
+    // ) {
+    //   this.selectedNumberFormat = {
+    //     name: this.selectedSchema?.properties[rowData.name].format || null,
+    //   };
+    //   if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+    //     this.selectedNumberBehavior = { name: 'WriteOnly' };
+    //   } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+    //     this.selectedNumberBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedNumberBehavior = { name: 'Read/Write' };
+    //   }
+    //   this.defaultNumber =
+    //     this.selectedSchema?.properties[rowData.name].default || '';
+    //   this.exampleNumber =
+    //     this.selectedSchema?.properties[rowData.name].example || '';
+    //   this.minimumNumber =
+    //     this.selectedSchema?.properties[rowData.name].minimum ||
+    //     this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+    //     null;
+    //   this.maximumNumber =
+    //     this.selectedSchema?.properties[rowData.name].maximum ||
+    //     this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+    //     null;
+    //   this.multipleOfNumber =
+    //     this.selectedSchema?.properties[rowData.name].multipleOf || null;
+    //   this.exclusiveMinNumber =
+    //     !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
+    //     false;
+    //   this.exclusiveMaxNumber =
+    //     !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
+    //     false;
+    //   this.deprecatedNumber =
+    //     this.selectedSchema?.properties[rowData.name].deprecated || false;
+    //   this.isNullableNumber = false;
+    // } else if (
+    //   col.field === 'type' &&
+    //   Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('number') &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('null')
+    // ) {
+    //   const number = this.selectedSchema.properties[rowData.name];
 
-      this.selectedNumberFormat = { name: number.format || null };
+    //   this.selectedNumberFormat = { name: number.format || null };
 
-      if (number.writeOnly) {
-        this.selectedNumberBehavior = { name: 'WriteOnly' };
-      } else if (number.readOnly) {
-        this.selectedNumberBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedNumberBehavior = { name: 'Read/Write' };
-      }
+    //   if (number.writeOnly) {
+    //     this.selectedNumberBehavior = { name: 'WriteOnly' };
+    //   } else if (number.readOnly) {
+    //     this.selectedNumberBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedNumberBehavior = { name: 'Read/Write' };
+    //   }
 
-      this.defaultNumber = number.default || '';
-      this.exampleNumber = number.example || '';
-      this.minimumNumber = number.exclusiveMinimum || number.minimum || null;
-      this.maximumNumber = number.exclusiveMaximum || number.maximum || null;
-      this.multipleOfNumber = number.multipleOf || null;
-      this.deprecatedNumber = number.deprecated || false;
-      this.exclusiveMinNumber = !!number.exclusiveMinimum || false;
-      this.exclusiveMaxNumber = !!number.exclusiveMaximum || false;
-      this.isNullableNumber = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'boolean'
-    ) {
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedBooleanBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedBooleanBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedBooleanBehavior = { name: 'Read/Write' };
-      }
-      if (this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-        this.defaultBoolean = { name: 'true' };
-      } else if (!this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
+    //   this.defaultNumber = number.default || '';
+    //   this.exampleNumber = number.example || '';
+    //   this.minimumNumber = number.exclusiveMinimum || number.minimum || null;
+    //   this.maximumNumber = number.exclusiveMaximum || number.maximum || null;
+    //   this.multipleOfNumber = number.multipleOf || null;
+    //   this.deprecatedNumber = number.deprecated || false;
+    //   this.exclusiveMinNumber = !!number.exclusiveMinimum || false;
+    //   this.exclusiveMaxNumber = !!number.exclusiveMaximum || false;
+    //   this.isNullableNumber = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'boolean'
+    // ) {
+    //   if (this.selectedSchema?.properties[rowData.name].writeOnly) {
+    //     this.selectedBooleanBehavior = { name: 'WriteOnly' };
+    //   } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
+    //     this.selectedBooleanBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedBooleanBehavior = { name: 'Read/Write' };
+    //   }
+    //   if (this.selectedSchema?.properties[rowData.name].default) {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
+    //     this.defaultBoolean = { name: 'true' };
+    //   } else if (!this.selectedSchema?.properties[rowData.name].default) {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
 
-        this.defaultBoolean = { name: 'false' };
-      } else {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
+    //     this.defaultBoolean = { name: 'false' };
+    //   } else {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
 
-        this.defaultBoolean = { name: '' };
-      }
-      this.deprecatedBoolean =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableBoolean = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('boolean') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const boolean = this.selectedSchema.properties[rowData.name];
+    //     this.defaultBoolean = { name: '' };
+    //   }
+    //   this.deprecatedBoolean =
+    //     this.selectedSchema?.properties[rowData.name].deprecated || false;
+    //   this.isNullableBoolean = false;
+    // } else if (
+    //   col.field === 'type' &&
+    //   Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('boolean') &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('null')
+    // ) {
+    //   const boolean = this.selectedSchema.properties[rowData.name];
 
-      if (boolean.writeOnly) {
-        this.selectedBooleanBehavior = { name: 'WriteOnly' };
-      } else if (boolean.readOnly) {
-        this.selectedBooleanBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedBooleanBehavior = { name: 'Read/Write' };
-      }
-      if (this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-        this.defaultBoolean = { name: 'true' };
-      } else if (!this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
+    //   if (boolean.writeOnly) {
+    //     this.selectedBooleanBehavior = { name: 'WriteOnly' };
+    //   } else if (boolean.readOnly) {
+    //     this.selectedBooleanBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedBooleanBehavior = { name: 'Read/Write' };
+    //   }
+    //   if (this.selectedSchema?.properties[rowData.name].default) {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
+    //     this.defaultBoolean = { name: 'true' };
+    //   } else if (!this.selectedSchema?.properties[rowData.name].default) {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
 
-        this.defaultBoolean = { name: 'false' };
-      } else {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
+    //     this.defaultBoolean = { name: 'false' };
+    //   } else {
+    //     console.log(this.selectedSchema?.properties[rowData.name].default);
 
-        this.defaultBoolean = { name: '' };
-      }
-      this.deprecatedBoolean = boolean.deprecated || false;
-      this.isNullableBoolean = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name]?.enum
-    ) {
-      const enumValue = this.selectedSchema.properties[rowData.name];
+    //     this.defaultBoolean = { name: '' };
+    //   }
+    //   this.deprecatedBoolean = boolean.deprecated || false;
+    //   this.isNullableBoolean = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name]?.enum
+    // ) {
+    //   const enumValue = this.selectedSchema.properties[rowData.name];
 
-      this.enumValues = enumValue.enum;
+    //   this.enumValues = enumValue.enum;
 
-      if (enumValue.writeOnly) {
-        this.selectedEnumBehavior = { name: 'WriteOnly' };
-      } else if (enumValue.readOnly) {
-        this.selectedEnumBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedEnumBehavior = { name: 'Read/Write' };
-      }
-      this.enumDefault = enumValue.default || '';
-      this.enumExample = enumValue.example || '';
-      this.deprecatedEnum = enumValue.deprecated || false;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'array'
-    ) {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+    //   if (enumValue.writeOnly) {
+    //     this.selectedEnumBehavior = { name: 'WriteOnly' };
+    //   } else if (enumValue.readOnly) {
+    //     this.selectedEnumBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedEnumBehavior = { name: 'Read/Write' };
+    //   }
+    //   this.enumDefault = enumValue.default || '';
+    //   this.enumExample = enumValue.example || '';
+    //   this.deprecatedEnum = enumValue.deprecated || false;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'array'
+    // ) {
+    //   const arrayValue = this.selectedSchema.properties[rowData.name];
+    //   console.log(this.selectedSchema?.properties[rowData.name]);
 
-      if (arrayValue.writeOnly) {
-        this.selectedArrayBehavior = { name: 'WriteOnly' };
-      } else if (arrayValue.readOnly) {
-        this.selectedArrayBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedArrayBehavior = { name: 'Read/Write' };
-      }
+    //   if (arrayValue.writeOnly) {
+    //     this.selectedArrayBehavior = { name: 'WriteOnly' };
+    //   } else if (arrayValue.readOnly) {
+    //     this.selectedArrayBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedArrayBehavior = { name: 'Read/Write' };
+    //   }
 
-      this.minArrayItems = arrayValue.minItems || null;
-      this.maxArrayItems = arrayValue.maxItems || null;
-      this.uniqueArrayItems = arrayValue.uniqueItems || false;
-      this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItems = arrayValue.items || false;
+    //   this.minArrayItems = arrayValue.minItems || null;
+    //   this.maxArrayItems = arrayValue.maxItems || null;
+    //   this.uniqueArrayItems = arrayValue.uniqueItems || false;
+    //   this.deprecatedArray = arrayValue.deprecated || false;
+    //   this.arrayItems = arrayValue.items || false;
 
-      //TODO: handle items
-      console.log('this.arrayItens in obj');
-      console.log(this.arrayItems);
-      this.isNullableArray = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('array') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+    //   //TODO: handle items
+    //   console.log('this.arrayItens in obj');
+    //   console.log(this.arrayItems);
+    //   this.isNullableArray = false;
+    // } else if (
+    //   col.field === 'type' &&
+    //   Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('array') &&
+    //   this.selectedSchema?.properties[rowData.name].type.includes('null')
+    // ) {
+    //   const arrayValue = this.selectedSchema.properties[rowData.name];
+    //   console.log(this.selectedSchema?.properties[rowData.name]);
 
-      if (arrayValue.writeOnly) {
-        this.selectedArrayBehavior = { name: 'WriteOnly' };
-      } else if (arrayValue.readOnly) {
-        this.selectedArrayBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedArrayBehavior = { name: 'Read/Write' };
-      }
+    //   if (arrayValue.writeOnly) {
+    //     this.selectedArrayBehavior = { name: 'WriteOnly' };
+    //   } else if (arrayValue.readOnly) {
+    //     this.selectedArrayBehavior = { name: 'ReadOnly' };
+    //   } else {
+    //     this.selectedArrayBehavior = { name: 'Read/Write' };
+    //   }
 
-      this.minArrayItems = arrayValue.minItems || null;
-      this.maxArrayItems = arrayValue.maxItems || null;
-      this.uniqueArrayItems = arrayValue.uniqueItems || false;
-      this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItems = arrayValue.items || false;
+    //   this.minArrayItems = arrayValue.minItems || null;
+    //   this.maxArrayItems = arrayValue.maxItems || null;
+    //   this.uniqueArrayItems = arrayValue.uniqueItems || false;
+    //   this.deprecatedArray = arrayValue.deprecated || false;
+    //   this.arrayItems = arrayValue.items || false;
 
-      //TODO: handle items
-      console.log('this.arrayItens in obj or null');
-      console.log(this.arrayItems);
-      this.isNullableArray = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'dictionary'
-    ) {
-      const dictionaryValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+    //   //TODO: handle items
+    //   console.log('this.arrayItens in obj or null');
+    //   console.log(this.arrayItems);
+    //   this.isNullableArray = true;
+    // }
+    // if (
+    //   col.field === 'type' &&
+    //   this.selectedSchema?.properties[rowData.name].type === 'dictionary'
+    // ) {
+    //   const dictionaryValue = this.selectedSchema.properties[rowData.name];
+    //   console.log(this.selectedSchema?.properties[rowData.name]);
 
-      console.log('dictionaryValue', dictionaryValue);
-      //TODO: inicialize dictionary
-    }
+    //   console.log('dictionaryValue', dictionaryValue);
+    //   //TODO: inicialize dictionary
+    // }
 
     this.op.toggle(event);
 
