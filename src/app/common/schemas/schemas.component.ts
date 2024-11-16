@@ -1462,7 +1462,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.selectedRowData = rowData;
 
     this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
-    console.log('Matched Schema Field (selectedCol):', this.selectedCol);
+    // console.log('Matched Schema Field (selectedCol):', this.selectedCol);
 
     this.childComponent.toggleOverlay(
       event,

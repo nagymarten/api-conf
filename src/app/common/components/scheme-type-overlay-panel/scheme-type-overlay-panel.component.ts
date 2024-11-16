@@ -26,6 +26,7 @@ import { PanelModule } from 'primeng/panel';
 import { EnumOverlayPanelComponent } from '../enum-overlay-panel/enum-overlay-panel.component';
 import { SubSchemeTypeComponent } from '../sub-scheme-type/sub-scheme-type.component';
 import { ApiDataService } from '../../../services/api-data.service';
+import { _createIconNoSpan } from 'ag-grid-community';
 
 interface Type {
   name: string;
@@ -257,13 +258,23 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       return value.split(' or ')[0].trim();
     };
 
-    const cleanedValue = cleanString(rowData.type);
-    const rootType = extractRootType(cleanedValue);
+    const extractSchemaName = (value: string): string => {
+      console.log('Original value:', value);
+      const trimmedValue = value.trim(); // Trim leading/trailing whitespace
+      const schemaName = trimmedValue.split('/').pop(); // Extract the last part after '/'
+      console.log('Extracted schema name:', schemaName);
+      return schemaName || '';
+    };
 
-    const originalType = { name: rootType };
-    this.selectedType = originalType;
+    if (!selectedCol.$ref) {
+      const cleanedValue = cleanString(rowData.type);
+      const rootType = extractRootType(cleanedValue);
+      const originalType = { name: rootType };
+      this.selectedType = originalType;
+    } else {
+      this.selectedType = { name: extractSchemaName(selectedCol.$ref) };
+    }
 
-    console.log('rowData', rowData);
     console.log('selected schema', selectedCol);
 
     if (selectedCol.properties) {
@@ -464,8 +475,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.isNullableBoolean = true;
     }
 
-    if (this.selectedSchema?.properties[rowData.name]?.enum) {
-      const enumValue = this.selectedSchema.properties[rowData.name];
+    if (selectedCol.enum) {
+      const enumValue = selectedCol;
 
       this.enumValues = enumValue.enum;
 
@@ -480,7 +491,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.enumExample = enumValue.example || '';
       this.deprecatedEnum = enumValue.deprecated || false;
     }
-    console.log(selectedCol);
     if (selectedCol.type === 'array') {
       const arrayValue = selectedCol;
       console.log(selectedCol);
@@ -499,8 +509,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.deprecatedArray = arrayValue.deprecated || false;
       this.arrayItems = arrayValue.items || false;
 
-      console.log('this.arrayItens in obj');
-      console.log(this.arrayItems);
       this.isNullableArray = false;
     } else if (
       Array.isArray(selectedCol.type) &&
@@ -523,14 +531,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.deprecatedArray = arrayValue.deprecated || false;
       this.arrayItems = arrayValue.items || false;
 
-      console.log('this.arrayItens in obj or null');
-      console.log(this.arrayItems);
       this.isNullableArray = true;
     }
     if (selectedCol.additionalProperties) {
       const dictionaryValue = selectedCol;
-
-      console.log('dictionaryValue', dictionaryValue);
 
       if (dictionaryValue.writeOnly) {
         this.selectedDictionaryBehavior = { name: 'WriteOnly' };
@@ -556,7 +560,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   checkAndInitializeSelectedType() {
-    console.log(this.selectedType);
     if (!this.selectedType) {
       console.warn('No type selected.');
       return;
@@ -1272,7 +1275,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onTypeSelect() {
-    this.updateRowData(this.rowData);
+    this.updateRowData(this.selectedType);
   }
 
   onSchemeSelect(scheme: any) {
@@ -1285,9 +1288,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     console.log('Selected combine type:', this.selectedCombineType);
   }
 
-  updateRowData(rowData: any) {
-    rowData[this.selectedCol.field] =
-      this.selectedType?.name || rowData[this.selectedCol.field];
+  updateRowData(selectedType: any) {
+    console.log('Selected column in overlay:', selectedType);
+    this.selectedCol.type = selectedType.name;
+    this.resetFieldsForNewType();
+    console.log('Selected column in overlay:', this.selectedCol);
   }
 
   onMarkAsExample(index: number) {
@@ -1308,5 +1313,88 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.enumDefault = this.enumDefault === value ? null : value;
     console.log('enumdef', this.enumDefault);
     this.onEnumFieldChange('enumDefault', this.enumDefault || null);
+  }
+
+  resetFieldsForNewType() {
+    // Object
+    this.minProperties = null;
+    this.maxProperties = null;
+    this.allowAdditionalProperties = false;
+    this.deprecatedObject = false;
+    this.isNullableObject = false;
+
+    // String
+    this.selectedStringFormat = undefined;
+    this.selectedStringBehavior = undefined;
+    this.defaultString = '';
+    this.exampleString = '';
+    this.stringPattern = '';
+    this.stringMinLength = null;
+    this.stringMaxLength = null;
+    this.isStringDeprecated = false;
+    this.isNullableString = false;
+
+    // Integer
+    this.selectedIntegerFormat = undefined;
+    this.selectedIntegerBehavior = undefined;
+    this.defaultInteger = '';
+    this.exampleInteger = '';
+    this.minimumInteger = null;
+    this.maximumInteger = null;
+    this.multipleOfInteger = null;
+    this.exclusiveMinInteger = false;
+    this.exclusiveMaxInteger = false;
+    this.deprecatedInteger = false;
+    this.isNullableInteger = false;
+
+    // Number
+    this.selectedNumberFormat = undefined;
+    this.selectedNumberBehavior = undefined;
+    this.defaultNumber = '';
+    this.exampleNumber = '';
+    this.minimumNumber = null;
+    this.maximumNumber = null;
+    this.multipleOfNumber = null;
+    this.exclusiveMinNumber = false;
+    this.exclusiveMaxNumber = false;
+    this.deprecatedNumber = false;
+    this.isNullableNumber = false;
+
+    // Boolean
+    this.selectedBooleanBehavior = undefined;
+    this.defaultBoolean = undefined;
+    this.deprecatedBoolean = false;
+    this.isNullableBoolean = false;
+
+    // Enum
+    this.selectedEnumBehavior = undefined;
+    this.deprecatedEnum = false;
+    this.enumDefault = null;
+    this.enumExample = null;
+    this.enumValue = '';
+    this.enumValues = [];
+    this.showEnumInput = false;
+
+    // Array
+    this.selectedArrayBehavior = undefined;
+    this.minArrayItems = null;
+    this.maxArrayItems = null;
+    this.uniqueArrayItems = false;
+    this.deprecatedArray = false;
+    this.arrayItems = null;
+    this.isNullableArray = false;
+
+    // Dictionary
+    this.selectedDictionaryBehavior = undefined;
+    this.minDictionaryProperties = null;
+    this.maxDictionaryProperties = null;
+    this.deprecatedDictionary = false;
+    this.additionalPropertiesDisc = null;
+
+    // Common
+    this.minItems = null;
+    this.maxItems = null;
+    this.uniqueItems = false;
+    this.selectedCol.format = undefined;
   }
 }
