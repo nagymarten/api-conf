@@ -180,6 +180,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   minDictionaryProperties: number | null = null;
   maxDictionaryProperties: number | null = null;
   deprecatedDictionary: boolean = false;
+  additionalPropertiesDisc: any = null;
 
   minItems: number | null = null;
   maxItems: number | null = null;
@@ -479,9 +480,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.enumExample = enumValue.example || '';
       this.deprecatedEnum = enumValue.deprecated || false;
     }
-    if (this.selectedSchema?.properties[rowData.name].type === 'array') {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+    console.log(selectedCol);
+    if (selectedCol.type === 'array') {
+      const arrayValue = selectedCol;
+      console.log(selectedCol);
 
       if (arrayValue.writeOnly) {
         this.selectedArrayBehavior = { name: 'WriteOnly' };
@@ -501,12 +503,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       console.log(this.arrayItems);
       this.isNullableArray = false;
     } else if (
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('array') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
+      Array.isArray(selectedCol.type) &&
+      selectedCol.type.includes('array') &&
+      selectedCol.type.includes('null')
     ) {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+      const arrayValue = selectedCol;
 
       if (arrayValue.writeOnly) {
         this.selectedArrayBehavior = { name: 'WriteOnly' };
@@ -526,11 +527,22 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       console.log(this.arrayItems);
       this.isNullableArray = true;
     }
-    if (this.selectedSchema?.properties[rowData.name].type === 'dictionary') {
-      const dictionaryValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
+    if (selectedCol.additionalProperties) {
+      const dictionaryValue = selectedCol;
 
       console.log('dictionaryValue', dictionaryValue);
+
+      if (dictionaryValue.writeOnly) {
+        this.selectedDictionaryBehavior = { name: 'WriteOnly' };
+      } else if (dictionaryValue.readOnly) {
+        this.selectedDictionaryBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedDictionaryBehavior = { name: 'Read/Write' };
+      }
+      this.minDictionaryProperties = dictionaryValue.minProperties || null;
+      this.maxDictionaryProperties = dictionaryValue.maxProperties || null;
+      this.deprecatedDictionary = dictionaryValue.deprecated || false;
+      this.additionalPropertiesDisc = dictionaryValue.additionalProperties;
     }
 
     this.checkAndInitializeSelectedType();
@@ -687,6 +699,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.onStringFieldChange(field, value);
   }
 
+  onDictionaryFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onDictionaryFieldChange(field, value);
+  }
+
   onIntegerFieldBlur(field: string, event: any): void {
     const value = event.target?.value || event;
     this.onIntegerFieldChange(field, value);
@@ -701,10 +718,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     const value = event.target?.value || event;
     this.onStringFieldChange(field, value.name);
   }
-
+  //TODO: make good if i change fiels
   onStringFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const string = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const string = this.selectedCol;
 
       if (!string) {
         console.warn('Property not found in selected schema.');
@@ -782,8 +799,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onIntegerFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const integer = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const integer = this.selectedCol;
 
       if (!integer) {
         console.warn('Property not found in selected schema.');
@@ -894,8 +911,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onBooleanFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const boolean = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const boolean = this.selectedCol;
 
       if (!boolean) {
         console.warn('Property not found in selected schema.');
@@ -972,8 +989,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onEnumFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const enumValue = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const enumValue = this.selectedCol;
 
       if (!enumValue) {
         console.warn('Property not found in selected schema.');
@@ -1027,8 +1044,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onNumberFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const number = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const number = this.selectedCol;
 
       if (!number) {
         console.warn('Property not found in selected schema.');
@@ -1123,6 +1140,105 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
             }
           }
 
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onDictionaryFieldChange(field: string, value: any): void {
+    if (this.selectedSchema) {
+      const disc = this.selectedCol;
+
+      if (!disc) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedDictionaryBehavior':
+          if (value.name === 'WriteOnly') {
+            disc.writeOnly = true;
+            delete disc.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            disc.readOnly = true;
+            delete disc.writeOnly;
+          } else {
+            delete disc.readOnly;
+            delete disc.writeOnly;
+          }
+          break;
+        case 'minDictionaryProperties':
+          if (disc.minimum) {
+            disc.minimum = value ? Number(value) : null;
+          } else if (disc.exclusiveMinimum) {
+            disc.exclusiveMinimum = value ? Number(value) : null;
+          }
+          break;
+        case 'maxDictionaryProperties':
+          if (disc.maximum) {
+            disc.minimum = value ? Number(value) : null;
+          } else if (disc.exclusiveMaximum) {
+            disc.exclusiveMaximum = value ? Number(value) : null;
+          }
+          break;
+        case 'deprecatedDictionary':
+          disc.deprecated = !!value;
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onArrayFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onArrayFieldChange(field, value);
+  }
+
+  onArrayFieldChange(field: string, value: any): void {
+    if (this.selectedSchema) {
+      const array = this.selectedCol;
+
+      if (!array) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedArrayBehavior':
+          if (value.name === 'WriteOnly') {
+            array.writeOnly = true;
+            delete array.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            array.readOnly = true;
+            delete array.writeOnly;
+          } else {
+            delete array.readOnly;
+            delete array.writeOnly;
+          }
+          break;
+        case 'minArrayItems':
+          console.log(array);
+          array.minItems = value ? Number(value) : null;
+          break;
+        case 'maxArrayItems':
+          array.maxItems = value ? Number(value) : null;
+          break;
+        case 'uniqueArrayItems':
+          array.deprecated = !!value;
+          break;
+        case 'deprecatedArray':
+          array.deprecated = !!value;
           break;
 
         default:

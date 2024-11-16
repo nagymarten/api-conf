@@ -119,6 +119,12 @@
                         optionLabel="name"
                         placeholder="Read/Write"
                         [style]="{ width: '100%' }"
+                        (onChange)="
+                          onArrayFieldChange(
+                            'selectedArrayBehavior',
+                            $event.value
+                          )
+                        "
                       ></p-dropdown>
                     </div>
 
@@ -131,6 +137,10 @@
                         placeholder=">= 0"
                         [(ngModel)]="minArrayItems"
                         [style]="{ width: '100%' }"
+                        (blur)="onArrayFieldBlur('minArrayItems', $event)"
+                        (keydown.enter)="
+                          onArrayFieldBlur('minArrayItems', $event)
+                        "
                       />
                     </div>
 
@@ -143,6 +153,10 @@
                         placeholder=">= 0"
                         [(ngModel)]="maxArrayItems"
                         [style]="{ width: '100%' }"
+                        (blur)="onArrayFieldBlur('maxArrayItems', $event)"
+                        (keydown.enter)="
+                          onArrayFieldBlur('maxArrayItems', $event)
+                        "
                       />
                     </div>
 
@@ -151,12 +165,18 @@
                       <p-inputSwitch
                         id="uniqe_items"
                         [(ngModel)]="uniqueArrayItems"
+                        (onChange)="
+                          onArrayFieldChange('uniqueArrayItems', $event.checked)
+                        "
                       ></p-inputSwitch>
 
                       <label for="deprecatedSwitch">deprecated</label>
                       <p-inputSwitch
                         id="deprecated"
                         [(ngModel)]="deprecatedArray"
+                        (onChange)="
+                          onArrayFieldChange('deprecatedArray', $event.checked)
+                        "
                       ></p-inputSwitch>
 
                       <p-inputSwitch
@@ -879,6 +899,18 @@
                         pInputText
                         placeholder=">= 0"
                         [(ngModel)]="minDictionaryProperties"
+                        (blur)="
+                          onDictionaryFieldBlur(
+                            'minDictionaryProperties',
+                            $event
+                          )
+                        "
+                        (keydown.enter)="
+                          onDictionaryFieldBlur(
+                            'minDictionaryProperties',
+                            $event
+                          )
+                        "
                       />
                     </div>
 
@@ -892,6 +924,18 @@
                         pInputText
                         placeholder=">= 0"
                         [(ngModel)]="maxDictionaryProperties"
+                        (blur)="
+                          onDictionaryFieldBlur(
+                            'maxDictionaryProperties',
+                            $event
+                          )
+                        "
+                        (keydown.enter)="
+                          onDictionaryFieldBlur(
+                            'maxDictionaryProperties',
+                            $event
+                          )
+                        "
                       />
                     </div>
 
@@ -900,6 +944,12 @@
                       <p-inputSwitch
                         id="deprecatedDictionarySwitch"
                         [(ngModel)]="deprecatedDictionary"
+                        (onChange)="
+                          onDictionaryFieldChange(
+                            'deprecatedDictionary',
+                            $event.checked
+                          )
+                        "
                       ></p-inputSwitch>
                     </div>
 
@@ -911,6 +961,13 @@
                         [(ngModel)]="selectedDictionaryBehavior"
                         optionLabel="name"
                         placeholder="Read/Write"
+                        (onChange)="
+                          onDictionaryFieldChange(
+                            'selectedDictionaryBehavior',
+                            $event.value
+                          )
+                        "
+                        [appendTo]="'body'"
                       ></p-dropdown>
                     </div>
                   </div>

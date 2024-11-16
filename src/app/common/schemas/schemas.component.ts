@@ -270,6 +270,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           }
         } else if (subSchema?.items) {
           const arrayType = this.handleArray(subSchema);
+          this.modifyExtensions(subSchema);
 
           const childNode: TreeNode = {
             label: arrayType,
@@ -581,6 +582,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
             }
           }
         } else if (property?.properties) {
+          this.modifyExtensions(property);
+
           const childNode: TreeNode = {
             label: propertyKey,
             data: {
@@ -612,7 +615,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           });
           rootNode.children!.push(childNode);
         } else if (property?.enum) {
-          this.modifyExtensions(schema);
+          this.modifyExtensions(property);
 
           const childNode: TreeNode = {
             label: propertyKey,
@@ -624,7 +627,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               editDisabled: !!property?.$ref,
               isReferenceChild: false,
               isRootNode: false,
-              uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -632,7 +635,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (property?.additionalProperties) {
-          this.modifyExtensions(schema);
+          this.modifyExtensions(property);
 
           const discType = this.handleAdditionalProperties(property);
 
@@ -647,7 +650,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isReferenceChild: false,
               isRootNode: false,
               isObjArrOrDisc: true,
-              uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -671,6 +674,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           if (hasProperties) {
             Object.keys(additionalProps.properties).forEach((key) => {
               const subProperty = additionalProps.properties[key];
+              this.modifyExtensions(subProperty);
 
               const subChildNode: TreeNode = {
                 label: key,
@@ -722,7 +726,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (property.items) {
-          this.modifyExtensions(schema);
+          this.modifyExtensions(property);
 
           const arrayType = this.handleArray(property);
 
@@ -737,7 +741,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isReferenceChild: false,
               isRootNode: false,
               isObjArrOrDisc: true,
-              uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -1151,6 +1155,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   updateSchemaField(newName: string, rowData: any): void {
+    //TODO: Test disc and arrays
     const updateInSchema = (
       schema: any,
       oldName: string,
@@ -1451,10 +1456,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
     resolvedRefs: Set<string> = new Set()
   ): any {
     if (!schema || !rowData) {
-      console.warn('Schema or RowData is not defined.', { schema, rowData });
       return null;
     }
 
+    // Check if the current schema matches the rowData by uniqueId
     if (
       rowData.uniqueId &&
       schema[`x-${this.nameOfId}`] &&
@@ -1463,6 +1468,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return schema;
     }
 
+    // Check .properties
     if (schema.properties) {
       for (const propertyKey in schema.properties) {
         const property = schema.properties[propertyKey];
@@ -1476,10 +1482,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
           property,
           resolvedRefs
         );
-        if (nestedField) return nestedField;
+        if (nestedField) {
+          return nestedField;
+        }
       }
     }
 
+    // Check composite constructs: allOf, anyOf, oneOf
     const compositeConstructs = ['allOf', 'anyOf', 'oneOf'];
     for (const construct of compositeConstructs) {
       if (schema[construct] && Array.isArray(schema[construct])) {
@@ -1493,11 +1502,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
             subSchema,
             resolvedRefs
           );
-          if (field) return field;
+          if (field) {
+            return field;
+          }
         }
       }
     }
 
+    // Check enums
     if (schema.enum && Array.isArray(schema.enum)) {
       if (schema.enum.includes(rowData.name)) {
         return {
@@ -1507,10 +1519,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (
-      schema.additionalProperties &&
-      typeof schema.additionalProperties === 'object'
-    ) {
+    // Check additionalProperties
+    if (schema.additionalProperties) {
       if (this.isRowDataMatching(rowData, schema.additionalProperties)) {
         return schema.additionalProperties;
       }
@@ -1520,9 +1530,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
         schema.additionalProperties,
         resolvedRefs
       );
-      if (nestedField) return nestedField;
+      if (nestedField) {
+        return nestedField;
+      }
     }
 
+    // Check array items
     if (schema.type === 'array' && schema.items) {
       if (this.isRowDataMatching(rowData, schema.items)) {
         return schema.items;
@@ -1533,9 +1546,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
         schema.items,
         resolvedRefs
       );
-      if (nestedField) return nestedField;
+      if (nestedField) {
+        return nestedField;
+      }
     }
 
+    // Check $ref
     if (schema.$ref) {
       const refSchemaName = this.extractSchemaNameFromRef(schema.$ref);
 
