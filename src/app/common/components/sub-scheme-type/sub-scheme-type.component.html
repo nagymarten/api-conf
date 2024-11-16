@@ -118,6 +118,12 @@
                       optionLabel="name"
                       placeholder="Read/Write"
                       [style]="{ width: '100%' }"
+                      (onChange)="
+                        onArrayFieldChange(
+                          'selectedArrayBehavior',
+                          $event.value
+                        )
+                      "
                     ></p-dropdown>
                   </div>
 
@@ -130,6 +136,10 @@
                       placeholder=">= 0"
                       [(ngModel)]="minArrayItems"
                       [style]="{ width: '100%' }"
+                      (blur)="onArrayFieldBlur('minArrayItems', $event)"
+                      (keydown.enter)="
+                        onArrayFieldBlur('minArrayItems', $event)
+                      "
                     />
                   </div>
 
@@ -142,6 +152,10 @@
                       placeholder=">= 0"
                       [(ngModel)]="maxArrayItems"
                       [style]="{ width: '100%' }"
+                      (blur)="onArrayFieldBlur('maxArrayItems', $event)"
+                      (keydown.enter)="
+                        onArrayFieldBlur('maxArrayItems', $event)
+                      "
                     />
                   </div>
 
@@ -150,12 +164,18 @@
                     <p-inputSwitch
                       id="uniqe_items"
                       [(ngModel)]="uniqueArrayItems"
+                      (onChange)="
+                        onArrayFieldChange('uniqueArrayItems', $event.checked)
+                      "
                     ></p-inputSwitch>
 
                     <label for="deprecatedSwitch">deprecated</label>
                     <p-inputSwitch
                       id="deprecated"
                       [(ngModel)]="deprecatedArray"
+                      (onChange)="
+                        onArrayFieldChange('deprecatedArray', $event.checked)
+                      "
                     ></p-inputSwitch>
 
                     <p-inputSwitch
@@ -170,7 +190,13 @@
                   </div>
                 </div>
               </div>
-              <app-sub-scheme-type></app-sub-scheme-type>
+              <app-sub-scheme-type
+                [rowData]="rowData"
+                [apiSchemas]="apiSchemas"
+                [selectedSchemaName]="selectedSchemaName"
+                [selectedArrayItems]="arrayItemsSub"
+              >
+              </app-sub-scheme-type>
             </p-panel>
           </ng-container>
 
@@ -841,43 +867,70 @@
               <div class="properties-content">
                 <div class="dictionary-properties-container">
                   <div class="form-group">
-                    <label for="minProperties">minProperties</label>
+                    <label for="minDictionaryProperties">minProperties</label>
                     <input
-                      id="minProperties"
+                      id="minDictionaryProperties"
                       type="number"
                       pInputText
                       placeholder=">= 0"
-                      [(ngModel)]="minProperties"
+                      [(ngModel)]="minDictionaryProperties"
+                      (blur)="
+                        onDictionaryFieldBlur('minDictionaryProperties', $event)
+                      "
+                      (keydown.enter)="
+                        onDictionaryFieldBlur('minDictionaryProperties', $event)
+                      "
                     />
                   </div>
 
                   <div class="form-group">
-                    <label for="maxProperties">maxProperties</label>
+                    <label for="maxDictionaryProperties"
+                      >maxDictionaryProperties</label
+                    >
                     <input
-                      id="maxProperties"
+                      id="maxDictionaryProperties"
                       type="number"
                       pInputText
                       placeholder=">= 0"
-                      [(ngModel)]="maxProperties"
+                      [(ngModel)]="maxDictionaryProperties"
+                      (blur)="
+                        onDictionaryFieldBlur('maxDictionaryProperties', $event)
+                      "
+                      (keydown.enter)="
+                        onDictionaryFieldBlur('maxDictionaryProperties', $event)
+                      "
                     />
                   </div>
 
                   <div class="toggle-group">
-                    <label for="deprecatedSwitch">deprecated</label>
+                    <label for="deprecatedDictionarySwitch">deprecated</label>
                     <p-inputSwitch
-                      id="deprecatedSwitch"
-                      [(ngModel)]="deprecated"
+                      id="deprecatedDictionarySwitch"
+                      [(ngModel)]="deprecatedDictionary"
+                      (onChange)="
+                        onDictionaryFieldChange(
+                          'deprecatedDictionary',
+                          $event.checked
+                        )
+                      "
                     ></p-inputSwitch>
                   </div>
 
                   <div class="form-group">
-                    <label for="behavior">behavior</label>
+                    <label for="behaviorDictionary">behavior</label>
                     <p-dropdown
-                      id="behavior"
+                      id="behaviorDictionary"
                       [options]="behaviorOptions"
-                      [(ngModel)]="selectedBehavior"
+                      [(ngModel)]="selectedDictionaryBehavior"
                       optionLabel="name"
                       placeholder="Read/Write"
+                      (onChange)="
+                        onDictionaryFieldChange(
+                          'selectedDictionaryBehavior',
+                          $event.value
+                        )
+                      "
+                      [appendTo]="'body'"
                     ></p-dropdown>
                   </div>
                 </div>
@@ -889,36 +942,58 @@
       </div>
     </div>
 
-    <div *ngIf="activeItem?.label === 'Components'">
-      <div class="p-toolbar-group-start">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search"></i>
-          <input pInputText placeholder="Search" />
-        </span>
-        <p-divider />
+    <div
+      *ngIf="activeItem?.label === 'Components'"
+      class="p-toolbar-group-start"
+    >
+      <!-- Search Input -->
+      <span
+        class="p-input-icon-left"
+        style="margin-bottom: 1rem; display: flex; align-items: center"
+      >
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          placeholder="Search"
+          style="width: 100%; max-width: 300px"
+        />
+      </span>
 
-        <p-scroller
-          [items]="apiSchemas"
-          [itemSize]="50"
-          [scrollHeight]="scrollHeight"
-          class="border-1 surface-border"
+      <!-- Divider -->
+      <p-divider class="custom-divider"></p-divider>
+
+      <div
+        style="height: 300px; overflow-y: auto; border: 1px solid #ccc"
+        #scroller
+      >
+        <div
+          *ngFor="let item of apiSchemas"
+          [id]="'item-' + item.name"
+          style="
+            height: 50px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
         >
-          <ng-template pTemplate="item" let-item let-options="options">
-            <div
-              class="flex align-items-center p-2 clickable-item"
-              [ngClass]="{ 'surface-ground': options.odd }"
-              style="height: 50px; cursor: pointer"
-              (click)="onSchemeSelect(item)"
-            >
-              <p-button
-                label="{{ item.name }}"
-                [text]="true"
-                severity="secondary"
-                [style]="{ width: '100%' }"
-              />
-            </div>
-          </ng-template>
-        </p-scroller>
+          <p-button
+            label="{{ item.name }}"
+            (click)="onSchemeSelect(item)"
+            [ngClass]="{ 'selected-button': item.name === selectedRefSchema }"
+            [style]="{
+              'background-color':
+                item.name === selectedRefSchema ? '#d4edda' : '',
+              color: item.name === selectedRefSchema ? '#155724' : '',
+              border: item.name === selectedRefSchema ? '1px solid #c3e6cb' : ''
+            }"
+          ></p-button>
+          <i
+            *ngIf="item.name === selectedRefSchema"
+            class="pi pi-check"
+            style="color: green; margin-left: 8px"
+          ></i>
+        </div>
       </div>
     </div>
 

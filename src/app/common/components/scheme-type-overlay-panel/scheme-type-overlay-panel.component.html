@@ -195,11 +195,11 @@
                 </div>
                 <app-sub-scheme-type
                   [rowData]="rowData"
-                  [col]="selectedCol"
+                  [selectedCol]="selectedCol"
                   [apiSchemas]="apiSchemas"
                   [selectedSchema]="selectedSchema"
                   [selectedSchemaName]="selectedSchemaName"
-                  [arrayItems]="arrayItems"
+                  [selectedArrayItems]="arrayItems"
                 >
                 </app-sub-scheme-type>
               </p-panel>
@@ -972,7 +972,15 @@
                     </div>
                   </div>
                 </div>
-                <app-sub-scheme-type></app-sub-scheme-type>
+                <app-sub-scheme-type
+                  [rowData]="rowData"
+                  [selectedCol]="selectedCol"
+                  [apiSchemas]="apiSchemas"
+                  [selectedSchema]="selectedSchema"
+                  [selectedSchemaName]="selectedSchemaName"
+                  [selectedArrayItems]="additionalPropertiesDisc"
+                >
+                </app-sub-scheme-type>
               </p-panel>
             </ng-container>
           </div>

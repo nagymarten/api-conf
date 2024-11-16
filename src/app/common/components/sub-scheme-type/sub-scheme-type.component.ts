@@ -6,8 +6,9 @@ import {
   OnInit,
   Output,
   EventEmitter,
+  ElementRef,
 } from '@angular/core';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ChipsModule } from 'primeng/chips';
@@ -55,13 +56,14 @@ interface Type {
 })
 export class SubSchemeTypeComponent implements OnInit {
   @Input() rowData: any;
-  @Input() col: any;
+  @Input() selectedCol: any;
   @Input() apiSchemas: any;
   @Input() selectedSchema: any;
   @Input() selectedSchemaName: any;
-  @Input() arrayItems!: any;
+  @Input() selectedArrayItems: any;
 
-  @ViewChild('op') op!: OverlayPanel;
+  @ViewChild('scroller') scroller!: ElementRef;
+
   @Output() updateRow = new EventEmitter<string>();
   @Output() schemaUpdated: EventEmitter<any> = new EventEmitter<any>();
 
@@ -86,8 +88,9 @@ export class SubSchemeTypeComponent implements OnInit {
   selectedIntType: any;
   combineTypes: Type[] = [{ name: 'AND' }, { name: 'XOR' }, { name: 'OR' }];
   showAddPropertyForm: boolean = false;
-  scrollHeight: string = '200px';
-  selectedCombineType!: string;
+  scrollHeight: string = '250px';
+  selectedCombineType: Type | undefined;
+  selectedRefSchema: string = '';
   selectedBehavior: any;
   default: string = '';
   example: string = '';
@@ -98,6 +101,9 @@ export class SubSchemeTypeComponent implements OnInit {
   exclusiveMax: boolean = false;
   deprecated: boolean = false;
   allow_additional_properties: boolean = false;
+  apiSchemasS = Array.from({ length: 50 }, (_, i) => ({
+    name: `Item ${i + 1}`,
+  }));
 
   //Object
   minProperties: number | null = null;
@@ -164,10 +170,16 @@ export class SubSchemeTypeComponent implements OnInit {
   maxArrayItems: number | null = null;
   uniqueArrayItems: boolean = false;
   deprecatedArray: boolean = false;
-  arrayItens: any = null;
+  arrayItemsSub: any = null;
   isNullableArray: boolean = false;
 
-  selectedBehaviorArray: string = '';
+  //Dictionary
+  selectedDictionaryBehavior: Type | undefined;
+  minDictionaryProperties: number | null = null;
+  maxDictionaryProperties: number | null = null;
+  deprecatedDictionary: boolean = false;
+  additionalPropertiesDisc: any = null;
+
   minItems: number | null = null;
   maxItems: number | null = null;
   uniqueItems: boolean = false;
@@ -209,7 +221,199 @@ export class SubSchemeTypeComponent implements OnInit {
   constructor(private apiDataService: ApiDataService) {}
 
   ngOnInit() {
-    this.activeItem = this.responseExamples[0];
+    if (Object.keys(this.selectedArrayItems).length === 0) {
+      console.log('selected schema nulla', this.selectedArrayItems);
+    } else {
+      console.log('selected schema', this.selectedArrayItems);
+    }
+    console.log('selected schema', this.selectedArrayItems.type);
+
+    const cleanString = (value: string) =>
+      value
+        .replace(/\{\d+\}/g, '')
+        .replace(/\s*or\s+null\s*$/i, '')
+        .replace(/<[^>]*>/g, '')
+        .trim();
+
+    const extractRootType = (value: string): string => {
+      const match = value.match(/^(\w+)\[/);
+      if (match) {
+        return match[1].trim();
+      }
+      return value.split(' or ')[0].trim();
+    };
+
+    const cleanedValue = cleanString(this.selectedArrayItems.type);
+    const rootType = extractRootType(cleanedValue);
+
+    const originalType = { name: rootType };
+    this.selectedType = originalType;
+
+    console.log('selected schema', this.selectedArrayItems);
+
+    if (this.selectedArrayItems.properties) {
+      this.minProperties = this.selectedArrayItems.minProperties || null;
+      this.maxProperties = this.selectedArrayItems.maxProperties || null;
+      this.allowAdditionalProperties =
+        this.selectedArrayItems.allowAdditionalProperties || false;
+      this.deprecated = this.selectedArrayItems.deprecated || false;
+      this.isNullableObject = false;
+    } else if (
+      Array.isArray(this.selectedArrayItems.type) &&
+      this.selectedArrayItems.type.includes('object') &&
+      this.selectedArrayItems.type.includes('null')
+    ) {
+      this.minProperties = this.selectedArrayItems.minProperties || null;
+      this.maxProperties = this.selectedArrayItems.maxProperties || null;
+      this.allowAdditionalProperties =
+        this.selectedArrayItems.allowAdditionalProperties || false;
+      this.deprecated = this.selectedArrayItems.deprecated || false;
+      this.isNullableObject = true;
+    }
+    if (this.selectedArrayItems.type === 'string') {
+      this.selectedStringFormat = {
+        name: this.selectedArrayItems.format || null,
+      };
+      if (this.selectedArrayItems.writeOnly) {
+        this.selectedStringBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedArrayItems.readOnly) {
+        this.selectedStringBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedStringBehavior = { name: 'Read/Write' };
+      }
+      this.defaultString = this.selectedArrayItems.default || '';
+      this.exampleString = this.selectedArrayItems.example || '';
+      this.stringPattern = this.selectedArrayItems.pattern || '';
+      this.stringMinLength = this.selectedArrayItems.minLength || null;
+      this.stringMaxLength = this.selectedArrayItems.maxLength || null;
+      this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
+      this.isNullableString = false;
+    } else if (
+      Array.isArray(this.selectedArrayItems.type) &&
+      this.selectedArrayItems.type.includes('string') &&
+      this.selectedArrayItems.type.includes('null')
+    ) {
+      this.selectedStringFormat = {
+        name: this.selectedArrayItems.format || null,
+      };
+      if (this.selectedArrayItems.writeOnly) {
+        this.selectedStringBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedArrayItems.readOnly) {
+        this.selectedStringBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedStringBehavior = { name: 'Read/Write' };
+      }
+      this.defaultString = this.selectedArrayItems.default || '';
+      this.exampleString = this.selectedArrayItems.example || '';
+      this.stringPattern = this.selectedArrayItems.pattern || '';
+      this.stringMinLength = this.selectedArrayItems.minLength || null;
+      this.stringMaxLength = this.selectedArrayItems.maxLength || null;
+      this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
+      this.isNullableString = true;
+    }
+
+    if (this.selectedArrayItems.type === 'integer') {
+      this.selectedIntegerFormat = {
+        name: this.selectedArrayItems.format || null,
+      };
+      if (this.selectedArrayItems.writeOnly) {
+        this.selectedIntegerBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedArrayItems.readOnly) {
+        this.selectedIntegerBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedIntegerBehavior = { name: 'Read/Write' };
+      }
+      this.defaultInteger = this.selectedArrayItems.default || '';
+      this.exampleInteger = this.selectedArrayItems.example || '';
+      this.minimumInteger =
+        this.selectedArrayItems.minimum ||
+        this.selectedArrayItems.exclusiveMinimum ||
+        null;
+      this.maximumInteger =
+        this.selectedArrayItems.maximum ||
+        this.selectedArrayItems.exclusiveMaximum ||
+        null;
+      this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
+      this.exclusiveMinInteger =
+        !!this.selectedArrayItems.exclusiveMinimum || false;
+      this.exclusiveMaxInteger =
+        !!this.selectedArrayItems.exclusiveMaximum || false;
+      this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
+      this.isNullableInteger = false;
+    } else if (
+      Array.isArray(this.selectedArrayItems.type) &&
+      this.selectedArrayItems.type.includes('integer') &&
+      this.selectedArrayItems.type.includes('null')
+    ) {
+      this.selectedIntegerFormat = {
+        name: this.selectedArrayItems.format || null,
+      };
+      if (this.selectedArrayItems.writeOnly) {
+        this.selectedIntegerBehavior = { name: 'WriteOnly' };
+      } else if (this.selectedArrayItems.readOnly) {
+        this.selectedIntegerBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedIntegerBehavior = { name: 'Read/Write' };
+      }
+      this.defaultInteger = this.selectedArrayItems.default || '';
+      this.exampleInteger = this.selectedArrayItems.example || '';
+      this.minimumInteger =
+        this.selectedArrayItems.exclusiveMinimum ||
+        this.selectedArrayItems.minimum ||
+        null;
+      this.maximumInteger =
+        this.selectedArrayItems.exclusiveMaximum ||
+        this.selectedArrayItems.maximum ||
+        null;
+      this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
+      this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
+      this.exclusiveMinInteger =
+        !!this.selectedArrayItems.exclusiveMinimum || false;
+      this.exclusiveMaxInteger =
+        !!this.selectedArrayItems.exclusiveMaximum || false;
+      this.isNullableInteger = true;
+    }
+
+    if (this.selectedArrayItems.type === 'array') {
+      const arrayValue = this.selectedArrayItems;
+
+      if (arrayValue.writeOnly) {
+        this.selectedArrayBehavior = { name: 'WriteOnly' };
+      } else if (arrayValue.readOnly) {
+        this.selectedArrayBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedArrayBehavior = { name: 'Read/Write' };
+      }
+
+      this.minArrayItems = arrayValue.minItems || null;
+      this.maxArrayItems = arrayValue.maxItems || null;
+      this.uniqueArrayItems = arrayValue.uniqueItems || false;
+      this.deprecatedArray = arrayValue.deprecated || false;
+      this.arrayItemsSub = arrayValue.items || false;
+      this.isNullableArray = false;
+    }
+
+    if (this.selectedArrayItems.additionalProperties) {
+      const dictionaryValue = this.selectedArrayItems;
+
+      if (dictionaryValue.writeOnly) {
+        this.selectedDictionaryBehavior = { name: 'WriteOnly' };
+      } else if (dictionaryValue.readOnly) {
+        this.selectedDictionaryBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedDictionaryBehavior = { name: 'Read/Write' };
+      }
+      this.minDictionaryProperties = dictionaryValue.minProperties || null;
+      this.maxDictionaryProperties = dictionaryValue.maxProperties || null;
+      this.deprecatedDictionary = dictionaryValue.deprecated || false;
+      this.additionalPropertiesDisc = dictionaryValue.additionalProperties;
+    }
+
+    this.checkAndInitializeSelectedType();
+
+    // setTimeout(() => {
+    //   this.scrollToSelected();
+    // }, 0);
   }
 
   toggleEnumInput() {
@@ -229,364 +433,94 @@ export class SubSchemeTypeComponent implements OnInit {
     this.showEnumInput = false;
   }
 
-  setRowData(rowData: any) {
-    this.rowData = rowData;
+  checkAndInitializeSelectedType() {
+    console.log(this.selectedType);
+    if (!this.selectedType) {
+      console.warn('No type selected.');
+      return;
+    }
+
+    const selectedTypeName = this.selectedType.name;
+
+    const isInCombineTypes = ['allOf', 'anyOf', 'oneOf'].includes(
+      selectedTypeName
+    );
+
+    const isSpecialType = [
+      'array',
+      'boolean',
+      'integer',
+      'dictionary',
+      'number',
+      'string',
+      'enum',
+      'object',
+    ].includes(selectedTypeName);
+
+    const isInReferences = this.apiSchemas.some(
+      (schema: any) => schema.name === selectedTypeName
+    );
+
+    if (isInCombineTypes) {
+      this.activeItem = this.responseExamples[2];
+      this.handleSpecialType(selectedTypeName);
+    } else if (isSpecialType) {
+      this.activeItem = this.responseExamples[0];
+      this.selectedType.name = selectedTypeName;
+    } else if (isInReferences) {
+      const matchedSchema = this.apiSchemas.find(
+        (schema: any) => schema.name === selectedTypeName
+      );
+      if (matchedSchema) {
+        this.selectedRefSchema = selectedTypeName;
+        console.log(`${selectedTypeName} found in references.`);
+        this.initializeFromSchema(matchedSchema);
+        this.activeItem = this.responseExamples[1];
+        this.scrollToSelected();
+      }
+    } else {
+      console.warn(
+        `${selectedTypeName} is neither in combineTypes, references, nor a special type.`
+      );
+    }
   }
 
-  setCol(col: any) {
-    this.col = col;
+  scrollToSelected(): void {
+    if (this.selectedRefSchema) {
+      const selectedElement = document.getElementById(
+        `item-${this.selectedRefSchema}`
+      );
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
   }
 
-  toggleOverlay(event: Event, rowData: any, col: any) {
-    const cleanString = (value: string) =>
-      value
-        .replace(/\{\d+\}/g, '')
-        .replace(/\s*or\s+null\s*$/i, '')
-        .replace(/<[^>]*>/g, '')
-        .trim();
+  handleSpecialType(type: string) {
+    switch (type) {
+      case 'allOf':
+        this.selectedCombineType = { name: 'AND' };
 
-    const originalType = { name: cleanString(rowData[col.field]) };
-
-    this.setRowData(rowData);
-    this.setCol(col);
-    if (!this.types.some((type) => type.name === originalType.name)) {
-      this.types.unshift(originalType);
+        break;
+      case 'anyOf':
+        this.selectedCombineType = { name: 'OR' };
+        break;
+      case 'oneOf':
+        this.selectedCombineType = { name: 'XOR' };
+        break;
+      default:
+        console.warn(`Unhandled special type: ${type}`);
+        this.selectedCombineType = { name: '' };
     }
+  }
 
-    this.selectedType = originalType;
+  initializeFromSchema(schema: any) {
+    console.log('Initializing from schema:', schema);
 
-    if (this.selectedSchema?.type === 'object') {
-      this.minProperties = this.selectedSchema.minProperties || null;
-      this.maxProperties = this.selectedSchema.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedSchema.allowAdditionalProperties || false;
-      this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullableObject = false;
-    } else if (
-      Array.isArray(this.selectedSchema.type) &&
-      this.selectedSchema.type.includes('object') &&
-      this.selectedSchema.type.includes('null')
-    ) {
-      this.minProperties = this.selectedSchema.minProperties || null;
-      this.maxProperties = this.selectedSchema.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedSchema.allowAdditionalProperties || false;
-      this.deprecated = this.selectedSchema.deprecated || false;
-      this.isNullableObject = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'string'
-    ) {
-      this.selectedStringFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
-      this.defaultString =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleString =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.stringPattern =
-        this.selectedSchema?.properties[rowData.name].pattern || '';
-      this.stringMinLength =
-        this.selectedSchema?.properties[rowData.name].minLength || null;
-      this.stringMaxLength =
-        this.selectedSchema?.properties[rowData.name].maxLength || null;
-      this.isStringDeprecated =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableString = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('string') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const property = this.selectedSchema.properties[rowData.name];
-
-      this.selectedStringFormat = { name: property.format || null };
-
-      if (property.writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (property.readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
-
-      this.defaultString = property.default || '';
-      this.exampleString = property.example || '';
-      this.stringPattern = property.pattern || '';
-      this.stringMinLength = property.minLength || null;
-      this.stringMaxLength = property.maxLength || null;
-      this.isStringDeprecated = property.deprecated || false;
-      this.isNullableString = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'integer'
-    ) {
-      this.selectedIntegerFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
-      this.defaultInteger =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleInteger =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.minimumInteger =
-        this.selectedSchema?.properties[rowData.name].minimum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        null;
-      this.maximumInteger =
-        this.selectedSchema?.properties[rowData.name].maximum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        null;
-      this.multipleOfInteger =
-        this.selectedSchema?.properties[rowData.name].multipleOf || null;
-      this.exclusiveMinInteger =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        false;
-      this.exclusiveMaxInteger =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        false;
-      this.deprecatedInteger =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableInteger = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('integer') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const integer = this.selectedSchema.properties[rowData.name];
-
-      this.selectedIntegerFormat = { name: integer.format || null };
-
-      if (integer.writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (integer.readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
-
-      this.defaultInteger = integer.default || '';
-      this.exampleInteger = integer.example || '';
-      this.minimumInteger = integer.exclusiveMinimum || integer.minimum || null;
-      this.maximumInteger = integer.exclusiveMaximum || integer.maximum || null;
-      this.multipleOfInteger = integer.multipleOf || null;
-      this.deprecatedInteger = integer.deprecated || false;
-      this.exclusiveMinInteger = !!integer.exclusiveMinimum || false;
-      this.exclusiveMaxInteger = !!integer.exclusiveMaximum || false;
-      this.isNullableInteger = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'number'
-    ) {
-      this.selectedNumberFormat = {
-        name: this.selectedSchema?.properties[rowData.name].format || null,
-      };
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedNumberBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedNumberBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedNumberBehavior = { name: 'Read/Write' };
-      }
-      this.defaultNumber =
-        this.selectedSchema?.properties[rowData.name].default || '';
-      this.exampleNumber =
-        this.selectedSchema?.properties[rowData.name].example || '';
-      this.minimumNumber =
-        this.selectedSchema?.properties[rowData.name].minimum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        null;
-      this.maximumNumber =
-        this.selectedSchema?.properties[rowData.name].maximum ||
-        this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        null;
-      this.multipleOfNumber =
-        this.selectedSchema?.properties[rowData.name].multipleOf || null;
-      this.exclusiveMinNumber =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMinimum ||
-        false;
-      this.exclusiveMaxNumber =
-        !!this.selectedSchema?.properties[rowData.name].exclusiveMaximum ||
-        false;
-      this.deprecatedNumber =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableNumber = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('number') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const number = this.selectedSchema.properties[rowData.name];
-
-      this.selectedNumberFormat = { name: number.format || null };
-
-      if (number.writeOnly) {
-        this.selectedNumberBehavior = { name: 'WriteOnly' };
-      } else if (number.readOnly) {
-        this.selectedNumberBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedNumberBehavior = { name: 'Read/Write' };
-      }
-
-      this.defaultNumber = number.default || '';
-      this.exampleNumber = number.example || '';
-      this.minimumNumber = number.exclusiveMinimum || number.minimum || null;
-      this.maximumNumber = number.exclusiveMaximum || number.maximum || null;
-      this.multipleOfNumber = number.multipleOf || null;
-      this.deprecatedNumber = number.deprecated || false;
-      this.exclusiveMinNumber = !!number.exclusiveMinimum || false;
-      this.exclusiveMaxNumber = !!number.exclusiveMaximum || false;
-      this.isNullableNumber = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'boolean'
-    ) {
-      if (this.selectedSchema?.properties[rowData.name].writeOnly) {
-        this.selectedBooleanBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedSchema?.properties[rowData.name].readOnly) {
-        this.selectedBooleanBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedBooleanBehavior = { name: 'Read/Write' };
-      }
-      if (this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-        this.defaultBoolean = { name: 'true' };
-      } else if (!this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-
-        this.defaultBoolean = { name: 'false' };
-      } else {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-
-        this.defaultBoolean = { name: '' };
-      }
-      this.deprecatedBoolean =
-        this.selectedSchema?.properties[rowData.name].deprecated || false;
-      this.isNullableBoolean = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('boolean') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const boolean = this.selectedSchema.properties[rowData.name];
-
-      if (boolean.writeOnly) {
-        this.selectedBooleanBehavior = { name: 'WriteOnly' };
-      } else if (boolean.readOnly) {
-        this.selectedBooleanBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedBooleanBehavior = { name: 'Read/Write' };
-      }
-      if (this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-        this.defaultBoolean = { name: 'true' };
-      } else if (!this.selectedSchema?.properties[rowData.name].default) {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-
-        this.defaultBoolean = { name: 'false' };
-      } else {
-        console.log(this.selectedSchema?.properties[rowData.name].default);
-
-        this.defaultBoolean = { name: '' };
-      }
-      this.deprecatedBoolean = boolean.deprecated || false;
-      this.isNullableBoolean = true;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name]?.enum
-    ) {
-      const enumValue = this.selectedSchema.properties[rowData.name];
-
-      this.enumValues = enumValue.enum;
-
-      if (enumValue.writeOnly) {
-        this.selectedEnumBehavior = { name: 'WriteOnly' };
-      } else if (enumValue.readOnly) {
-        this.selectedEnumBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedEnumBehavior = { name: 'Read/Write' };
-      }
-      this.enumDefault = enumValue.default || '';
-      this.enumExample = enumValue.example || '';
-      this.deprecatedEnum = enumValue.deprecated || false;
-    }
-    if (
-      col.field === 'type' &&
-      this.selectedSchema?.properties[rowData.name].type === 'array'
-    ) {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
-
-      if (arrayValue.writeOnly) {
-        this.selectedArrayBehavior = { name: 'WriteOnly' };
-      } else if (arrayValue.readOnly) {
-        this.selectedArrayBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedArrayBehavior = { name: 'Read/Write' };
-      }
-
-      this.minArrayItems = arrayValue.minItems || null;
-      this.maxArrayItems = arrayValue.maxItems || null;
-      this.uniqueArrayItems = arrayValue.uniqueItems || false;
-      this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItens = arrayValue.items || false;
-      console.log('this.arrayItens in obj');
-      console.log(this.arrayItens);
-      this.isNullableArray = false;
-    } else if (
-      col.field === 'type' &&
-      Array.isArray(this.selectedSchema?.properties[rowData.name]?.type) &&
-      this.selectedSchema?.properties[rowData.name].type.includes('array') &&
-      this.selectedSchema?.properties[rowData.name].type.includes('null')
-    ) {
-      const arrayValue = this.selectedSchema.properties[rowData.name];
-      console.log(this.selectedSchema?.properties[rowData.name]);
-
-      if (arrayValue.writeOnly) {
-        this.selectedArrayBehavior = { name: 'WriteOnly' };
-      } else if (arrayValue.readOnly) {
-        this.selectedArrayBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedArrayBehavior = { name: 'Read/Write' };
-      }
-
-      this.minArrayItems = arrayValue.minItems || null;
-      this.maxArrayItems = arrayValue.maxItems || null;
-      this.uniqueArrayItems = arrayValue.uniqueItems || false;
-      this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItens = arrayValue.items || false;
-      console.log('this.arrayItens in obj or null');
-      console.log(this.arrayItens);
-      this.isNullableArray = true;
-    }
-
-    this.op.toggle(event);
-
-    setTimeout(() => {
-      this.op.align();
-    }, 0);
+    this.minProperties = schema.minProperties || null;
+    this.maxProperties = schema.maxProperties || null;
+    this.allowAdditionalProperties = schema.allowAdditionalProperties || false;
+    this.deprecated = schema.deprecated || false;
   }
 
   onFieldBlur(field: string, event: any): void {
@@ -643,6 +577,11 @@ export class SubSchemeTypeComponent implements OnInit {
     this.onStringFieldChange(field, value);
   }
 
+  onDictionaryFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onDictionaryFieldChange(field, value);
+  }
+
   onIntegerFieldBlur(field: string, event: any): void {
     const value = event.target?.value || event;
     this.onIntegerFieldChange(field, value);
@@ -657,10 +596,10 @@ export class SubSchemeTypeComponent implements OnInit {
     const value = event.target?.value || event;
     this.onStringFieldChange(field, value.name);
   }
-
+  //TODO: make good if i change fiels
   onStringFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const string = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const string = this.selectedCol;
 
       if (!string) {
         console.warn('Property not found in selected schema.');
@@ -738,8 +677,8 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   onIntegerFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const integer = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const integer = this.selectedCol;
 
       if (!integer) {
         console.warn('Property not found in selected schema.');
@@ -850,8 +789,8 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   onBooleanFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const boolean = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const boolean = this.selectedCol;
 
       if (!boolean) {
         console.warn('Property not found in selected schema.');
@@ -928,8 +867,8 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   onEnumFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const enumValue = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const enumValue = this.selectedCol;
 
       if (!enumValue) {
         console.warn('Property not found in selected schema.');
@@ -983,8 +922,8 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   onNumberFieldChange(field: string, value: any): void {
-    if (this.selectedSchema && this.selectedSchema.properties) {
-      const number = this.selectedSchema?.properties[this.rowData.name];
+    if (this.selectedSchema) {
+      const number = this.selectedCol;
 
       if (!number) {
         console.warn('Property not found in selected schema.');
@@ -1090,6 +1029,105 @@ export class SubSchemeTypeComponent implements OnInit {
     }
   }
 
+  onDictionaryFieldChange(field: string, value: any): void {
+    if (this.selectedSchema) {
+      const disc = this.selectedCol;
+
+      if (!disc) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedDictionaryBehavior':
+          if (value.name === 'WriteOnly') {
+            disc.writeOnly = true;
+            delete disc.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            disc.readOnly = true;
+            delete disc.writeOnly;
+          } else {
+            delete disc.readOnly;
+            delete disc.writeOnly;
+          }
+          break;
+        case 'minDictionaryProperties':
+          if (disc.minimum) {
+            disc.minimum = value ? Number(value) : null;
+          } else if (disc.exclusiveMinimum) {
+            disc.exclusiveMinimum = value ? Number(value) : null;
+          }
+          break;
+        case 'maxDictionaryProperties':
+          if (disc.maximum) {
+            disc.minimum = value ? Number(value) : null;
+          } else if (disc.exclusiveMaximum) {
+            disc.exclusiveMaximum = value ? Number(value) : null;
+          }
+          break;
+        case 'deprecatedDictionary':
+          disc.deprecated = !!value;
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onArrayFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onArrayFieldChange(field, value);
+  }
+
+  onArrayFieldChange(field: string, value: any): void {
+    if (this.selectedSchema) {
+      const array = this.selectedCol;
+
+      if (!array) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedArrayBehavior':
+          if (value.name === 'WriteOnly') {
+            array.writeOnly = true;
+            delete array.readOnly;
+          } else if (value.name === 'ReadOnly') {
+            array.readOnly = true;
+            delete array.writeOnly;
+          } else {
+            delete array.readOnly;
+            delete array.writeOnly;
+          }
+          break;
+        case 'minArrayItems':
+          console.log(array);
+          array.minItems = value ? Number(value) : null;
+          break;
+        case 'maxArrayItems':
+          array.maxItems = value ? Number(value) : null;
+          break;
+        case 'uniqueArrayItems':
+          array.deprecated = !!value;
+          break;
+        case 'deprecatedArray':
+          array.deprecated = !!value;
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+      console.log(this.selectedSchema);
+
+      this.updateSwaggerSpec();
+    }
+  }
+
   updateSwaggerSpec(): void {
     this.apiDataService.getSwaggerSpec().subscribe(
       (swaggerSpec: any) => {
@@ -1117,6 +1155,8 @@ export class SubSchemeTypeComponent implements OnInit {
 
   onSchemeSelect(scheme: any) {
     console.log('Selected scheme in overlay:', scheme);
+    this.selectedRefSchema = scheme.name;
+    this.scrollToSelected();
   }
 
   onCombineTypeChange() {
@@ -1124,9 +1164,8 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   updateRowData(rowData: any) {
-    rowData[this.col.field] =
-      this.selectedType?.name || rowData[this.col.field];
-    this.updateRow.emit(rowData);
+    rowData[this.selectedCol.field] =
+      this.selectedType?.name || rowData[this.selectedCol.field];
   }
 
   onMarkAsExample(index: number) {
