@@ -1251,17 +1251,26 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
     console.log(this.selectedCol);
 
+    let addedToSchema = false;
+    let uniqueId = 'no-id';
+
     if (this.selectedCol) {
-      const newProperty = {
+      // Define the new property with the required structure
+      const newProperty: Record<string, any> = {
         type: 'string',
+        [`x-${this.nameOfId}`]: {
+          id: this.generateUniqueId(), // Generate a unique ID here
+        },
       };
 
       this.modifyExtensions(newProperty);
+      uniqueId = newProperty[`x-${this.nameOfId}`]?.id || 'no-id';
 
       // Handle `.properties`
       if (this.selectedCol.properties) {
         console.log('Adding to .properties');
         this.selectedCol.properties[''] = newProperty;
+        addedToSchema = true;
       }
 
       // Handle `.allOf`, `.anyOf`, `.oneOf`
@@ -1272,6 +1281,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         ) {
           console.log(`Adding to ${composite}`);
           this.selectedCol[composite].push(newProperty);
+          addedToSchema = true;
         }
       });
 
@@ -1285,6 +1295,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         } else {
           this.selectedCol.items = newProperty;
         }
+        addedToSchema = true;
       }
 
       // Handle `.additionalItems`
@@ -1298,6 +1309,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         } else {
           this.selectedCol.additionalItems = newProperty;
         }
+        addedToSchema = true;
       }
     } else {
       console.warn(
@@ -1305,6 +1317,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       );
     }
 
+    if (addedToSchema) {
+      console.log('New property added to the schema.');
+    } else {
+      console.warn('Failed to add new property to the schema.');
+    }
+
+    // Create a new schema node for the UI
     const newSchemaNode: TreeNode = {
       label: '',
       data: {
@@ -1313,12 +1332,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
         type: 'string',
         showAddButton: false,
         showReferenceButton: false,
-        uniqueId: this.selectedCol?.[`x-${this.nameOfId}`]?.id || 'no-id',
+        uniqueId: uniqueId,
       },
       children: [],
       expanded: true,
     };
 
+    // Find the parent node in the JSON tree to add the new schema node
     const parentNode = this.findParentNode(this.jsonTree, rowData.uniqueId);
 
     if (parentNode) {
@@ -1355,6 +1375,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.focusNewSchemaInput = false;
     }, 0);
 
+    // Update the Swagger spec to save the new property
     this.updateSwaggerSpec();
   }
 
