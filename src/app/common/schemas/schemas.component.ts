@@ -1252,6 +1252,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     console.log(this.selectedCol);
 
     let addedToSchema = false;
+    let isComposite = false;
     let uniqueId = 'no-id';
 
     if (this.selectedCol) {
@@ -1282,6 +1283,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.log(`Adding to ${composite}`);
           this.selectedCol[composite].push(newProperty);
           addedToSchema = true;
+          isComposite = true;
         }
       });
 
@@ -1323,20 +1325,33 @@ export class SchemasComponent implements OnInit, OnDestroy {
       console.warn('Failed to add new property to the schema.');
     }
 
-    // Create a new schema node for the UI
-    const newSchemaNode: TreeNode = {
-      label: '',
-      data: {
-        name: '',
-        description: '',
-        type: 'string',
-        showAddButton: false,
-        showReferenceButton: false,
-        uniqueId: uniqueId,
-      },
-      children: [],
-      expanded: true,
-    };
+    const newSchemaNode: TreeNode = isComposite
+      ? {
+          label: 'string',
+          data: {
+            name: 'string',
+            description: '',
+            type: '',
+            showAddButton: false,
+            showReferenceButton: false,
+            uniqueId: uniqueId,
+          },
+          children: [],
+          expanded: true,
+        }
+      : {
+          label: '',
+          data: {
+            name: '',
+            description: '',
+            type: 'string',
+            showAddButton: false,
+            showReferenceButton: false,
+            uniqueId: uniqueId,
+          },
+          children: [],
+          expanded: true,
+        };
 
     // Find the parent node in the JSON tree to add the new schema node
     const parentNode = this.findParentNode(this.jsonTree, rowData.uniqueId);
