@@ -221,199 +221,194 @@ export class SubSchemeTypeComponent implements OnInit {
   constructor(private apiDataService: ApiDataService) {}
 
   ngOnInit() {
-    if (Object.keys(this.selectedArrayItems).length === 0) {
+    if (Object.keys(this.selectedArrayItems || {}).length === 0) {
       console.log('selected schema nulla', this.selectedArrayItems);
     } else {
+      const cleanString = (value: string) =>
+        value
+          .replace(/\{\d+\}/g, '')
+          .replace(/\s*or\s+null\s*$/i, '')
+          .replace(/<[^>]*>/g, '')
+          .trim();
+
+      const extractRootType = (value: string): string => {
+        const match = value.match(/^(\w+)\[/);
+        if (match) {
+          return match[1].trim();
+        }
+        return value.split(' or ')[0].trim();
+      };
+
+      const cleanedValue = cleanString(this.selectedArrayItems.type);
+      const rootType = extractRootType(cleanedValue);
+
+      const originalType = { name: rootType };
+      this.selectedType = originalType;
       console.log('selected schema', this.selectedArrayItems);
+
+      if (this.selectedArrayItems.properties) {
+        this.minProperties = this.selectedArrayItems.minProperties || null;
+        this.maxProperties = this.selectedArrayItems.maxProperties || null;
+        this.allowAdditionalProperties =
+          this.selectedArrayItems.allowAdditionalProperties || false;
+        this.deprecated = this.selectedArrayItems.deprecated || false;
+        this.isNullableObject = false;
+      } else if (
+        Array.isArray(this.selectedArrayItems.type) &&
+        this.selectedArrayItems.type.includes('object') &&
+        this.selectedArrayItems.type.includes('null')
+      ) {
+        this.minProperties = this.selectedArrayItems.minProperties || null;
+        this.maxProperties = this.selectedArrayItems.maxProperties || null;
+        this.allowAdditionalProperties =
+          this.selectedArrayItems.allowAdditionalProperties || false;
+        this.deprecated = this.selectedArrayItems.deprecated || false;
+        this.isNullableObject = true;
+      }
+      if (this.selectedArrayItems.type === 'string') {
+        this.selectedStringFormat = {
+          name: this.selectedArrayItems.format || null,
+        };
+        if (this.selectedArrayItems.writeOnly) {
+          this.selectedStringBehavior = { name: 'WriteOnly' };
+        } else if (this.selectedArrayItems.readOnly) {
+          this.selectedStringBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedStringBehavior = { name: 'Read/Write' };
+        }
+        this.defaultString = this.selectedArrayItems.default || '';
+        this.exampleString = this.selectedArrayItems.example || '';
+        this.stringPattern = this.selectedArrayItems.pattern || '';
+        this.stringMinLength = this.selectedArrayItems.minLength || null;
+        this.stringMaxLength = this.selectedArrayItems.maxLength || null;
+        this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
+        this.isNullableString = false;
+      } else if (
+        Array.isArray(this.selectedArrayItems.type) &&
+        this.selectedArrayItems.type.includes('string') &&
+        this.selectedArrayItems.type.includes('null')
+      ) {
+        this.selectedStringFormat = {
+          name: this.selectedArrayItems.format || null,
+        };
+        if (this.selectedArrayItems.writeOnly) {
+          this.selectedStringBehavior = { name: 'WriteOnly' };
+        } else if (this.selectedArrayItems.readOnly) {
+          this.selectedStringBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedStringBehavior = { name: 'Read/Write' };
+        }
+        this.defaultString = this.selectedArrayItems.default || '';
+        this.exampleString = this.selectedArrayItems.example || '';
+        this.stringPattern = this.selectedArrayItems.pattern || '';
+        this.stringMinLength = this.selectedArrayItems.minLength || null;
+        this.stringMaxLength = this.selectedArrayItems.maxLength || null;
+        this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
+        this.isNullableString = true;
+      }
+
+      if (this.selectedArrayItems.type === 'integer') {
+        this.selectedIntegerFormat = {
+          name: this.selectedArrayItems.format || null,
+        };
+        if (this.selectedArrayItems.writeOnly) {
+          this.selectedIntegerBehavior = { name: 'WriteOnly' };
+        } else if (this.selectedArrayItems.readOnly) {
+          this.selectedIntegerBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedIntegerBehavior = { name: 'Read/Write' };
+        }
+        this.defaultInteger = this.selectedArrayItems.default || '';
+        this.exampleInteger = this.selectedArrayItems.example || '';
+        this.minimumInteger =
+          this.selectedArrayItems.minimum ||
+          this.selectedArrayItems.exclusiveMinimum ||
+          null;
+        this.maximumInteger =
+          this.selectedArrayItems.maximum ||
+          this.selectedArrayItems.exclusiveMaximum ||
+          null;
+        this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
+        this.exclusiveMinInteger =
+          !!this.selectedArrayItems.exclusiveMinimum || false;
+        this.exclusiveMaxInteger =
+          !!this.selectedArrayItems.exclusiveMaximum || false;
+        this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
+        this.isNullableInteger = false;
+      } else if (
+        Array.isArray(this.selectedArrayItems.type) &&
+        this.selectedArrayItems.type.includes('integer') &&
+        this.selectedArrayItems.type.includes('null')
+      ) {
+        this.selectedIntegerFormat = {
+          name: this.selectedArrayItems.format || null,
+        };
+        if (this.selectedArrayItems.writeOnly) {
+          this.selectedIntegerBehavior = { name: 'WriteOnly' };
+        } else if (this.selectedArrayItems.readOnly) {
+          this.selectedIntegerBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedIntegerBehavior = { name: 'Read/Write' };
+        }
+        this.defaultInteger = this.selectedArrayItems.default || '';
+        this.exampleInteger = this.selectedArrayItems.example || '';
+        this.minimumInteger =
+          this.selectedArrayItems.exclusiveMinimum ||
+          this.selectedArrayItems.minimum ||
+          null;
+        this.maximumInteger =
+          this.selectedArrayItems.exclusiveMaximum ||
+          this.selectedArrayItems.maximum ||
+          null;
+        this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
+        this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
+        this.exclusiveMinInteger =
+          !!this.selectedArrayItems.exclusiveMinimum || false;
+        this.exclusiveMaxInteger =
+          !!this.selectedArrayItems.exclusiveMaximum || false;
+        this.isNullableInteger = true;
+      }
+
+      if (this.selectedArrayItems.type === 'array') {
+        const arrayValue = this.selectedArrayItems;
+
+        if (arrayValue.writeOnly) {
+          this.selectedArrayBehavior = { name: 'WriteOnly' };
+        } else if (arrayValue.readOnly) {
+          this.selectedArrayBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedArrayBehavior = { name: 'Read/Write' };
+        }
+
+        this.minArrayItems = arrayValue.minItems || null;
+        this.maxArrayItems = arrayValue.maxItems || null;
+        this.uniqueArrayItems = arrayValue.uniqueItems || false;
+        this.deprecatedArray = arrayValue.deprecated || false;
+        this.arrayItemsSub = arrayValue.items || false;
+        this.isNullableArray = false;
+      }
+
+      if (this.selectedArrayItems.additionalProperties) {
+        const dictionaryValue = this.selectedArrayItems;
+
+        if (dictionaryValue.writeOnly) {
+          this.selectedDictionaryBehavior = { name: 'WriteOnly' };
+        } else if (dictionaryValue.readOnly) {
+          this.selectedDictionaryBehavior = { name: 'ReadOnly' };
+        } else {
+          this.selectedDictionaryBehavior = { name: 'Read/Write' };
+        }
+        this.minDictionaryProperties = dictionaryValue.minProperties || null;
+        this.maxDictionaryProperties = dictionaryValue.maxProperties || null;
+        this.deprecatedDictionary = dictionaryValue.deprecated || false;
+        this.additionalPropertiesDisc = dictionaryValue.additionalProperties;
+      }
     }
-    console.log('selected schema', this.selectedArrayItems.type);
-
-    const cleanString = (value: string) =>
-      value
-        .replace(/\{\d+\}/g, '')
-        .replace(/\s*or\s+null\s*$/i, '')
-        .replace(/<[^>]*>/g, '')
-        .trim();
-
-    const extractRootType = (value: string): string => {
-      const match = value.match(/^(\w+)\[/);
-      if (match) {
-        return match[1].trim();
-      }
-      return value.split(' or ')[0].trim();
-    };
-
-    const cleanedValue = cleanString(this.selectedArrayItems.type);
-    const rootType = extractRootType(cleanedValue);
-
-    const originalType = { name: rootType };
-    this.selectedType = originalType;
-
-    console.log('selected schema', this.selectedArrayItems);
-
-    if (this.selectedArrayItems.properties) {
-      this.minProperties = this.selectedArrayItems.minProperties || null;
-      this.maxProperties = this.selectedArrayItems.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedArrayItems.allowAdditionalProperties || false;
-      this.deprecated = this.selectedArrayItems.deprecated || false;
-      this.isNullableObject = false;
-    } else if (
-      Array.isArray(this.selectedArrayItems.type) &&
-      this.selectedArrayItems.type.includes('object') &&
-      this.selectedArrayItems.type.includes('null')
-    ) {
-      this.minProperties = this.selectedArrayItems.minProperties || null;
-      this.maxProperties = this.selectedArrayItems.maxProperties || null;
-      this.allowAdditionalProperties =
-        this.selectedArrayItems.allowAdditionalProperties || false;
-      this.deprecated = this.selectedArrayItems.deprecated || false;
-      this.isNullableObject = true;
-    }
-    if (this.selectedArrayItems.type === 'string') {
-      this.selectedStringFormat = {
-        name: this.selectedArrayItems.format || null,
-      };
-      if (this.selectedArrayItems.writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedArrayItems.readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
-      this.defaultString = this.selectedArrayItems.default || '';
-      this.exampleString = this.selectedArrayItems.example || '';
-      this.stringPattern = this.selectedArrayItems.pattern || '';
-      this.stringMinLength = this.selectedArrayItems.minLength || null;
-      this.stringMaxLength = this.selectedArrayItems.maxLength || null;
-      this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
-      this.isNullableString = false;
-    } else if (
-      Array.isArray(this.selectedArrayItems.type) &&
-      this.selectedArrayItems.type.includes('string') &&
-      this.selectedArrayItems.type.includes('null')
-    ) {
-      this.selectedStringFormat = {
-        name: this.selectedArrayItems.format || null,
-      };
-      if (this.selectedArrayItems.writeOnly) {
-        this.selectedStringBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedArrayItems.readOnly) {
-        this.selectedStringBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedStringBehavior = { name: 'Read/Write' };
-      }
-      this.defaultString = this.selectedArrayItems.default || '';
-      this.exampleString = this.selectedArrayItems.example || '';
-      this.stringPattern = this.selectedArrayItems.pattern || '';
-      this.stringMinLength = this.selectedArrayItems.minLength || null;
-      this.stringMaxLength = this.selectedArrayItems.maxLength || null;
-      this.isStringDeprecated = this.selectedArrayItems.deprecated || false;
-      this.isNullableString = true;
-    }
-
-    if (this.selectedArrayItems.type === 'integer') {
-      this.selectedIntegerFormat = {
-        name: this.selectedArrayItems.format || null,
-      };
-      if (this.selectedArrayItems.writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedArrayItems.readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
-      this.defaultInteger = this.selectedArrayItems.default || '';
-      this.exampleInteger = this.selectedArrayItems.example || '';
-      this.minimumInteger =
-        this.selectedArrayItems.minimum ||
-        this.selectedArrayItems.exclusiveMinimum ||
-        null;
-      this.maximumInteger =
-        this.selectedArrayItems.maximum ||
-        this.selectedArrayItems.exclusiveMaximum ||
-        null;
-      this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
-      this.exclusiveMinInteger =
-        !!this.selectedArrayItems.exclusiveMinimum || false;
-      this.exclusiveMaxInteger =
-        !!this.selectedArrayItems.exclusiveMaximum || false;
-      this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
-      this.isNullableInteger = false;
-    } else if (
-      Array.isArray(this.selectedArrayItems.type) &&
-      this.selectedArrayItems.type.includes('integer') &&
-      this.selectedArrayItems.type.includes('null')
-    ) {
-      this.selectedIntegerFormat = {
-        name: this.selectedArrayItems.format || null,
-      };
-      if (this.selectedArrayItems.writeOnly) {
-        this.selectedIntegerBehavior = { name: 'WriteOnly' };
-      } else if (this.selectedArrayItems.readOnly) {
-        this.selectedIntegerBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedIntegerBehavior = { name: 'Read/Write' };
-      }
-      this.defaultInteger = this.selectedArrayItems.default || '';
-      this.exampleInteger = this.selectedArrayItems.example || '';
-      this.minimumInteger =
-        this.selectedArrayItems.exclusiveMinimum ||
-        this.selectedArrayItems.minimum ||
-        null;
-      this.maximumInteger =
-        this.selectedArrayItems.exclusiveMaximum ||
-        this.selectedArrayItems.maximum ||
-        null;
-      this.multipleOfInteger = this.selectedArrayItems.multipleOf || null;
-      this.deprecatedInteger = this.selectedArrayItems.deprecated || false;
-      this.exclusiveMinInteger =
-        !!this.selectedArrayItems.exclusiveMinimum || false;
-      this.exclusiveMaxInteger =
-        !!this.selectedArrayItems.exclusiveMaximum || false;
-      this.isNullableInteger = true;
-    }
-
-    if (this.selectedArrayItems.type === 'array') {
-      const arrayValue = this.selectedArrayItems;
-
-      if (arrayValue.writeOnly) {
-        this.selectedArrayBehavior = { name: 'WriteOnly' };
-      } else if (arrayValue.readOnly) {
-        this.selectedArrayBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedArrayBehavior = { name: 'Read/Write' };
-      }
-
-      this.minArrayItems = arrayValue.minItems || null;
-      this.maxArrayItems = arrayValue.maxItems || null;
-      this.uniqueArrayItems = arrayValue.uniqueItems || false;
-      this.deprecatedArray = arrayValue.deprecated || false;
-      this.arrayItemsSub = arrayValue.items || false;
-      this.isNullableArray = false;
-    }
-
-    if (this.selectedArrayItems.additionalProperties) {
-      const dictionaryValue = this.selectedArrayItems;
-
-      if (dictionaryValue.writeOnly) {
-        this.selectedDictionaryBehavior = { name: 'WriteOnly' };
-      } else if (dictionaryValue.readOnly) {
-        this.selectedDictionaryBehavior = { name: 'ReadOnly' };
-      } else {
-        this.selectedDictionaryBehavior = { name: 'Read/Write' };
-      }
-      this.minDictionaryProperties = dictionaryValue.minProperties || null;
-      this.maxDictionaryProperties = dictionaryValue.maxProperties || null;
-      this.deprecatedDictionary = dictionaryValue.deprecated || false;
-      this.additionalPropertiesDisc = dictionaryValue.additionalProperties;
-    }
-
     this.checkAndInitializeSelectedType();
 
-    // setTimeout(() => {
-    //   this.scrollToSelected();
-    // }, 0);
+    setTimeout(() => {
+      this.scrollToSelected();
+    }, 0);
   }
 
   toggleEnumInput() {
@@ -434,9 +429,9 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   checkAndInitializeSelectedType() {
-    console.log(this.selectedType);
     if (!this.selectedType) {
       console.warn('No type selected.');
+      this.activeItem = this.responseExamples[0];
       return;
     }
 
@@ -608,7 +603,7 @@ export class SubSchemeTypeComponent implements OnInit {
 
       switch (field) {
         case 'selectedStringFormat':
-          string.format = value || null;
+          string.format = value.name || null;
           break;
         case 'selectedStringBehavior':
           if (value === 'WriteOnly') {
@@ -678,7 +673,7 @@ export class SubSchemeTypeComponent implements OnInit {
 
   onIntegerFieldChange(field: string, value: any): void {
     if (this.selectedSchema) {
-      const integer = this.selectedCol;
+      const integer = this.selectedArrayItems;
 
       if (!integer) {
         console.warn('Property not found in selected schema.');
@@ -687,7 +682,7 @@ export class SubSchemeTypeComponent implements OnInit {
 
       switch (field) {
         case 'selectedIntegerFormat':
-          integer.format = value || null;
+          integer.format = value.name || null;
           break;
         case 'selectedIntegerBehavior':
           if (value.name === 'WriteOnly') {
@@ -1150,7 +1145,7 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   onTypeSelect() {
-    this.updateRowData(this.rowData);
+    this.updateRowData(this.selectedType);
   }
 
   onSchemeSelect(scheme: any) {
@@ -1163,9 +1158,54 @@ export class SubSchemeTypeComponent implements OnInit {
     console.log('Selected combine type:', this.selectedCombineType);
   }
 
-  updateRowData(rowData: any) {
-    rowData[this.selectedCol.field] =
-      this.selectedType?.name || rowData[this.selectedCol.field];
+  updateRowData(selectedType: any): void {
+    console.log('Selected type in overlay:', selectedType);
+    console.log('Selected column in overlay:', this.selectedCol);
+    console.log('Selected arrayitems in overlay:', this.selectedArrayItems);
+
+    this.resetFieldsForNewType(this.selectedCol, this.rowData);
+
+    if (this.selectedCol?.type === 'array') {
+      if (this.selectedCol.items) {
+        console.log("Array 'items' exist, updating their type.");
+        if (Array.isArray(this.selectedCol.items)) {
+          this.selectedCol.items.forEach(
+            (item: any) => (item.type = selectedType.name)
+          );
+        } else if (typeof this.selectedCol.items === 'object') {
+          this.selectedCol.items.type = selectedType.name;
+        }
+      } else {
+        console.log("Array 'items' do not exist, creating new 'items'.");
+        this.selectedCol.items = {
+          type: selectedType.name,
+        };
+      }
+    } else if (this.selectedCol?.type === 'dictionary') {
+      if (this.selectedCol.additionalProperties) {
+        console.log(
+          "Dictionary 'additionalProperties' exist, updating their type."
+        );
+        if (typeof this.selectedCol.additionalProperties === 'object') {
+          this.selectedCol.additionalProperties.type = selectedType.name;
+        }
+      } else {
+        console.log(
+          "Dictionary 'additionalProperties' do not exist, creating new 'additionalProperties'."
+        );
+        this.selectedCol.additionalProperties = {
+          type: selectedType.name,
+        };
+      }
+    } else {
+      console.log(
+        `Type '${this.selectedCol?.type}' is neither array nor dictionary, updating type directly.`
+      );
+      this.selectedCol.type = selectedType.name;
+    }
+
+    console.log('Updated selectedCol:', this.selectedCol);
+    console.log('Updated rowData:', this.rowData);
   }
 
   onMarkAsExample(index: number) {
@@ -1186,5 +1226,144 @@ export class SubSchemeTypeComponent implements OnInit {
     this.enumDefault = this.enumDefault === value ? null : value;
     console.log('enumdef', this.enumDefault);
     this.onEnumFieldChange('enumDefault', this.enumDefault || null);
+  }
+
+  resetFieldsForNewType(selectedCol: any, rowData: any) {
+    // Object
+    this.minProperties = null;
+    this.maxProperties = null;
+    this.allowAdditionalProperties = false;
+    this.deprecatedObject = false;
+    this.isNullableObject = false;
+
+    // String
+    this.selectedStringFormat = undefined;
+    this.selectedStringBehavior = undefined;
+    this.defaultString = '';
+    this.exampleString = '';
+    this.stringPattern = '';
+    this.stringMinLength = null;
+    this.stringMaxLength = null;
+    this.isStringDeprecated = false;
+    this.isNullableString = false;
+
+    // Integer
+    this.selectedIntegerFormat = undefined;
+    this.selectedIntegerBehavior = undefined;
+    this.defaultInteger = '';
+    this.exampleInteger = '';
+    this.minimumInteger = null;
+    this.maximumInteger = null;
+    this.multipleOfInteger = null;
+    this.exclusiveMinInteger = false;
+    this.exclusiveMaxInteger = false;
+    this.deprecatedInteger = false;
+    this.isNullableInteger = false;
+
+    // Number
+    this.selectedNumberFormat = undefined;
+    this.selectedNumberBehavior = undefined;
+    this.defaultNumber = '';
+    this.exampleNumber = '';
+    this.minimumNumber = null;
+    this.maximumNumber = null;
+    this.multipleOfNumber = null;
+    this.exclusiveMinNumber = false;
+    this.exclusiveMaxNumber = false;
+    this.deprecatedNumber = false;
+    this.isNullableNumber = false;
+
+    // Boolean
+    this.selectedBooleanBehavior = undefined;
+    this.defaultBoolean = undefined;
+    this.deprecatedBoolean = false;
+    this.isNullableBoolean = false;
+
+    // Enum
+    this.selectedEnumBehavior = undefined;
+    this.deprecatedEnum = false;
+    this.enumDefault = null;
+    this.enumExample = null;
+    this.enumValue = '';
+    this.enumValues = [];
+    this.showEnumInput = false;
+
+    // Array
+    this.selectedArrayBehavior = undefined;
+    this.minArrayItems = null;
+    this.maxArrayItems = null;
+    this.uniqueArrayItems = false;
+    this.deprecatedArray = false;
+    this.arrayItemsSub = null;
+    this.isNullableArray = false;
+
+    // Dictionary
+    this.selectedDictionaryBehavior = undefined;
+    this.minDictionaryProperties = null;
+    this.maxDictionaryProperties = null;
+    this.deprecatedDictionary = false;
+    this.additionalPropertiesDisc = null;
+
+    // Common
+    this.minItems = null;
+    this.maxItems = null;
+    this.uniqueItems = false;
+    this.selectedCol.format = undefined;
+
+    // Remove unwanted properties from selectedCol
+    ['properties', 'additionalProperties', 'items'].forEach((key) => {
+      if (selectedCol && selectedCol[key]) {
+        console.log(`Deleting '${key}' from selectedCol`);
+        delete selectedCol[key];
+      } else {
+        console.log(`'${key}' not found in selectedCol`);
+        rowData.showAddButton = false;
+      }
+    });
+
+    //TODO: Only showAddButton when its object or item or dictionary has object
+    if (selectedCol?.type === 'object') {
+      console.log('Type is object, adding properties');
+      selectedCol.properties = {};
+      rowData.showAddButton = true;
+    } else if (selectedCol?.type === 'array') {
+      console.log('Type is array, adding items');
+      selectedCol.items = {};
+      rowData.showAddButton = true;
+    } else if (selectedCol?.type === 'dictionary') {
+      console.log('Type is dictionary, adding additionalProperties');
+      selectedCol.additionalProperties = {};
+      rowData.showAddButton = true;
+    } else {
+      console.log(
+        `Type '${selectedCol?.type}' does not support adding children`
+      );
+      rowData.showAddButton = false;
+    }
+    delete selectedCol.readOnly;
+    delete selectedCol.writeOnly;
+    delete selectedCol.example;
+    delete selectedCol.default;
+    delete selectedCol.format;
+    delete selectedCol.multipleOf;
+    delete selectedCol.maximum;
+    delete selectedCol.minimum;
+    delete selectedCol.maxItems;
+    delete selectedCol.minItems;
+    delete selectedCol.maxProperties;
+    delete selectedCol.minProperties;
+    delete selectedCol.deprecated;
+    delete selectedCol.uniqueItems;
+    delete selectedCol.exclusiveMinimum;
+    delete selectedCol.exclusiveMaximum;
+    delete selectedCol.items;
+    delete selectedCol.additionalProperties;
+    delete selectedCol.properties;
+
+    selectedCol.description = '';
+
+    // Log the final state for debugging
+    console.log('Final selectedCol:', selectedCol);
+    console.log('Final rowData:', rowData);
   }
 }

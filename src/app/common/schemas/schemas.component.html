@@ -109,7 +109,8 @@
                     *ngIf="
                       col.field === 'name' &&
                       rowNode.parent &&
-                      !isSpecialType(rowData[col.field])
+                      (!isSpecialType(rowData[col.field]) ||
+                        rowData.isChildOfProperties)
                     "
                   >
                     <p-treeTableCellEditor>
@@ -122,7 +123,9 @@
                           [(ngModel)]="rowData[col.field]"
                           [ngModelOptions]="{ standalone: true }"
                           placeholder="Enter schema name"
-                          (blur)="onFieldBlur(rowData[col.field], $event, rowData)"
+                          (blur)="
+                            onFieldBlur(rowData[col.field], $event, rowData)
+                          "
                           (keydown.enter)="
                             onFieldEnter(rowData[col.field], $event, rowData)
                           "
@@ -132,15 +135,16 @@
                       <ng-template pTemplate="output">
                         <ng-container
                           *ngIf="
-                            (rowData.showReferenceButton ||
-                              (rowData.showAddButton &&
-                                isSpecialType(rowData[col.field]))) &&
+                            !rowData.isChildOfProperties &&
+                              (rowData.showReferenceButton ||
+                                (rowData.showAddButton &&
+                                  isSpecialType(rowData[col.field]))) &&
                               col.field === 'name';
                             else defaultOutput
                           "
                         >
                           <p-button
-                            label="{{ rowData[col.field] }}"
+                            label="{{ rowData[col.field] || 'name' }}"
                             [outlined]="true"
                             (click)="toggleChildOverlay($event, rowData)"
                             class="no-border-button"
@@ -157,7 +161,13 @@
                           ></app-scheme-type-overlay-panel>
                         </ng-container>
                         <ng-template #defaultOutput>
-                          {{ rowData[col.field] }}
+                          <span
+                            [ngClass]="{
+                              'placeholder-grey': !rowData[col.field]
+                            }"
+                          >
+                            {{ rowData[col.field] || "name" }}
+                          </span>
                         </ng-template>
                       </ng-template>
                     </p-treeTableCellEditor>
@@ -202,13 +212,41 @@
                     >
                       {{ rowData[col.field] }}
                     </ng-container>
+                    <ng-container
+                      *ngIf="
+                        isSpecialType(rowData[col.field]) &&
+                        !rowData.isRootNode &&
+                        rowData.showAddButton &&
+                        !rowData.isObjArrOrDisc &&
+                        !rowData.isReferenceChild &&
+                        !rowData.isSubschemeChild
+                      "
+                    >
+                      <p-button
+                        label="{{ rowData[col.field] }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
+                      ></p-button>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
                   </ng-container>
 
                   <ng-container
                     *ngIf="
-                      col.field == 'name' &&
-                      rowNode.parent &&
-                      !rowData.isReferenceChild
+                      (col.field == 'name' &&
+                        rowNode.parent &&
+                        !rowData.isReferenceChild &&
+                        rowData.isSubschemeChild) ||
+                      (rowData.isObjArrOrDisc && col.field == 'name')
                     "
                   >
                     <ng-container *ngIf="isSpecialType(rowData[col.field])">
@@ -228,6 +266,7 @@
                         (schemaUpdated)="onSchemaUpdated($event)"
                       ></app-scheme-type-overlay-panel>
                     </ng-container>
+
                     <ng-container
                       *ngIf="
                         isSpecialType(rowData[col.field]) &&
@@ -236,6 +275,18 @@
                     >
                       {{ rowData[col.field] }}
                     </ng-container>
+                  </ng-container>
+
+                  <ng-container
+                    *ngIf="
+                      col.field === 'name' &&
+                      rowNode.parent &&
+                      rowData.editDisabled &&
+                      isSpecialType(rowData[col.field]) &&
+                      !rowData.isReferenceChild
+                    "
+                  >
+                    {{ rowData[col.field] }}
                   </ng-container>
 
                   <ng-container *ngIf="col.field === 'name' && !rowNode.parent">
@@ -338,20 +389,7 @@
             </ng-template>
           </p-treeTable>
         </div>
-        <div *ngIf="selectedSchema.enum">
-          <h4>Enum Reference:</h4>
-          <a href="#">{{ selectedSchemaName }}</a>
-        </div>
-
-        <div
-          *ngIf="
-            !selectedSchema.properties &&
-            !selectedSchema.enum &&
-            !selectedSchema.allOf
-          "
-        >
-          <p>No properties available for this schema.</p>
-        </div>
+        <div *ngIf="selectedSchema.enum"></div>
       </div>
     </div>
 

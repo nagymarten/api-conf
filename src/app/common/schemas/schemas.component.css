@@ -38,6 +38,13 @@ textarea {
   border: 1px solid #ccc;
 }
 
+.placeholder-grey {
+  color: #aaa;
+  /* Light grey color */
+  font-style: italic;
+  /* Optional for a placeholder-like look */
+}
+
 button {
   background-color: #007bff;
   color: white;

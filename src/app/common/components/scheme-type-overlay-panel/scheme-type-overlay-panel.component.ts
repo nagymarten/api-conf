@@ -562,6 +562,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   checkAndInitializeSelectedType() {
     if (!this.selectedType) {
       console.warn('No type selected.');
+      this.activeItem = this.responseExamples[0];
+
       return;
     }
 
@@ -687,7 +689,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
               }
             }
           }
-          console.log('Selected Schema:', this.selectedSchema.type);
           break;
         default:
           console.warn(`Unhandled field: ${field}`);
@@ -733,7 +734,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
       switch (field) {
         case 'selectedStringFormat':
-          string.format = value || null;
+          string.format = value.name || null;
           break;
         case 'selectedStringBehavior':
           if (value === 'WriteOnly') {
@@ -812,7 +813,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
       switch (field) {
         case 'selectedIntegerFormat':
-          integer.format = value || null;
+          integer.format = value.name || null;
           break;
         case 'selectedIntegerBehavior':
           if (value.name === 'WriteOnly') {
@@ -1243,6 +1244,34 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'deprecatedArray':
           array.deprecated = !!value;
           break;
+        case 'isNullableArray':
+          console.log('Is nullable array', value);
+          console.log(array);
+           if (value) {
+            if (Array.isArray(array.type)) {
+              if (!array.type.includes('null')) {
+                array.type.push('null');
+              }
+            } else if (typeof array.type === 'string') {
+              array.type = [array.type, 'null'];
+            } else {
+              console.warn('Unexpected type, resetting to ["string", "null"]');
+              array.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(array.type)) {
+              array.type = array.type.filter((t: string) => t !== 'null');
+              if (array.type.length === 1) {
+                array.type = array.type[0];
+              }
+            } else if (typeof array.type === 'string') {
+              console.log('Type is already not nullable');
+            } else {
+              console.warn('Unexpected type, resetting to "string"');
+              array.type = 'string';
+            }
+          }
+            break;
 
         default:
           console.warn(`Unhandled field: ${field}`);
@@ -1291,8 +1320,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   updateRowData(selectedType: any) {
     console.log('Selected column in overlay:', selectedType);
     this.selectedCol.type = selectedType.name;
-    this.resetFieldsForNewType();
+    this.resetFieldsForNewType(this.selectedCol, this.rowData);
     console.log('Selected column in overlay:', this.selectedCol);
+    console.log(this.rowData);
   }
 
   onMarkAsExample(index: number) {
@@ -1315,15 +1345,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.onEnumFieldChange('enumDefault', this.enumDefault || null);
   }
 
-  resetFieldsForNewType() {
-    // Object
+  resetFieldsForNewType(selectedCol: any, rowData: any): void {
     this.minProperties = null;
     this.maxProperties = null;
     this.allowAdditionalProperties = false;
     this.deprecatedObject = false;
     this.isNullableObject = false;
 
-    // String
     this.selectedStringFormat = undefined;
     this.selectedStringBehavior = undefined;
     this.defaultString = '';
@@ -1334,7 +1362,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.isStringDeprecated = false;
     this.isNullableString = false;
 
-    // Integer
     this.selectedIntegerFormat = undefined;
     this.selectedIntegerBehavior = undefined;
     this.defaultInteger = '';
@@ -1347,7 +1374,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.deprecatedInteger = false;
     this.isNullableInteger = false;
 
-    // Number
     this.selectedNumberFormat = undefined;
     this.selectedNumberBehavior = undefined;
     this.defaultNumber = '';
@@ -1360,13 +1386,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.deprecatedNumber = false;
     this.isNullableNumber = false;
 
-    // Boolean
     this.selectedBooleanBehavior = undefined;
     this.defaultBoolean = undefined;
     this.deprecatedBoolean = false;
     this.isNullableBoolean = false;
 
-    // Enum
     this.selectedEnumBehavior = undefined;
     this.deprecatedEnum = false;
     this.enumDefault = null;
@@ -1375,7 +1399,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.enumValues = [];
     this.showEnumInput = false;
 
-    // Array
     this.selectedArrayBehavior = undefined;
     this.minArrayItems = null;
     this.maxArrayItems = null;
@@ -1384,17 +1407,72 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.arrayItems = null;
     this.isNullableArray = false;
 
-    // Dictionary
     this.selectedDictionaryBehavior = undefined;
     this.minDictionaryProperties = null;
     this.maxDictionaryProperties = null;
     this.deprecatedDictionary = false;
     this.additionalPropertiesDisc = null;
 
-    // Common
     this.minItems = null;
     this.maxItems = null;
     this.uniqueItems = false;
     this.selectedCol.format = undefined;
+
+    const removableKeys = [
+      'readOnly',
+      'writeOnly',
+      'example',
+      'default',
+      'format',
+      'multipleOf',
+      'maximum',
+      'minimum',
+      'maxItems',
+      'minItems',
+      'maxProperties',
+      'minProperties',
+      'deprecated',
+      'uniqueItems',
+      'exclusiveMinimum',
+      'exclusiveMaximum',
+      'items',
+      'additionalProperties',
+      'properties',
+    ];
+    removableKeys.forEach((key) => {
+      if (selectedCol[key]) {
+        console.log(`Deleting '${key}' from selectedCol`);
+        delete selectedCol[key];
+      }
+    });
+
+    selectedCol.description = '';
+
+    // Initialize specific structures if missing
+    if (selectedCol?.type === 'object' && !selectedCol.properties) {
+      console.log("Type is 'object', adding '.properties'");
+      selectedCol.properties = {};
+      rowData.showAddButton = true;
+    } else if (selectedCol?.type === 'array' && !selectedCol.items) {
+      console.log("Type is 'array', adding '.items'");
+      selectedCol.items = {};
+      rowData.showAddButton = true;
+    } else if (
+      selectedCol?.type === 'dictionary' &&
+      !selectedCol.additionalProperties
+    ) {
+      console.log("Type is 'dictionary', adding '.additionalProperties'");
+      selectedCol.additionalProperties = {};
+      rowData.showAddButton = true;
+    } else {
+      console.log(
+        `Type '${selectedCol?.type}' does not support adding children.`
+      );
+      rowData.showAddButton = false;
+    }
+
+    // Log the final state for debugging
+    console.log('Final selectedCol:', selectedCol);
+    console.log('Final rowData:', rowData);
   }
 }
