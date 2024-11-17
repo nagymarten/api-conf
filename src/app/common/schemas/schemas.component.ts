@@ -547,38 +547,23 @@ export class SchemasComponent implements OnInit, OnDestroy {
         console.log('Property:', property);
 
         this.modifyExtensions(property);
-        const childNode: TreeNode = {
-          label: propertyKey,
-          data: {
-            name: propertyKey,
-            description: property?.description || '',
-            type: this.formatPropertyType(property) || '',
-            showReferenceButton: !!property?.$ref,
-            editDisabled: !!property?.$ref,
-            isReferenceChild: false,
-            isRootNode: false,
-            showAddButton: this.shouldShowAddButton(property),
-            isChildOfProperties: true,
-            uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-ids',
-          },
-          children: [],
-          parent: rootNode,
-        };
 
         if (property.$ref) {
+          console.log('Property $ref:', propertyKey);
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
           this.modifyExtensions(property);
 
           const childNode: TreeNode = {
-            label: refSchemaName,
+            label: propertyKey,
             data: {
-              name: refSchemaName,
+              name: propertyKey,
               description: property?.description || '',
-              type: property?.type || '',
+              type: refSchemaName || '',
               showReferenceButton: !!property?.$ref,
-              editDisabled: !!property?.$ref,
+              editDisabled: false,
               isReferenceChild: false,
               isRootNode: false,
+              isObjArrOrDisc: true,
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -901,6 +886,26 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
           rootNode.children!.push(childNode);
         } else if (this.isValidType(property?.type)) {
+          this.modifyExtensions(property);
+
+          const childNode: TreeNode = {
+            label: propertyKey,
+            data: {
+              name: propertyKey,
+              description: property?.description || '',
+              type: this.formatPropertyType(property) || '',
+              showReferenceButton: !!property?.$ref,
+              editDisabled: !!property?.$ref,
+              isReferenceChild: false,
+              isRootNode: false,
+              showAddButton: this.shouldShowAddButton(property),
+              isChildOfProperties: true,
+              isObjArrOrDisc: false,
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-ids',
+            },
+            children: [],
+            parent: rootNode,
+          };
           rootNode.children!.push(childNode);
         }
       });
@@ -931,7 +936,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
           showReferenceButton: !!schema?.$ref,
           editDisabled: !!schema?.$ref,
           isReferenceChild: false,
+          isObjArrOrDisc: true,
           isRootNode: false,
+
           uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
         },
         children: [],
@@ -947,8 +954,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       resolvedChildren.forEach((resolvedChild) => {
         if (resolvedChild.children && resolvedChild.children.length > 0) {
           resolvedChild.children.forEach((nestedChild) => {
-            // disableEditOnAllChildren(nestedChild);
-            // referenceChildren(nestedChild);
             childNode.children!.push(nestedChild);
           });
         }
@@ -970,6 +975,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           editDisabled: !!schema?.$ref,
           isReferenceChild: false,
           isRootNode: false,
+          isObjArrOrDisc: true,
           uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
         },
         children: [],
@@ -1140,6 +1146,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
       // Handle case where items is an empty object
       if (Object.keys(items).length === 0) {
         return 'unknown';
+      }
+
+      if (items.$ref) {
+        // Use the extractSchemaNameFromRef method to get the schema name and eliminate spaces
+        const schemaName = this.extractSchemaNameFromRef(items.$ref);
+        return schemaName.replace(/\s+/g, ''); // Remove spaces from the schema name
       }
 
       // Check if `items` itself is an array (nested arrays)
@@ -2093,20 +2105,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return false;
     };
 
-    const validateUnionTypes = (typeStr: string): boolean => {
-      const unionTypes = typeStr.split(' or ').map((t) => t.trim());
-      return unionTypes.every(
-        (t) =>
-          validateArrayType(t) ||
-          validateDictionaryType(t) ||
-          validateGenericType(t) ||
-          specialTypes.includes(cleanType(t)) ||
-          stringFormats.includes(cleanType(t)) ||
-          numberFormats.includes(cleanType(t)) ||
-          intFormats.includes(cleanType(t))
-      );
-    };
-
     const validateArrayType = (typeStr: string): boolean => {
       if (typeStr === 'array') {
         return true;
@@ -2115,49 +2113,39 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const match = typeStr.match(/^array\[(.+)\]$/);
       if (match) {
         const innerType = match[1];
+        // Use getSchemaByRef to validate if the reference exists
+        const isReferenceValid = !!this.getSchemaByRef(
+          `#/components/schemas/${innerType}`
+        );
         return (
-          validateUnionTypes(innerType) ||
-          validateDictionaryType(innerType) ||
-          validateArrayType(innerType) ||
-          validateGenericType(innerType) ||
-          specialTypes.includes(cleanType(innerType)) ||
+          specialTypes.includes(cleanType(innerType)) || // Validate known special types
+          isReferenceValid || // Validate if it's a valid schema reference
           stringFormats.includes(cleanType(innerType)) ||
           numberFormats.includes(cleanType(innerType)) ||
-          intFormats.includes(cleanType(innerType))
+          intFormats.includes(cleanType(innerType)) ||
+          validateGenericType(innerType)
         );
       }
       return false;
     };
 
-    const validateDictionaryType = (typeStr: string): boolean => {
-      const match = typeStr.match(/^dictionary\[string,\s*(.+)\]$/);
-      if (match) {
-        const innerType = match[1];
-        return (
-          validateUnionTypes(innerType) ||
-          validateArrayType(innerType) ||
-          validateDictionaryType(innerType) ||
-          validateGenericType(innerType) ||
-          specialTypes.includes(cleanType(innerType)) ||
-          stringFormats.includes(cleanType(innerType)) ||
-          numberFormats.includes(cleanType(innerType)) ||
-          intFormats.includes(cleanType(innerType))
-        );
-      }
-      return false;
+    const validateUnionTypes = (typeStr: string): boolean => {
+      const unionTypes = typeStr.split(' or ').map((t) => t.trim());
+      return unionTypes.every(
+        (t) =>
+          validateArrayType(t) ||
+          validateGenericType(t) ||
+          specialTypes.includes(cleanType(t)) ||
+          stringFormats.includes(cleanType(t)) ||
+          numberFormats.includes(cleanType(t)) ||
+          intFormats.includes(cleanType(t))
+      );
     };
-
-    if (typeof type === 'string' && type === 'array[object] or null') {
-      return true;
-    }
 
     if (typeof type === 'string') {
       const cleanedType = cleanString(type);
       if (cleanedType === 'array') {
         return true;
-      }
-      if (cleanedType.startsWith('dictionary')) {
-        return validateDictionaryType(cleanedType);
       }
       if (cleanedType.startsWith('array')) {
         return validateArrayType(cleanedType);
@@ -2170,7 +2158,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
         stringFormats.includes(cleanType(cleanedType)) ||
         numberFormats.includes(cleanType(cleanedType)) ||
         intFormats.includes(cleanType(cleanedType)) ||
-        validateGenericType(cleanedType) // New addition for generic types
+        validateGenericType(cleanedType)
       );
     }
 
