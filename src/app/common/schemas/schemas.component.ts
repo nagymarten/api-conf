@@ -544,12 +544,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
           console.warn(`Property ${propertyKey} is null or undefined.`);
           return;
         }
-        console.log('Property:', property);
+
+        // console.log('Property:', property);
 
         this.modifyExtensions(property);
 
         if (property.$ref) {
-          console.log('Property $ref:', propertyKey);
+          // console.log('Property $ref:', propertyKey);
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
           this.modifyExtensions(property);
 
@@ -1389,20 +1390,17 @@ export class SchemasComponent implements OnInit, OnDestroy {
     let addedToSchema = false;
     let isComposite = false;
     let uniqueId = 'no-id';
-    //TODO: handle if array or dictonry has no items or additionalProperties
     if (this.selectedCol) {
       if (rowData.type === 'object' && !this.selectedCol.properties) {
         console.log("Parent node is an 'object'. Adding '.properties'.");
         this.selectedCol.properties = {};
       }
 
-      // Handle array type: Ensure `.items` exists
       if (rowData.type === 'array' && !this.selectedCol.items) {
         console.log("Parent node is an 'array'. Adding '.items'.");
         this.selectedCol.items = {};
       }
 
-      // Handle dictionary type: Ensure `.additionalProperties` exists
       if (
         rowData.type === 'dictionary' &&
         !this.selectedCol.additionalProperties
@@ -1423,14 +1421,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.modifyExtensions(newProperty);
       uniqueId = newProperty[`x-${this.nameOfId}`]?.id || 'no-id';
 
-      // Handle `.properties`
       if (this.selectedCol.properties) {
         console.log('Adding to .properties');
         this.selectedCol.properties[''] = newProperty;
         addedToSchema = true;
       }
 
-      // Handle `.allOf`, `.anyOf`, `.oneOf`
       ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
         if (
           this.selectedCol[composite] &&
@@ -1443,7 +1439,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
 
-      // Handle `.items`
       if (this.selectedCol.items) {
         console.log('Adding to .items');
         if (Array.isArray(this.selectedCol.items)) {
@@ -1456,7 +1451,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         addedToSchema = true;
       }
 
-      // Handle `.additionalItems`
       if (this.selectedCol.additionalItems) {
         console.log('Adding to .additionalItems');
         if (typeof this.selectedCol.additionalItems === 'object') {
@@ -1509,7 +1503,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
           expanded: true,
         };
 
-    // Find the parent node in the JSON tree to add the new schema node
     const parentNode = this.findParentNode(this.jsonTree, rowData.uniqueId);
     console.log('parentNode', parentNode);
 
@@ -1523,7 +1516,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.jsonTree.push(newSchemaNode);
     }
 
-    // Ensure change detection picks up the update
     this.jsonTree = [...this.jsonTree];
     this.focusNewSchemaInput = true;
 

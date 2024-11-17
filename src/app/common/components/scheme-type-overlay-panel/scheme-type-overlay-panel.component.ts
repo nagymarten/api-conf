@@ -1419,6 +1419,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.selectedCol.format = undefined;
 
     const removableKeys = [
+      '$ref',
       'readOnly',
       'writeOnly',
       'example',
@@ -1471,7 +1472,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       rowData.showAddButton = false;
     }
 
-    // Log the final state for debugging
     console.log('Final selectedCol:', selectedCol);
     console.log('Final rowData:', rowData);
   }
