@@ -11,16 +11,43 @@
         <div *ngIf="activeItem?.label === 'Type'">
           <div class="card flex-column">
             <div class="type-selection-container">
-              <p-dropdown
-                [options]="types"
-                [(ngModel)]="selectedType"
-                optionLabel="name"
-                placeholder="Select type"
-                [showClear]="true"
-                [style]="{ width: '100%' }"
-                (onChange)="onTypeSelect()"
-                [appendTo]="'body'"
-              ></p-dropdown>
+              <div
+                *ngIf="!isMultiselect"
+                style="display: flex; align-items: center; gap: 10px"
+              >
+                <p-dropdown
+                  [options]="types"
+                  [(ngModel)]="selectedType"
+                  optionLabel="name"
+                  placeholder="Select type"
+                  [showClear]="true"
+                  [style]="{ flex: 1 }"
+                  (onChange)="onTypeSelect()"
+                  [appendTo]="'body'"
+                ></p-dropdown>
+              </div>
+
+              <div *ngIf="isMultiselect">
+                <p-multiSelect
+                  [options]="multiselectTypes"
+                  [(ngModel)]="selectedMultipleTypes"
+                  optionLabel="name"
+                  placeholder="Select multiple types"
+                  [style]="{ width: '100%' }"
+                ></p-multiSelect>
+              </div>
+              <p-inputSwitch
+                id="isMultiselect"
+                [(ngModel)]="isMultiselect"
+                [pTooltip]="isMultiselect ? 'Multiselect' : 'Not Multiselect'"
+                (onChange)="onMultislectChange($event.checked)"
+                class="not-nullable-button"
+                [disabled]="
+                  selectedMultipleTypes.length > 1 ||
+                  selectedType?.name === 'enum' ||
+                  selectedType?.name === 'dictionary'
+                "
+              ></p-inputSwitch>
             </div>
 
             <p-divider />
@@ -991,7 +1018,6 @@
         *ngIf="activeItem?.label === 'Components'"
         class="p-toolbar-group-start"
       >
-        <!-- Search Input -->
         <span
           class="p-input-icon-left"
           style="margin-bottom: 1rem; display: flex; align-items: center"
@@ -999,6 +1025,8 @@
           <i class="pi pi-search"></i>
           <input
             pInputText
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="filterSchemas()"
             placeholder="Search"
             style="width: 100%; max-width: 300px"
           />
@@ -1012,7 +1040,7 @@
           #scroller
         >
           <div
-            *ngFor="let item of apiSchemas"
+            *ngFor="let item of filteredSchemas"
             [id]="'item-' + item.name"
             style="
               height: 50px;

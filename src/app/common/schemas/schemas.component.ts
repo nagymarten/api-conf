@@ -626,7 +626,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               showAddButton: this.shouldShowAddButton(property),
               childOfProperty: true,
               isObjectChild: true,
-              uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -662,7 +662,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isRootNode: false,
               childOfProperty: true,
               isObjectChild: true,
-              uniqueId: schema[`x-${this.nameOfId}`]?.id || 'no-id',
+              uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
             parent: rootNode,
@@ -1224,17 +1224,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   formatPropertyType(property: any): string {
     if (Array.isArray(property.type)) {
-      // Handle array of types, e.g., ["string", "null"]
       if (property.type.length === 2 && property.type.includes('null')) {
-        // Find the non-null type
         const nonNullType = property.type.find((t: string) => t !== 'null');
         return property.format
           ? `${nonNullType}<${property.format}> or null`
           : `${nonNullType} or null`;
       }
-      return property.type.join(' | '); // Fallback for unexpected structures
+      return property.type.join(' or ');
     } else if (typeof property.type === 'string') {
-      // Handle single string type
       return property.format
         ? `${property.type}<${property.format}>`
         : property.type;
@@ -1708,7 +1705,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.selectedRowData = rowData;
 
     this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
-    // console.log('Matched Schema Field (selectedCol):', this.selectedCol);
+    console.log('Matched Schema Field (selectedCol):', this.selectedCol);
 
     this.childComponent.toggleOverlay(
       event,
@@ -1725,8 +1722,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     if (!schema || !rowData) {
       return null;
     }
-
-    // Check if the current schema matches the rowData by uniqueId
     if (
       rowData.uniqueId &&
       schema[`x-${this.nameOfId}`] &&
@@ -1735,11 +1730,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return schema;
     }
 
-    // Check .properties
     if (schema.properties) {
       for (const propertyKey in schema.properties) {
         const property = schema.properties[propertyKey];
-
         if (this.isRowDataMatching(rowData, property)) {
           return property;
         }
@@ -1755,7 +1748,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check composite constructs: allOf, anyOf, oneOf
     const compositeConstructs = ['allOf', 'anyOf', 'oneOf'];
     for (const construct of compositeConstructs) {
       if (schema[construct] && Array.isArray(schema[construct])) {
@@ -1776,7 +1768,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check enums
     if (schema.enum && Array.isArray(schema.enum)) {
       if (schema.enum.includes(rowData.name)) {
         return {
@@ -1786,7 +1777,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check additionalProperties
     if (schema.additionalProperties) {
       if (this.isRowDataMatching(rowData, schema.additionalProperties)) {
         return schema.additionalProperties;
@@ -1802,7 +1792,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check array items
     if (schema.type === 'array' && schema.items) {
       if (this.isRowDataMatching(rowData, schema.items)) {
         return schema.items;
@@ -1818,7 +1807,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Check $ref
     if (schema.$ref) {
       const refSchemaName = this.extractSchemaNameFromRef(schema.$ref);
 

@@ -27,6 +27,7 @@ import { EnumOverlayPanelComponent } from '../enum-overlay-panel/enum-overlay-pa
 import { SubSchemeTypeComponent } from '../sub-scheme-type/sub-scheme-type.component';
 import { ApiDataService } from '../../../services/api-data.service';
 import { _createIconNoSpan } from 'ag-grid-community';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 interface Type {
   name: string;
@@ -53,6 +54,7 @@ interface Type {
     PanelModule,
     EnumOverlayPanelComponent,
     SubSchemeTypeComponent,
+    MultiSelectModule,
   ],
   templateUrl: './scheme-type-overlay-panel.component.html',
   styleUrl: './scheme-type-overlay-panel.component.css',
@@ -86,6 +88,14 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { name: 'enum' },
     { name: 'dictionary' },
   ];
+  multiselectTypes: Type[] = [
+    { name: 'object' },
+    { name: 'array' },
+    { name: 'integer' },
+    { name: 'number' },
+    { name: 'string' },
+    { name: 'boolean' },
+  ];
   selectedType: Type | undefined;
   intFormats: Type[] = [{ name: 'int32' }, { name: 'int64' }];
   selectedIntType: any;
@@ -103,10 +113,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMin: boolean = false;
   exclusiveMax: boolean = false;
   deprecated: boolean = false;
-  allow_additional_properties: boolean = false;
-  apiSchemasS = Array.from({ length: 50 }, (_, i) => ({
-    name: `Item ${i + 1}`,
-  }));
+  isMultiselect: boolean = false;
 
   //Object
   minProperties: number | null = null;
@@ -186,6 +193,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   minItems: number | null = null;
   maxItems: number | null = null;
   uniqueItems: boolean = false;
+  selectedRef: any;
+  filteredSchemas: any[] = [];
+  searchQuery: string = '';
+  selectedMultipleTypes: any[] = [];
 
   stringFormats: Type[] = [
     { name: 'None' },
@@ -223,7 +234,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   constructor(private apiDataService: ApiDataService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.filteredSchemas = [...this.apiSchemas];
+  }
 
   toggleEnumInput() {
     this.showEnumInput = !this.showEnumInput;
@@ -240,6 +253,48 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   clearEnumValues() {
     this.enumValues = [];
     this.showEnumInput = false;
+  }
+
+  filterSchemas(): void {
+    if (this.searchQuery.trim() === '') {
+      this.filteredSchemas = [...this.apiSchemas];
+    } else {
+      const query = this.searchQuery.toLowerCase();
+
+      this.filteredSchemas = this.apiSchemas.filter(
+        (schema: { name: string }) => schema.name.toLowerCase().includes(query)
+      );
+    }
+
+    if (this.selectedRefSchema) {
+      const selectedRefIndex = this.filteredSchemas.findIndex(
+        (schema) => schema.name === this.selectedRefSchema
+      );
+
+      if (selectedRefIndex === -1) {
+        const selectedSchemaObject = this.apiSchemas.find(
+          (schema: { name: string }) => schema.name === this.selectedRefSchema
+        );
+        if (selectedSchemaObject) {
+          this.filteredSchemas.unshift(selectedSchemaObject);
+        }
+      } else {
+        const [selectedRef] = this.filteredSchemas.splice(selectedRefIndex, 1);
+        this.filteredSchemas.unshift(selectedRef);
+      }
+    }
+  }
+
+  onMultislectChange(value: boolean) {
+    this.isMultiselect = value;
+
+    this.selectedMultipleTypes = [];
+
+    if (this.isMultiselect && this.selectedMultipleTypes.length === 1) {
+      this.selectedType = this.selectedMultipleTypes[0];
+    } else if (this.selectedType) {
+      this.selectedMultipleTypes.push(this.selectedType);
+    }
   }
 
   toggleOverlay(event: Event, rowData: any, selectedCol: any) {
@@ -260,8 +315,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     const extractSchemaName = (value: string): string => {
       console.log('Original value:', value);
-      const trimmedValue = value.trim(); // Trim leading/trailing whitespace
-      const schemaName = trimmedValue.split('/').pop(); // Extract the last part after '/'
+      const trimmedValue = value.trim();
+      const schemaName = trimmedValue.split('/').pop();
       console.log('Extracted schema name:', schemaName);
       return schemaName || '';
     };
@@ -271,11 +326,24 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       const rootType = extractRootType(cleanedValue);
       const originalType = { name: rootType };
       this.selectedType = originalType;
+      this.selectedRef = selectedCol;
+      console.log('selected schema', selectedCol);
+
+      if (Array.isArray(selectedCol.type)) {
+        console.log('Multiselect schema', selectedCol);
+        this.isMultiselect = true;
+
+        this.selectedMultipleTypes = selectedCol.type.map((type: string) => ({
+          name: type,
+        }));
+      }
     } else {
+      this.selectedRef = selectedCol;
       this.selectedType = { name: extractSchemaName(selectedCol.$ref) };
     }
 
     console.log('selected schema', selectedCol);
+    console.log('selected type', this.selectedType);
 
     if (selectedCol.properties) {
       this.minProperties = selectedCol.minProperties || null;
@@ -289,6 +357,19 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       selectedCol.type.includes('object') &&
       selectedCol.type.includes('null')
     ) {
+      this.minProperties = selectedCol.minProperties || null;
+      this.maxProperties = selectedCol.maxProperties || null;
+      this.allowAdditionalProperties =
+        selectedCol.allowAdditionalProperties || false;
+      this.deprecated = selectedCol.deprecated || false;
+      this.isNullableObject = true;
+    } else if (
+      Array.isArray(selectedCol.type) &&
+      selectedCol.type.includes('object') &&
+      selectedCol.type.includes('null') &&
+      selectedCol.properties
+    ) {
+      //TODO: Handle muétiselect props
       this.minProperties = selectedCol.minProperties || null;
       this.maxProperties = selectedCol.maxProperties || null;
       this.allowAdditionalProperties =
@@ -532,8 +613,50 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.arrayItems = arrayValue.items || false;
 
       this.isNullableArray = true;
+    } else if (
+      Array.isArray(selectedCol.type) &&
+      selectedCol.type.includes('array') &&
+      selectedCol.items
+    ) {
+      //TODO: handle multiselect array
+      const arrayValue = selectedCol;
+
+      if (arrayValue.writeOnly) {
+        this.selectedArrayBehavior = { name: 'WriteOnly' };
+      } else if (arrayValue.readOnly) {
+        this.selectedArrayBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedArrayBehavior = { name: 'Read/Write' };
+      }
+
+      this.minArrayItems = arrayValue.minItems || null;
+      this.maxArrayItems = arrayValue.maxItems || null;
+      this.uniqueArrayItems = arrayValue.uniqueItems || false;
+      this.deprecatedArray = arrayValue.deprecated || false;
+      this.arrayItems = arrayValue.items || false;
+
+      this.isNullableArray = true;
     }
     if (selectedCol.additionalProperties) {
+      const dictionaryValue = selectedCol;
+
+      if (dictionaryValue.writeOnly) {
+        this.selectedDictionaryBehavior = { name: 'WriteOnly' };
+      } else if (dictionaryValue.readOnly) {
+        this.selectedDictionaryBehavior = { name: 'ReadOnly' };
+      } else {
+        this.selectedDictionaryBehavior = { name: 'Read/Write' };
+      }
+      this.minDictionaryProperties = dictionaryValue.minProperties || null;
+      this.maxDictionaryProperties = dictionaryValue.maxProperties || null;
+      this.deprecatedDictionary = dictionaryValue.deprecated || false;
+      this.additionalPropertiesDisc = dictionaryValue.additionalProperties;
+    } else if (
+      selectedCol.additionalProperties &&
+      Array.isArray(selectedCol.type)
+    ) {
+      //TODO: handle multiselect dictionary
+
       const dictionaryValue = selectedCol;
 
       if (dictionaryValue.writeOnly) {
@@ -561,9 +684,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   checkAndInitializeSelectedType() {
     if (!this.selectedType) {
-      console.warn('No type selected.');
       this.activeItem = this.responseExamples[0];
-
       return;
     }
 
@@ -627,7 +748,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     switch (type) {
       case 'allOf':
         this.selectedCombineType = { name: 'AND' };
-
         break;
       case 'anyOf':
         this.selectedCombineType = { name: 'OR' };
@@ -1247,7 +1367,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         case 'isNullableArray':
           console.log('Is nullable array', value);
           console.log(array);
-           if (value) {
+          if (value) {
             if (Array.isArray(array.type)) {
               if (!array.type.includes('null')) {
                 array.type.push('null');
@@ -1271,7 +1391,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
               array.type = 'string';
             }
           }
-            break;
+          break;
 
         default:
           console.warn(`Unhandled field: ${field}`);
@@ -1308,8 +1428,23 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   onSchemeSelect(scheme: any) {
-    console.log('Selected scheme in overlay:', scheme);
     this.selectedRefSchema = scheme.name;
+    console.log('Selected scheme in overlay:', scheme);
+    console.log('Selected selectedRef:', this.selectedRef);
+
+    if (this.selectedRef && typeof this.selectedRef.$ref === 'string') {
+      this.selectedRef.$ref = this.selectedRef.$ref.replace(
+        /#\/components\/schemas\/[^/]+/, // Match the old schema name in the $ref
+        `#/components/schemas/${this.selectedRefSchema}` // Replace with the new schema name
+      );
+      console.log('Updated selectedRef.$ref:', this.selectedRef.$ref);
+    } else {
+      console.warn(
+        '`selectedRef` is not in the expected format or does not have a $ref property:',
+        this.selectedRef
+      );
+    }
+
     this.scrollToSelected();
   }
 
