@@ -38,6 +38,67 @@ textarea {
   border: 1px solid #ccc;
 }
 
+.description-text {
+  display: block;
+  /* Ensure the p behaves like a textarea */
+  width: 100%;
+  /* Match the textarea width */
+  padding: 8px;
+  /* Add some padding for appearance */
+  font-size: inherit;
+  /* Match the font size */
+  font-family: inherit;
+  /* Match the font family */
+  border: 1px solid transparent;
+  /* Make it look like it's not editable */
+  cursor: pointer;
+  /* Indicate it is clickable */
+  white-space: pre-wrap;
+  /* Allow line breaks to match textarea behavior */
+}
+
+.description-editor {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  font-size: inherit;
+  font-family: inherit;
+  border: 1px solid #ccc;
+  /* Match input borders */
+  border-radius: 4px;
+  /* Rounded edges for a textarea */
+  resize: none;
+  /* Prevent resizing for consistency */
+  outline: none;
+  /* Remove outline on focus */
+  box-sizing: border-box;
+  /* Ensure padding and borders don't affect size */
+}
+
+.title-editor {
+  font-size: inherit;
+  /* Match the font size of the span */
+  font-family: inherit;
+  /* Match the font family of the span */
+  width: 100%;
+  /* Take up the full width */
+  padding: 0;
+  /* Remove any default padding */
+  border: none;
+  /* Remove the border for a clean look */
+  outline: none;
+  /* Remove the outline on focus */
+  text-align: inherit;
+  /* Match the text alignment of the span */
+}
+
+.title-text {
+  display: inline-block;
+  /* Ensure the span behaves like the input */
+  width: 100%;
+  /* Take up the full width */
+}
+
 .placeholder-grey {
   color: #aaa;
   /* Light grey color */

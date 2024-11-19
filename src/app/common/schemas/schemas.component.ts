@@ -101,6 +101,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
   nameOfId: string = 'myappika';
   examplesSubscheema: any;
   rowData: any;
+  selectedSchemaTitle: string = '';
+  isEditingTitle: boolean = false;
+  selectedSchemaDescription: string = '';
+  isEditingDescription: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -130,6 +134,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       { field: 'name', header: 'Name' },
       { field: 'type', header: 'Type' },
     ];
+
+    if (this.selectedSchema) {
+      this.selectedSchemaTitle = this.selectedSchema.title || '';
+      this.selectedSchemaDescription = this.selectedSchema.description || '';
+    }
   }
 
   formatTypeWithCount(type: string, count: number): string {
@@ -1390,7 +1399,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     let addedToSchema = false;
     let isComposite = false;
     let uniqueId = 'no-id';
+
     if (this.selectedCol) {
+      // Ensure necessary fields exist in the parent
       if (rowData.type === 'object' && !this.selectedCol.properties) {
         console.log("Parent node is an 'object'. Adding '.properties'.");
         this.selectedCol.properties = {};
@@ -1421,47 +1432,92 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.modifyExtensions(newProperty);
       uniqueId = newProperty[`x-${this.nameOfId}`]?.id || 'no-id';
 
+      // Add to .properties only if it doesn't already exist
       if (this.selectedCol.properties) {
-        console.log('Adding to .properties');
-        this.selectedCol.properties[''] = newProperty;
-        addedToSchema = true;
+        const isDuplicate = Object.keys(this.selectedCol.properties).some(
+          (key) =>
+            this.selectedCol.properties[key][`x-${this.nameOfId}`]?.id ===
+            uniqueId
+        );
+
+        if (!isDuplicate) {
+          console.log('Adding to .properties');
+          this.selectedCol.properties[`property_${uniqueId}`] = newProperty;
+          addedToSchema = true;
+        } else {
+          console.warn('Property already exists in .properties. Skipping.');
+        }
       }
 
+      // Add to composite fields (allOf, anyOf, oneOf) if not duplicate
       ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
         if (
           this.selectedCol[composite] &&
           Array.isArray(this.selectedCol[composite])
         ) {
-          console.log(`Adding to ${composite}`);
-          this.selectedCol[composite].push(newProperty);
-          addedToSchema = true;
-          isComposite = true;
+          const isDuplicate = this.selectedCol[composite].some(
+            (item) => item[`x-${this.nameOfId}`]?.id === uniqueId
+          );
+
+          if (!isDuplicate) {
+            console.log(`Adding to ${composite}`);
+            this.selectedCol[composite].push(newProperty);
+            addedToSchema = true;
+            isComposite = true;
+          } else {
+            console.warn(`Property already exists in ${composite}. Skipping.`);
+          }
         }
       });
 
+      // Add to .items if not duplicate
       if (this.selectedCol.items) {
-        console.log('Adding to .items');
-        if (Array.isArray(this.selectedCol.items)) {
-          this.selectedCol.items.push(newProperty);
-        } else if (typeof this.selectedCol.items === 'object') {
-          this.selectedCol.items = [this.selectedCol.items, newProperty];
+        const items = Array.isArray(this.selectedCol.items)
+          ? this.selectedCol.items
+          : [this.selectedCol.items];
+
+        const isDuplicate = items.some(
+          (item: Record<string, any>) =>
+            item[`x-${this.nameOfId}`]?.id === uniqueId
+        );
+
+        if (!isDuplicate) {
+          console.log('Adding to .items');
+          if (Array.isArray(this.selectedCol.items)) {
+            this.selectedCol.items.push(newProperty);
+          } else if (typeof this.selectedCol.items === 'object') {
+            this.selectedCol.items = [this.selectedCol.items, newProperty];
+          } else {
+            this.selectedCol.items = newProperty;
+          }
+          addedToSchema = true;
         } else {
-          this.selectedCol.items = newProperty;
+          console.warn('Property already exists in .items. Skipping.');
         }
-        addedToSchema = true;
       }
 
-      if (this.selectedCol.additionalItems) {
-        console.log('Adding to .additionalItems');
-        if (typeof this.selectedCol.additionalItems === 'object') {
-          this.selectedCol.additionalItems = {
-            ...this.selectedCol.additionalItems,
-            ...newProperty,
-          };
+      // Add to .additionalProperties if not duplicate
+      if (this.selectedCol.additionalProperties) {
+        const isDuplicate =
+          this.selectedCol.additionalProperties[`x-${this.nameOfId}`]?.id ===
+          uniqueId;
+
+        if (!isDuplicate) {
+          console.log('Adding to .additionalProperties');
+          if (typeof this.selectedCol.additionalProperties === 'object') {
+            this.selectedCol.additionalProperties = {
+              ...this.selectedCol.additionalProperties,
+              ...newProperty,
+            };
+          } else {
+            this.selectedCol.additionalProperties = newProperty;
+          }
+          addedToSchema = true;
         } else {
-          this.selectedCol.additionalItems = newProperty;
+          console.warn(
+            'Property already exists in .additionalProperties. Skipping.'
+          );
         }
-        addedToSchema = true;
       }
     } else {
       console.warn(
@@ -1472,7 +1528,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     if (addedToSchema) {
       console.log('New property added to the schema.');
     } else {
-      console.warn('Failed to add new property to the schema.');
+      console.warn('No new property added. It already exists in the schema.');
     }
 
     const newSchemaNode: TreeNode = isComposite
@@ -1510,14 +1566,41 @@ export class SchemasComponent implements OnInit, OnDestroy {
       if (!parentNode.children) {
         parentNode.children = [];
       }
-      parentNode.children.push(newSchemaNode);
+
+      const nodeAlreadyExists = parentNode.children.some(
+        (child) =>
+          child.data.uniqueId === newSchemaNode.data.uniqueId || // Check for uniqueId match
+          child.data.name === newSchemaNode.data.name // Check for name match
+      );
+
+      if (!nodeAlreadyExists) {
+        parentNode.children.push(newSchemaNode);
+        console.log('New schema node added to parent.');
+        this.focusNewSchemaInput = true;
+      } else {
+        console.warn('Node already exists in parent. Skipping addition.');
+      }
     } else {
       console.warn('Parent node not found. Adding to root level.');
-      this.jsonTree.push(newSchemaNode);
+
+      const nodeAlreadyExistsAtRoot = this.jsonTree.some(
+        (node) =>
+          node.data.uniqueId === newSchemaNode.data.uniqueId ||
+          node.data.name === newSchemaNode.data.name // Check for name match
+      );
+
+      if (!nodeAlreadyExistsAtRoot) {
+        this.jsonTree.push(newSchemaNode);
+        console.log('New schema node added to root level.');
+        this.focusNewSchemaInput = true;
+      } else {
+        console.warn(
+          'Node already exists at the root level. Skipping addition.'
+        );
+      }
     }
 
     this.jsonTree = [...this.jsonTree];
-    this.focusNewSchemaInput = true;
 
     setTimeout(() => {
       const lastTreeTableCellEditors = document.querySelectorAll(
@@ -1945,23 +2028,59 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   startEditingTitle(): void {
-    this.schemaDetailsForm.patchValue({ isEditingTitle: true });
+    this.isEditingTitle = true;
   }
 
   stopEditingTitle(): void {
-    this.schemaDetailsForm.patchValue({ isEditingTitle: false });
+    this.isEditingTitle = false;
+
+    if (this.selectedSchema && this.selectedSchemaName) {
+      const oldSchemaName = this.selectedSchemaName;
+      const newSchemaName = this.selectedSchemaTitle.trim();
+
+      if (newSchemaName && newSchemaName !== oldSchemaName) {
+        this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
+          if (swaggerSpec?.components?.schemas) {
+            swaggerSpec.components.schemas[newSchemaName] =
+              swaggerSpec.components.schemas[oldSchemaName];
+            delete swaggerSpec.components.schemas[oldSchemaName];
+
+            swaggerSpec.components.schemas[newSchemaName].title = newSchemaName;
+
+            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+            this.selectedSchemaName = newSchemaName;
+            this.selectedSchema = swaggerSpec.components.schemas[newSchemaName];
+            console.log('Schema name updated:', newSchemaName);
+
+            this.router.navigate(['/schemas', newSchemaName]);
+          } else {
+            console.error('No schemas found in Swagger spec.');
+          }
+        });
+      }
+    }
   }
+
   startEditingDescription(): void {
-    this.schemaDetailsForm.patchValue({ isEditingDescription: true });
+    this.isEditingDescription = true;
   }
 
   stopEditingDescription(): void {
-    this.schemaDetailsForm.patchValue({ isEditingDescription: false });
+    this.isEditingDescription = false;
+
+    if (this.selectedSchema) {
+      if (this.selectedSchemaDescription.trim() === '') {
+        delete this.selectedSchema.description;
+      } else {
+        this.selectedSchema.description = this.selectedSchemaDescription;
+      }
+    }
+
+    this.onUpdateSchema();
   }
 
   onUpdateSchema(): void {
-    console.log('Starting onUpdateSchema...');
-
     this.apiDataService
       .getSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
@@ -1982,8 +2101,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
             console.log('Form Data:', formData);
 
             schemaObject.title = formData.title || schemaObject.title;
-            schemaObject.description =
-              formData.description || schemaObject.description;
 
             try {
               schemaObject.properties =
@@ -2014,16 +2131,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
               .getSwaggerSpec()
               .subscribe((updatedSpec: ExtendedSwaggerSpec | null) => {
                 if (updatedSpec) {
-                  console.log('Updated Swagger Spec:', updatedSpec);
-                } else {
-                  console.error('Failed to fetch the updated Swagger spec.');
+                  this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
                 }
               });
-          } else {
-            console.error(`Schema not found for: ${schemaName}`);
           }
-        } else {
-          console.error('No Swagger spec or schemas found.');
         }
       });
   }

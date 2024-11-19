@@ -2,45 +2,40 @@
   <div class="schema-details">
     <h1>
       <input
-        *ngIf="schemaDetailsForm.get('isEditingTitle')?.value"
-        formControlName="title"
+        *ngIf="isEditingTitle"
+        [(ngModel)]="selectedSchemaTitle"
         (blur)="stopEditingTitle()"
+        (keydown.enter)="stopEditingTitle()"
         placeholder="Schema Title"
         class="title-editor"
       />
 
       <span
-        *ngIf="!schemaDetailsForm.get('isEditingTitle')?.value"
+        *ngIf="!isEditingTitle"
         (click)="startEditingTitle()"
         class="title-text"
       >
-        {{
-          schemaDetailsForm.get("title")?.value ||
-            selectedSchemaName ||
-            "Click to add a title"
-        }}
+        {{ selectedSchemaTitle || "Click to add a title" }}
       </span>
     </h1>
 
     <div class="description-section">
+      <textarea
+        *ngIf="isEditingDescription"
+        [(ngModel)]="selectedSchemaDescription"
+        (blur)="stopEditingDescription()"
+        (keydown.enter)="stopEditingDescription()"
+        placeholder="No description available"
+        class="description-editor"
+      ></textarea>
+
       <p
-        *ngIf="!schemaDetailsForm.get('isEditingDescription')?.value"
+        *ngIf="!isEditingDescription"
         (click)="startEditingDescription()"
         class="description-text"
       >
-        {{
-          schemaDetailsForm.get("description")?.value ||
-            "Click to add a description"
-        }}
+        {{ selectedSchemaDescription || "Click to add a description" }}
       </p>
-
-      <textarea
-        *ngIf="schemaDetailsForm.get('isEditingDescription')?.value"
-        formControlName="description"
-        (blur)="stopEditingDescription()"
-        placeholder="Description"
-        class="description-editor"
-      ></textarea>
     </div>
 
     <div class="tabs">
@@ -138,7 +133,8 @@
                         <ng-container
                           *ngIf="
                             !rowData.isChildOfProperties &&
-                              (rowData.showReferenceButton && !rowData.isObjArrOrDisc ||
+                              ((rowData.showReferenceButton &&
+                                !rowData.isObjArrOrDisc) ||
                                 (rowData.showAddButton &&
                                   isSpecialType(rowData[col.field]))) &&
                               col.field === 'name';
@@ -176,7 +172,11 @@
                   </ng-container>
 
                   <ng-container
-                    *ngIf="col.field !== 'name' && rowData.showReferenceButton && rowData.isObjArrOrDisc"
+                    *ngIf="
+                      col.field !== 'name' &&
+                      rowData.showReferenceButton &&
+                      rowData.isObjArrOrDisc
+                    "
                   >
                     <p-button
                       label="{{ rowData[col.field] }}"
@@ -277,7 +277,8 @@
                         [outlined]="true"
                         (click)="toggleChildOverlay($event, rowData)"
                         class="no-border-button"
-                      >fsdf</p-button>
+                        >fsdf</p-button
+                      >
                       <app-scheme-type-overlay-panel
                         #overlayPanel
                         [rowData]="rowData"
