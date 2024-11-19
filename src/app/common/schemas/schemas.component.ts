@@ -662,6 +662,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isRootNode: false,
               childOfProperty: true,
               isObjectChild: true,
+              showAddButton: this.shouldShowAddButton(property),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
