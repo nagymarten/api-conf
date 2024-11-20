@@ -330,11 +330,14 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.isMultiselectAndMoreThanOne = true;
       this.selectedType = undefined;
 
-      this.temporaryMultiSelectMenu = this.multiselectMenu.filter((menuItem) =>
-        this.selectedMultipleTypes.some(
-          (selectedType) =>
-            menuItem.label && selectedType.name === menuItem.label.toLowerCase()
-        )
+      this.temporaryMultiSelectMenu = this.multiselectMenu.filter(
+        (menuItem) =>
+          menuItem.label !== 'Boolean' &&
+          this.selectedMultipleTypes.some(
+            (selectedType) =>
+              menuItem.label &&
+              selectedType.name === menuItem.label.toLowerCase()
+          )
       );
 
       if (
@@ -351,6 +354,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       this.isMultiselectAndMoreThanOne = false;
       this.selectedType = undefined;
     }
+    //TODO: change in swagger if multislect
 
     console.log('Updated selected types:', this.selectedMultipleTypes);
   }
@@ -399,6 +403,12 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           (type: string | null) => type !== null && type !== 'null'
         );
 
+         if (filteredTypes.includes('object') && !selectedCol.properties) {
+           selectedCol.properties = {}; 
+           console.log('Added empty properties to object type');
+           this.updateSwaggerSpec();
+         }
+
         if (filteredTypes.length >= 2) {
           this.isMultiselect = true;
 
@@ -408,6 +418,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
           this.temporaryMultiSelectMenu = this.multiselectMenu.filter(
             (menuItem) =>
+              menuItem.label !== 'Boolean' &&
               this.selectedMultipleTypes.some(
                 (selectedType) =>
                   menuItem.label &&
@@ -430,6 +441,13 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           this.selectedRef = selectedCol;
           console.log('selected schema', selectedCol);
         }
+      } else {
+        const cleanedValue = cleanString(rowData.type);
+        const rootType = extractRootType(cleanedValue);
+        const originalType = { name: rootType };
+        this.selectedType = originalType;
+        this.selectedRef = selectedCol;
+        console.log('selected schema', selectedCol);
       }
     } else {
       this.selectedRef = selectedCol;
@@ -777,8 +795,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   }
 
   checkAndInitializeSelectedType() {
-    if (!this.selectedType) {
+    if (!this.selectedType || !this.selectedMultipleTypes) {
       this.activeItem = this.responseExamples[0];
+      this.activeMultiselectItem = this.temporaryMultiSelectMenu[0];
       return;
     }
 

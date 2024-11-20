@@ -481,6 +481,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
             ? [subSchema.items.type]
             : [];
 
+          if (
+            Array.isArray(subSchema.type) &&
+            subSchema.type.includes('object') &&
+            !subSchema.properties
+          ) {
+            subSchema.properties = {};
+          }
+
           if (subSchema.type === 'array' && itemsType.length > 0) {
             typeLabel = itemsType.includes('null')
               ? [
@@ -898,6 +906,14 @@ export class SchemasComponent implements OnInit, OnDestroy {
           rootNode.children!.push(childNode);
         } else if (this.isValidType(property?.type)) {
           this.modifyExtensions(property);
+          
+          if (
+            Array.isArray(property.type) &&
+            property.type.includes('object') &&
+            !property.properties
+          ) {
+            property.properties = {};
+          }
 
           const childNode: TreeNode = {
             label: propertyKey,
@@ -1148,24 +1164,20 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   handleArray(property: any): string {
-    // Recursive function to handle nested arrays
     const resolveArrayType = (items: any): string => {
       if (!items) {
-        return 'unknown'; // Default when no items are defined
+        return 'unknown';
       }
 
-      // Handle case where items is an empty object
       if (Object.keys(items).length === 0) {
         return 'unknown';
       }
 
       if (items.$ref) {
-        // Use the extractSchemaNameFromRef method to get the schema name and eliminate spaces
         const schemaName = this.extractSchemaNameFromRef(items.$ref);
-        return schemaName.replace(/\s+/g, ''); // Remove spaces from the schema name
+        return schemaName.replace(/\s+/g, '');
       }
 
-      // Check if `items` itself is an array (nested arrays)
       if (
         items.type === 'array' ||
         (Array.isArray(items.type) && items.type.includes('array'))
@@ -1174,7 +1186,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         return `array[${nestedType}]`;
       }
 
-      // Handle `items.type` for non-array types
       const itemTypes = Array.isArray(items.type)
         ? items.type
         : [items.type || 'unknown'];
@@ -1186,19 +1197,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return resolvedItemType;
     };
 
-    // Extract `items` from the property
     const items = property.items;
 
-    // Handle the top-level type
     const resolvedItemType = resolveArrayType(items);
 
-    // Handle the parent `type` (ensure it's treated as an array of types)
     const parentTypes = Array.isArray(property.type)
       ? property.type
       : [property.type || 'array'];
     const parentHasNull = parentTypes.includes('null');
 
-    // Construct the final output
     return parentHasNull
       ? `array[${resolvedItemType}] or null`
       : `array[${resolvedItemType}]`;
