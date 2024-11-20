@@ -78,6 +78,19 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     { label: 'Combine Schemas', icon: 'pi pi-fw pi-th-large' },
   ];
   activeItem!: MenuItem;
+
+  multiselectMenu: MenuItem[] = [
+    { label: 'Object' },
+    { label: 'Array' },
+    { label: 'Integer' },
+    { label: 'Number' },
+    { label: 'String' },
+    { label: 'Boolean' },
+    { label: 'Common' },
+  ];
+
+  activeMultiselectItem!: MenuItem;
+
   types: Type[] = [
     { name: 'object' },
     { name: 'array' },
@@ -114,6 +127,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   exclusiveMax: boolean = false;
   deprecated: boolean = false;
   isMultiselect: boolean = false;
+  isMultiselectAndMoreThanOne: boolean = true;
 
   //Object
   minProperties: number | null = null;
@@ -197,6 +211,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   filteredSchemas: any[] = [];
   searchQuery: string = '';
   selectedMultipleTypes: any[] = [];
+  temporaryMultiSelectMenu: MenuItem[] = [];
 
   stringFormats: Type[] = [
     { name: 'None' },
@@ -285,6 +300,61 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     }
   }
 
+  onSelectedMultipleTypesChange(
+    selectedMultipleTypes: { name: string }[]
+  ): void {
+    const addedItems = selectedMultipleTypes.filter(
+      (item) =>
+        !this.selectedMultipleTypes.some(
+          (existing) => existing.name === item.name
+        )
+    );
+
+    const removedItems = this.selectedMultipleTypes.filter(
+      (existing) =>
+        !selectedMultipleTypes.some((item) => item.name === existing.name)
+    );
+
+    addedItems.forEach((item) => {
+      this.selectedMultipleTypes.push(item);
+    });
+
+    removedItems.forEach((item) => {
+      this.selectedMultipleTypes = this.selectedMultipleTypes.filter(
+        (existing) => existing.name !== item.name
+      );
+    });
+
+    if (this.selectedMultipleTypes.length >= 2) {
+      console.log('Updated selected types:', this.selectedMultipleTypes);
+      this.isMultiselectAndMoreThanOne = true;
+      this.selectedType = undefined;
+
+      this.temporaryMultiSelectMenu = this.multiselectMenu.filter((menuItem) =>
+        this.selectedMultipleTypes.some(
+          (selectedType) =>
+            menuItem.label && selectedType.name === menuItem.label.toLowerCase()
+        )
+      );
+
+      if (
+        !this.temporaryMultiSelectMenu.some(
+          (menuItem) => menuItem.label === 'Common'
+        )
+      ) {
+        this.temporaryMultiSelectMenu.push({ label: 'Common' });
+      }
+    } else if (this.selectedMultipleTypes.length === 1) {
+      this.isMultiselectAndMoreThanOne = false;
+      this.selectedType = { name: this.selectedMultipleTypes[0].name };
+    } else {
+      this.isMultiselectAndMoreThanOne = false;
+      this.selectedType = undefined;
+    }
+
+    console.log('Updated selected types:', this.selectedMultipleTypes);
+  }
+
   onMultislectChange(value: boolean) {
     this.isMultiselect = value;
 
@@ -329,27 +399,37 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           (type: string | null) => type !== null && type !== 'null'
         );
 
-        if (filteredTypes.length > 1) {
+        if (filteredTypes.length >= 2) {
           this.isMultiselect = true;
 
           this.selectedMultipleTypes = filteredTypes.map((type: string) => ({
-            name: type,
+            name: type.toLowerCase(),
           }));
+
+          this.temporaryMultiSelectMenu = this.multiselectMenu.filter(
+            (menuItem) =>
+              this.selectedMultipleTypes.some(
+                (selectedType) =>
+                  menuItem.label &&
+                  selectedType.name === menuItem.label.toLowerCase()
+              )
+          );
+
+          if (
+            !this.temporaryMultiSelectMenu.some(
+              (menuItem) => menuItem.label === 'Common'
+            )
+          ) {
+            this.temporaryMultiSelectMenu.push({ label: 'Common' });
+          }
         } else {
           const cleanedValue = cleanString(rowData.type);
           const rootType = extractRootType(cleanedValue);
-          const originalType = { name: rootType };
+          const originalType = { name: rootType.toLowerCase() }; // Convert to lowercase
           this.selectedType = originalType;
           this.selectedRef = selectedCol;
           console.log('selected schema', selectedCol);
         }
-      } else {
-        const cleanedValue = cleanString(rowData.type);
-        const rootType = extractRootType(cleanedValue);
-        const originalType = { name: rootType };
-        this.selectedType = originalType;
-        this.selectedRef = selectedCol;
-        console.log('selected schema', selectedCol);
       }
     } else {
       this.selectedRef = selectedCol;

@@ -35,6 +35,7 @@
                   placeholder="Select multiple types"
                   [style]="{ width: '100%' }"
                   [appendTo]="'body'"
+                  (onChange)="onSelectedMultipleTypesChange($event.value)"
                 ></p-multiSelect>
               </div>
               <p-inputSwitch
@@ -1010,6 +1011,14 @@
                 >
                 </app-sub-scheme-type>
               </p-panel>
+            </ng-container>
+
+            <ng-container *ngIf="isMultiselect && isMultiselectAndMoreThanOne">
+              asd
+              <p-tabMenu
+                [model]="temporaryMultiSelectMenu"
+                [(activeItem)]="activeMultiselectItem"
+              ></p-tabMenu>
             </ng-container>
           </div>
         </div>
