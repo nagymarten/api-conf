@@ -322,20 +322,34 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     };
 
     if (!selectedCol.$ref) {
-      const cleanedValue = cleanString(rowData.type);
-      const rootType = extractRootType(cleanedValue);
-      const originalType = { name: rootType };
-      this.selectedType = originalType;
-      this.selectedRef = selectedCol;
-      console.log('selected schema', selectedCol);
-
       if (Array.isArray(selectedCol.type)) {
         console.log('Multiselect schema', selectedCol);
-        this.isMultiselect = true;
 
-        this.selectedMultipleTypes = selectedCol.type.map((type: string) => ({
-          name: type,
-        }));
+        const filteredTypes = selectedCol.type.filter(
+          (type: string | null) => type !== null && type !== 'null'
+        );
+
+        if (filteredTypes.length > 1) {
+          this.isMultiselect = true;
+
+          this.selectedMultipleTypes = filteredTypes.map((type: string) => ({
+            name: type,
+          }));
+        } else {
+          const cleanedValue = cleanString(rowData.type);
+          const rootType = extractRootType(cleanedValue);
+          const originalType = { name: rootType };
+          this.selectedType = originalType;
+          this.selectedRef = selectedCol;
+          console.log('selected schema', selectedCol);
+        }
+      } else {
+        const cleanedValue = cleanString(rowData.type);
+        const rootType = extractRootType(cleanedValue);
+        const originalType = { name: rootType };
+        this.selectedType = originalType;
+        this.selectedRef = selectedCol;
+        console.log('selected schema', selectedCol);
       }
     } else {
       this.selectedRef = selectedCol;
