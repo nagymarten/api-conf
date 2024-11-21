@@ -213,6 +213,29 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   selectedMultipleTypes: any[] = [];
   temporaryMultiSelectMenu: MenuItem[] = [];
 
+  //Multiselect
+  minimumMultiselect: number | null = null;
+  maximumMultiselect: number | null = null;
+  exclusiveMinMultiselect: boolean = false;
+  exclusiveMaxMultiselect: boolean = false;
+  deprecatedMultiselect: boolean = false;
+  stringMultiselectPattern: string = '';
+  stringMultiselectMinLength: number | null = null;
+  stringMultiselectMaxLength: number | null = null;
+  selectedMultiselectBehavior: Type | undefined;
+  minMultiselectArrayItems: number | null = null;
+  maxMultiselectArrayItems: number | null = null;
+  uniqueMultiselectArrayItems: boolean = false;
+  minMultiselectProperties: number | null = null;
+  maxMultiselectProperties: number | null = null;
+  allowMultiselectAdditionalProperties: boolean = false;
+  multipleOfMultiselect: number | null = null;
+  exampleMultiselect: string = '';
+  defaultMultiselect: string = '';
+  isNullableMultiselect: boolean = false;
+  multipleFormats: Type[] = [];
+  selectedMultipleFormat: Type | undefined;
+
   stringFormats: Type[] = [
     { name: 'None' },
     { name: 'byte' },
@@ -303,33 +326,21 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   onSelectedMultipleTypesChange(
     selectedMultipleTypes: { name: string }[]
   ): void {
-    const addedItems = selectedMultipleTypes.filter(
-      (item) =>
-        !this.selectedMultipleTypes.some(
-          (existing) => existing.name === item.name
-        )
-    );
+    // Reset selectedMultipleTypes and multipleFormats
+    this.selectedMultipleTypes = [];
+    this.multipleFormats = [];
 
-    const removedItems = this.selectedMultipleTypes.filter(
-      (existing) =>
-        !selectedMultipleTypes.some((item) => item.name === existing.name)
-    );
-
-    addedItems.forEach((item) => {
-      this.selectedMultipleTypes.push(item);
+    // Refill selectedMultipleTypes with the provided types
+    selectedMultipleTypes.forEach((type) => {
+      this.selectedMultipleTypes.push({ name: type.name.toLowerCase() });
     });
 
-    removedItems.forEach((item) => {
-      this.selectedMultipleTypes = this.selectedMultipleTypes.filter(
-        (existing) => existing.name !== item.name
-      );
-    });
-
+    // Handle multiselect formats
     if (this.selectedMultipleTypes.length >= 2) {
-      console.log('Updated selected types:', this.selectedMultipleTypes);
       this.isMultiselectAndMoreThanOne = true;
       this.selectedType = undefined;
 
+      // Filter temporary menu based on selected types
       this.temporaryMultiSelectMenu = this.multiselectMenu.filter(
         (menuItem) =>
           menuItem.label !== 'Boolean' &&
@@ -340,6 +351,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           )
       );
 
+      // Add "Common" if not already present
       if (
         !this.temporaryMultiSelectMenu.some(
           (menuItem) => menuItem.label === 'Common'
@@ -347,16 +359,43 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       ) {
         this.temporaryMultiSelectMenu.push({ label: 'Common' });
       }
+
+      // Add relevant formats to multipleFormats
+      if (
+        this.selectedMultipleTypes.some(
+          (selectedType) => selectedType.name === 'integer'
+        )
+      ) {
+        this.multipleFormats.push(...this.intFormats);
+      }
+
+      if (
+        this.selectedMultipleTypes.some(
+          (selectedType) => selectedType.name === 'number'
+        )
+      ) {
+        this.multipleFormats.push(...this.numberFormats);
+      }
+
+      if (
+        this.selectedMultipleTypes.some(
+          (selectedType) => selectedType.name === 'string'
+        )
+      ) {
+        this.multipleFormats.push(...this.stringFormats);
+      }
     } else if (this.selectedMultipleTypes.length === 1) {
+      // Handle single selected type
       this.isMultiselectAndMoreThanOne = false;
       this.selectedType = { name: this.selectedMultipleTypes[0].name };
     } else {
+      // Handle no selected types
       this.isMultiselectAndMoreThanOne = false;
       this.selectedType = undefined;
     }
-    //TODO: change in swagger if multislect
 
     console.log('Updated selected types:', this.selectedMultipleTypes);
+    console.log('Updated multiple formats:', this.multipleFormats);
   }
 
   onMultislectChange(value: boolean) {
@@ -396,18 +435,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     };
 
     if (!selectedCol.$ref) {
-      if (Array.isArray(selectedCol.type)) {
-        console.log('Multiselect schema', selectedCol);
-
+      if (Array.isArray(selectedCol?.type)) {
         const filteredTypes = selectedCol.type.filter(
           (type: string | null) => type !== null && type !== 'null'
         );
-
-         if (filteredTypes.includes('object') && !selectedCol.properties) {
-           selectedCol.properties = {}; 
-           console.log('Added empty properties to object type');
-           this.updateSwaggerSpec();
-         }
 
         if (filteredTypes.length >= 2) {
           this.isMultiselect = true;
@@ -433,29 +464,77 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           ) {
             this.temporaryMultiSelectMenu.push({ label: 'Common' });
           }
+
+          if (
+            this.selectedMultipleTypes.some(
+              (selectedType) => selectedType.name === 'integer'
+            )
+          ) {
+            this.multipleFormats.push(...this.intFormats);
+          }
+
+          if (
+            this.selectedMultipleTypes.some(
+              (selectedType) => selectedType.name === 'number'
+            )
+          ) {
+            this.multipleFormats.push(...this.numberFormats);
+          }
+
+          if (
+            this.selectedMultipleTypes.some(
+              (selectedType) => selectedType.name === 'string'
+            )
+          ) {
+            this.multipleFormats.push(...this.stringFormats);
+          }
+
+          this.minimumMultiselect =
+            selectedCol.minimum || selectedCol.exclusiveMinimum || null;
+          this.maximumMultiselect =
+            selectedCol.maximum || selectedCol.exclusiveMaximum || null;
+          this.exclusiveMinMultiselect =
+            !!selectedCol.exclusiveMinimum || false;
+          this.exclusiveMaxMultiselect =
+            !!selectedCol.exclusiveMaximum || false;
+          this.deprecatedMultiselect = selectedCol.deprecated || false;
+          this.stringMultiselectPattern = selectedCol.pattern || '';
+          this.stringMultiselectMinLength = selectedCol.minLength || null;
+          this.stringMultiselectMaxLength = selectedCol.maxLength || null;
+
+          if (selectedCol.writeOnly) {
+            this.selectedMultiselectBehavior = { name: 'WriteOnly' };
+          } else if (selectedCol.readOnly) {
+            this.selectedMultiselectBehavior = { name: 'ReadOnly' };
+          } else {
+            this.selectedMultiselectBehavior = { name: 'Read/Write' };
+          }
+
+          this.minMultiselectArrayItems = selectedCol.minItems || null;
+          this.maxMultiselectArrayItems = selectedCol.maxItems || null;
+          this.uniqueMultiselectArrayItems = selectedCol.uniqueItems || false;
+          this.minMultiselectProperties = selectedCol.minProperties || null;
+          this.maxMultiselectProperties = selectedCol.maxProperties || null;
+          this.allowMultiselectAdditionalProperties =
+            selectedCol.allowAdditionalProperties || false;
+          this.multipleOfMultiselect = selectedCol.multipleOf || null;
+          this.exampleMultiselect = selectedCol.example || '';
+          this.defaultMultiselect = selectedCol.default || '';
         } else {
           const cleanedValue = cleanString(rowData.type);
           const rootType = extractRootType(cleanedValue);
-          const originalType = { name: rootType.toLowerCase() }; // Convert to lowercase
+          const originalType = { name: rootType.toLowerCase() };
           this.selectedType = originalType;
           this.selectedRef = selectedCol;
-          console.log('selected schema', selectedCol);
         }
-      } else {
-        const cleanedValue = cleanString(rowData.type);
-        const rootType = extractRootType(cleanedValue);
-        const originalType = { name: rootType };
-        this.selectedType = originalType;
-        this.selectedRef = selectedCol;
-        console.log('selected schema', selectedCol);
       }
     } else {
       this.selectedRef = selectedCol;
       this.selectedType = { name: extractSchemaName(selectedCol.$ref) };
     }
 
-    console.log('selected schema', selectedCol);
-    console.log('selected type', this.selectedType);
+    // console.log('selected schema', selectedCol);
+    // console.log('selected type', this.selectedType);
 
     if (selectedCol.properties) {
       this.minProperties = selectedCol.minProperties || null;
@@ -481,7 +560,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       selectedCol.type.includes('null') &&
       selectedCol.properties
     ) {
-      //TODO: Handle muétiselect props
       this.minProperties = selectedCol.minProperties || null;
       this.maxProperties = selectedCol.maxProperties || null;
       this.allowAdditionalProperties =
@@ -654,7 +732,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       }
 
       if (selectedCol.default) {
-        console.log(selectedCol.default);
         this.defaultBoolean = { name: 'true' };
       } else if (!selectedCol.default) {
         console.log(selectedCol.default);
@@ -1025,6 +1102,145 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
             }
           }
 
+          break;
+
+        default:
+          console.warn(`Unhandled field: ${field}`);
+      }
+
+      this.updateSwaggerSpec();
+    }
+  }
+
+  onMultipleFieldBlur(field: string, event: any): void {
+    const value = event.target?.value || event;
+    this.onMultipleFieldChange(field, value);
+  }
+
+  onMultipleFieldChange(field: string, value: any): void {
+    if (this.selectedSchema) {
+      const multiple = this.selectedCol;
+
+      if (!multiple) {
+        console.warn('Property not found in selected schema.');
+        return;
+      }
+
+      switch (field) {
+        case 'selectedMultiselectBehavior':
+          if (value === 'WriteOnly') {
+            multiple.writeOnly = true;
+            delete multiple.readOnly;
+          } else if (value === 'ReadOnly') {
+            multiple.readOnly = true;
+            delete multiple.writeOnly;
+          } else {
+            delete multiple.readOnly;
+            delete multiple.writeOnly;
+          }
+          break;
+        case 'selectedMultipleFormat':
+          multiple.format = value.name || null;
+          break;
+        case 'stringMultiselectMinLength':
+          multiple.minLength = value ? Number(value) : null;
+          break;
+        case 'stringMultiselectMaxLength':
+          multiple.maxLength = value ? Number(value) : null;
+          break;
+        case 'stringMultiselectPattern':
+          multiple.pattern = value || '';
+          break;
+        case 'exampleMultiselect':
+          multiple.example = value || '';
+          break;
+        case 'defaultMultiselect':
+          multiple.default = value || '';
+          break;
+        case 'multipleOfMultiselect':
+          multiple.multipleOf = value ? Number(value) : null;
+          break;
+        case 'minimumMultiselect':
+          console.log('Minimum Integer:', value);
+          console.log(multiple);
+          if (multiple.minimum) {
+            multiple.minimum = value ? Number(value) : null;
+          } else if (multiple.exclusiveMinimum) {
+            multiple.exclusiveMinimum = value ? Number(value) : null;
+          }
+          break;
+        case 'maximumMultiselect':
+          console.log('Max Integer:', value);
+          console.log(multiple);
+          if (multiple.maximum) {
+            multiple.minimum = value ? Number(value) : null;
+          } else if (multiple.exclusiveMaximum) {
+            multiple.exclusiveMaximum = value ? Number(value) : null;
+          }
+          break;
+        case 'exclusiveMinMultiselect':
+          if (!!value === true && multiple.minimum) {
+            multiple.exclusiveMinimum = multiple.minimum;
+            delete multiple.minimum;
+          } else if (!!value === false && multiple.exclusiveMinimum) {
+            multiple.minimum = multiple.exclusiveMinimum;
+            delete multiple.exclusiveMinimum;
+          }
+          break;
+
+        case 'exclusiveMaxMultiselect':
+          if (!!value === true && multiple.maximum) {
+            multiple.exclusiveMaximum = multiple.maximum;
+            delete multiple.maximum;
+          } else if (!!value === false && multiple.exclusiveMaximum) {
+            multiple.maximum = multiple.exclusiveMaximum;
+            delete multiple.exclusiveMaximum;
+          }
+          break;
+        case 'deprecatedMultiselect':
+          multiple.deprecated = !!value;
+          break;
+        case 'minMultiselectArrayItems':
+          console.log(multiple);
+          multiple.minItems = value ? Number(value) : null;
+          break;
+        case 'maxMultiselectArrayItems':
+          multiple.maxItems = value ? Number(value) : null;
+          break;
+        case 'uniqueMultiselectArrayItems':
+          multiple.uniqueItems = !!value;
+          break;
+        case 'minMultiselectProperties':
+          multiple.minProperties = value;
+          break;
+        case 'maxMultiselectProperties':
+          multiple.maxProperties = value;
+          break;
+        case 'allowMultiselectAdditionalProperties':
+          multiple.allowAdditionalProperties = value;
+          break;
+        case 'isNullableMultiselect':
+          if (value) {
+            if (Array.isArray(multiple.type)) {
+              if (!multiple.type.includes('null')) {
+                multiple.type.push('null');
+              }
+            } else if (typeof multiple.type === 'string') {
+              multiple.type = [multiple.type, 'null'];
+            } else {
+              multiple.type = ['string', 'null'];
+            }
+          } else {
+            if (Array.isArray(multiple.type)) {
+              multiple.type = multiple.type.filter((t: string) => t !== 'null');
+              if (multiple.type.length === 1) {
+                multiple.type = multiple.type[0];
+              }
+            } else if (typeof multiple.type === 'string') {
+            } else {
+              multiple.type = 'string';
+            }
+          }
           break;
 
         default:
@@ -1472,7 +1688,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           array.maxItems = value ? Number(value) : null;
           break;
         case 'uniqueArrayItems':
-          array.deprecated = !!value;
+          array.uniqueItems = !!value;
           break;
         case 'deprecatedArray':
           array.deprecated = !!value;

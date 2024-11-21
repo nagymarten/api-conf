@@ -989,11 +989,13 @@
                           type="number"
                           pInputText
                           placeholder="0"
-                          [(ngModel)]="minimumInteger"
+                          [(ngModel)]="minimumMultiselect"
                           [style]="{ width: '100%' }"
-                          (blur)="onIntegerFieldBlur('minimumInteger', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('minimumMultiselect', $event)
+                          "
                           (keydown.enter)="
-                            onIntegerFieldBlur('minimumInteger', $event)
+                            onMultipleFieldBlur('minimumMultiselect', $event)
                           "
                         />
                       </div>
@@ -1005,11 +1007,13 @@
                           type="number"
                           pInputText
                           placeholder="100"
-                          [(ngModel)]="maximumInteger"
+                          [(ngModel)]="maximumMultiselect"
                           [style]="{ width: '100%' }"
-                          (blur)="onIntegerFieldBlur('maximumInteger', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('maximumMultiselect', $event)
+                          "
                           (keydown.enter)="
-                            onIntegerFieldBlur('maximumInteger', $event)
+                            onMultipleFieldBlur('maximumMultiselect', $event)
                           "
                         />
                       </div>
@@ -1021,13 +1025,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="multipleOfInteger"
+                          [(ngModel)]="multipleOfMultiselect"
                           [style]="{ width: '100%' }"
                           (blur)="
-                            onIntegerFieldBlur('multipleOfInteger', $event)
+                            onMultipleFieldBlur('multipleOfMultiselect', $event)
                           "
                           (keydown.enter)="
-                            onIntegerFieldBlur('multipleOfInteger', $event)
+                            onMultipleFieldBlur('multipleOfMultiselect', $event)
                           "
                         />
                       </div>
@@ -1037,10 +1041,10 @@
 
                         <p-inputSwitch
                           id="exclusiveMin"
-                          [(ngModel)]="exclusiveMinInteger"
+                          [(ngModel)]="exclusiveMinMultiselect"
                           (onChange)="
-                            onIntegerFieldChange(
-                              'exclusiveMinInteger',
+                            onMultipleFieldBlur(
+                              'exclusiveMinMultiselect',
                               $event.checked
                             )
                           "
@@ -1049,10 +1053,10 @@
 
                         <p-inputSwitch
                           id="exclusiveMax"
-                          [(ngModel)]="exclusiveMaxInteger"
+                          [(ngModel)]="exclusiveMaxMultiselect"
                           (onChange)="
-                            onIntegerFieldChange(
-                              'exclusiveMaxInteger',
+                            onMultipleFieldBlur(
+                              'exclusiveMaxMultiselect',
                               $event.checked
                             )
                           "
@@ -1061,10 +1065,10 @@
 
                         <p-inputSwitch
                           id="deprecated"
-                          [(ngModel)]="deprecatedInteger"
+                          [(ngModel)]="deprecatedMultiselect"
                           (onChange)="
-                            onIntegerFieldChange(
-                              'deprecatedInteger',
+                            onMultipleFieldBlur(
+                              'deprecatedMultiselect',
                               $event.checked
                             )
                           "
@@ -1084,11 +1088,19 @@
                           type="text"
                           pInputText
                           placeholder="^[A-Za-z0-9 _-]+$"
-                          [(ngModel)]="stringPattern"
+                          [(ngModel)]="stringMultiselectPattern"
                           [style]="{ width: '100%' }"
-                          (blur)="onStringFieldBlur('stringPattern', $event)"
+                          (blur)="
+                            onMultipleFieldBlur(
+                              'stringMultiselectPattern',
+                              $event
+                            )
+                          "
                           (keydown.enter)="
-                            onStringFieldBlur('stringPattern', $event)
+                            onMultipleFieldBlur(
+                              'stringMultiselectPattern',
+                              $event
+                            )
                           "
                         />
                       </div>
@@ -1100,11 +1112,19 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="stringMinLength"
+                          [(ngModel)]="stringMultiselectMinLength"
                           [style]="{ width: '100%' }"
-                          (blur)="onStringFieldBlur('stringMinLength', $event)"
+                          (blur)="
+                            onMultipleFieldBlur(
+                              'stringMultiselectMinLength',
+                              $event
+                            )
+                          "
                           (keydown.enter)="
-                            onStringFieldBlur('stringMinLength', $event)
+                            onMultipleFieldBlur(
+                              'stringMultiselectMinLength',
+                              $event
+                            )
                           "
                         />
                       </div>
@@ -1116,23 +1136,31 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="stringMaxLength"
+                          [(ngModel)]="stringMultiselectMaxLength"
                           [style]="{ width: '100%' }"
-                          (blur)="onStringFieldBlur('stringMaxLength', $event)"
+                          (blur)="
+                            onMultipleFieldBlur(
+                              'stringMultiselectMaxLength',
+                              $event
+                            )
+                          "
                           (keydown.enter)="
-                            onStringFieldBlur('stringMaxLength', $event)
+                            onMultipleFieldBlur(
+                              'stringMultiselectMaxLength',
+                              $event
+                            )
                           "
                         />
                       </div>
 
                       <div class="toggle-group">
-                        <label for="isStringDeprecated">deprecated</label>
+                        <label for="isMultiselectDeprecated">deprecated</label>
                         <p-inputSwitch
-                          [(ngModel)]="isStringDeprecated"
-                          id="isStringDeprecated"
+                          [(ngModel)]="deprecatedMultiselect"
+                          id="isMultiselectDeprecated"
                           (onChange)="
-                            onStringFieldChange(
-                              'isStringDeprecated',
+                            onMultipleFieldChange(
+                              'deprecatedMultiselect',
                               $event.checked
                             )
                           "
@@ -1150,13 +1178,13 @@
                         <p-dropdown
                           id="behavior"
                           [options]="behaviorOptions"
-                          [(ngModel)]="selectedArrayBehavior"
+                          [(ngModel)]="selectedMultiselectBehavior"
                           optionLabel="name"
                           placeholder="Read/Write"
                           [style]="{ width: '100%' }"
                           (onChange)="
-                            onArrayFieldChange(
-                              'selectedArrayBehavior',
+                            onMultipleFieldChange(
+                              'selectedMultiselectBehavior',
                               $event.value
                             )
                           "
@@ -1170,11 +1198,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="minArrayItems"
+                          [(ngModel)]="minMultiselectArrayItems"
                           [style]="{ width: '100%' }"
-                          (blur)="onArrayFieldBlur('minArrayItems', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('minMultiselectArrayItems', $event)
+                          "
                           (keydown.enter)="
-                            onArrayFieldBlur('minArrayItems', $event)
+                            onMultipleFieldBlur('minMultiselectArrayItems', $event)
                           "
                         />
                       </div>
@@ -1186,11 +1216,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="maxArrayItems"
+                          [(ngModel)]="maxMultiselectArrayItems"
                           [style]="{ width: '100%' }"
-                          (blur)="onArrayFieldBlur('maxArrayItems', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('maxMultiselectArrayItems', $event)
+                          "
                           (keydown.enter)="
-                            onArrayFieldBlur('maxArrayItems', $event)
+                            onMultipleFieldBlur('maxMultiselectArrayItems', $event)
                           "
                         />
                       </div>
@@ -1199,10 +1231,10 @@
                         <label for="uniqe_items">uniqe items</label>
                         <p-inputSwitch
                           id="uniqe_items"
-                          [(ngModel)]="uniqueArrayItems"
+                          [(ngModel)]="uniqueMultiselectArrayItems"
                           (onChange)="
-                            onArrayFieldChange(
-                              'uniqueArrayItems',
+                            onMultipleFieldChange(
+                              'uniqueMultiselectArrayItems',
                               $event.checked
                             )
                           "
@@ -1211,10 +1243,10 @@
                         <label for="deprecatedSwitch">deprecated</label>
                         <p-inputSwitch
                           id="deprecated"
-                          [(ngModel)]="deprecatedArray"
+                          [(ngModel)]="deprecatedMultiselect"
                           (onChange)="
-                            onArrayFieldChange(
-                              'deprecatedArray',
+                            onMultipleFieldChange(
+                              'deprecatedMultiselect',
                               $event.checked
                             )
                           "
@@ -1234,9 +1266,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="minProperties"
-                          (blur)="onFieldBlur('minProperties', $event)"
-                          (keydown.enter)="onFieldBlur('minProperties', $event)"
+                          [(ngModel)]="minMultiselectProperties"
+                          (blur)="
+                            onMultipleFieldBlur('minMultiselectProperties', $event)
+                          "
+                          (keydown.enter)="
+                            onMultipleFieldBlur('minMultiselectProperties', $event)
+                          "
                           [style]="{ width: '100%' }"
                         />
                       </div>
@@ -1248,9 +1284,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="maxProperties"
-                          (blur)="onFieldBlur('maxProperties', $event)"
-                          (keydown.enter)="onFieldBlur('maxProperties', $event)"
+                          [(ngModel)]="maxMultiselectProperties"
+                          (blur)="
+                            onMultipleFieldBlur('maxMultiselectProperties', $event)
+                          "
+                          (keydown.enter)="
+                            onMultipleFieldBlur('maxMultiselectProperties', $event)
+                          "
                           [style]="{ width: '100%' }"
                         />
                       </div>
@@ -1261,10 +1301,10 @@
                         >
                         <p-inputSwitch
                           id="allow_additional_properties"
-                          [(ngModel)]="allowAdditionalProperties"
+                          [(ngModel)]="allowMultiselectAdditionalProperties"
                           (onChange)="
-                            onFieldChange(
-                              'allowAdditionalProperties',
+                            onMultipleFieldChange(
+                              'allowMultiselectAdditionalProperties',
                               $event.checked
                             )
                           "
@@ -1275,20 +1315,17 @@
                         <label for="deprecatedSwitch">deprecated</label>
                         <p-inputSwitch
                           id="deprecatedSwitch"
-                          [(ngModel)]="deprecated"
+                          [(ngModel)]="deprecatedMultiselect"
                           (onChange)="
-                            onFieldChange('deprecated', $event.checked)
+                            onMultipleFieldChange(
+                              'deprecatedMultiselect',
+                              $event.checked
+                            )
                           "
                         ></p-inputSwitch>
                       </div>
                     </div>
                   </div>
-                </ng-container>
-
-                <ng-container
-                  *ngIf="activeMultiselectItem?.label === 'Boolean'"
-                >
-                  nem kell
                 </ng-container>
 
                 <ng-container *ngIf="activeMultiselectItem?.label === 'Number'">
@@ -1301,11 +1338,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="minimumNumber"
+                          [(ngModel)]="minimumMultiselect"
                           [style]="{ width: '100%' }"
-                          (blur)="onNumberFieldBlur('minimumNumber', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('minimumMultiselect', $event)
+                          "
                           (keydown.enter)="
-                            onNumberFieldBlur('minimumNumber', $event)
+                            onMultipleFieldBlur('minimumMultiselect', $event)
                           "
                         />
                       </div>
@@ -1317,11 +1356,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="maximumNumber"
+                          [(ngModel)]="maximumMultiselect"
                           [style]="{ width: '100%' }"
-                          (blur)="onNumberFieldBlur('maximumNumber', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('maximumMultiselect', $event)
+                          "
                           (keydown.enter)="
-                            onNumberFieldBlur('maximumNumber', $event)
+                            onMultipleFieldBlur('maximumMultiselect', $event)
                           "
                         />
                       </div>
@@ -1333,11 +1374,13 @@
                           type="number"
                           pInputText
                           placeholder=">= 0"
-                          [(ngModel)]="multipleOfNumber"
+                          [(ngModel)]="multipleOfMultiselect"
                           [style]="{ width: '100%' }"
-                          (blur)="onNumberFieldBlur('multipleOfNumber', $event)"
+                          (blur)="
+                            onMultipleFieldBlur('multipleOfMultiselect', $event)
+                          "
                           (keydown.enter)="
-                            onNumberFieldBlur('multipleOfNumber', $event)
+                            onMultipleFieldBlur('multipleOfMultiselect', $event)
                           "
                         />
                       </div>
@@ -1346,10 +1389,10 @@
                         <label for="exclusiveMinSwitch">exclusiveMin</label>
                         <p-inputSwitch
                           id="exclusiveMinSwitch"
-                          [(ngModel)]="exclusiveMinNumber"
+                          [(ngModel)]="exclusiveMinMultiselect"
                           (onChange)="
-                            onNumberFieldChange(
-                              'exclusiveMinNumber',
+                            onMultipleFieldChange(
+                              'exclusiveMinMultiselect',
                               $event.checked
                             )
                           "
@@ -1358,10 +1401,10 @@
                         <label for="exclusiveMaxSwitch">exclusiveMax</label>
                         <p-inputSwitch
                           id="exclusiveMaxSwitch"
-                          [(ngModel)]="exclusiveMaxNumber"
+                          [(ngModel)]="exclusiveMaxMultiselect"
                           (onChange)="
-                            onNumberFieldChange(
-                              'exclusiveMaxNumber',
+                            onMultipleFieldChange(
+                              'exclusiveMaxMultiselect',
                               $event.checked
                             )
                           "
@@ -1370,10 +1413,10 @@
                         <label for="deprecatedSwitch">deprecated</label>
                         <p-inputSwitch
                           id="deprecatedSwitch"
-                          [(ngModel)]="deprecatedNumber"
+                          [(ngModel)]="deprecatedMultiselect"
                           (onChange)="
-                            onNumberFieldChange(
-                              'deprecatedNumber',
+                            onMultipleFieldChange(
+                              'deprecatedMultiselect',
                               $event.checked
                             )
                           "
@@ -1390,17 +1433,35 @@
                       <p-dropdown
                         id="behavior"
                         [options]="behaviorOptions"
-                        [(ngModel)]="selectedBooleanBehavior"
+                        [(ngModel)]="selectedMultiselectBehavior"
                         optionLabel="name"
                         placeholder="Read/Write"
                         [style]="{ width: '100%' }"
                         (onChange)="
-                          onBooleanFieldChange(
-                            'selectedBooleanBehavior',
+                          onMultipleFieldChange(
+                            'selectedMultiselectBehavior',
                             $event.value
                           )
                         "
                         [appendTo]="'body'"
+                      ></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="format">Format</label>
+                      <p-dropdown
+                        id="format"
+                        [options]="multipleFormats"
+                        [(ngModel)]="selectedMultipleFormat"
+                        placeholder="Select multiselect format"
+                        [style]="{ width: '100%' }"
+                        optionLabel="name"
+                        (onChange)="
+                          onMultipleFieldChange(
+                            'selectedMultipleFormat',
+                            $event.value
+                          )
+                        "
                       ></p-dropdown>
                     </div>
 
@@ -1411,11 +1472,11 @@
                         type="text"
                         pInputText
                         placeholder="example"
-                        [(ngModel)]="exampleString"
+                        [(ngModel)]="exampleMultiselect"
                         [style]="{ width: '100%' }"
-                        (blur)="onStringFieldBlur('exampleString', $event)"
+                        (blur)="onMultipleFieldBlur('exampleMultiselect', $event)"
                         (keydown.enter)="
-                          onStringFieldBlur('exampleString', $event)
+                          onMultipleFieldBlur('exampleMultiselect', $event)
                         "
                       />
                     </div>
@@ -1427,11 +1488,11 @@
                         type="text"
                         pInputText
                         placeholder="default"
-                        [(ngModel)]="defaultString"
+                        [(ngModel)]="defaultMultiselect"
                         [style]="{ width: '100%' }"
-                        (blur)="onStringFieldBlur('defaultString', $event)"
+                        (blur)="onMultipleFieldBlur('defaultMultiselect', $event)"
                         (keydown.enter)="
-                          onStringFieldBlur('defaultString', $event)
+                          onMultipleFieldBlur('defaultMultiselect', $event)
                         "
                       />
                     </div>
@@ -1441,24 +1502,24 @@
                     <div class="toggle-group">
                       <label for="deprecatedSwitch">deprecated</label>
                       <p-inputSwitch
-                        [(ngModel)]="deprecatedBoolean"
+                        [(ngModel)]="deprecatedMultiselect"
                         id="deprecated"
                         (onChange)="
-                          onBooleanFieldChange(
-                            'deprecatedBoolean',
+                          onMultipleFieldChange(
+                            'deprecatedMultiselect',
                             $event.checked
                           )
                         "
                       ></p-inputSwitch>
                       <p-inputSwitch
                         id="isNullableBoolean"
-                        [(ngModel)]="isNullableBoolean"
+                        [(ngModel)]="isNullableMultiselect"
                         [pTooltip]="
                           isNullableBoolean ? 'Nullable' : 'Not nullable'
                         "
                         (onChange)="
-                          onBooleanFieldChange(
-                            'isNullableBoolean',
+                          onMultipleFieldChange(
+                            'isNullableMultiselect',
                             $event.checked
                           )
                         "
