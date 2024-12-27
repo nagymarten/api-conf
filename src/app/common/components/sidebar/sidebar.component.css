@@ -5,14 +5,12 @@
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  /* Ensure vertical scrolling */
 }
 
 .path-item {
   font-weight: bold;
   color: #000;
   padding: 8px 0;
-  /* Adjust padding for better spacing */
 }
 
 .method-link {
@@ -29,15 +27,35 @@
 
 .mat-expansion-panel {
   margin-bottom: 8px;
-  /* Add spacing between panels */
 }
 
 .mat-expansion-panel-header {
   cursor: pointer;
-  /* Ensure it's clear that this is clickable */
 }
 
 .mat-list-item {
   padding-left: 16px;
-  /* Align child items */
+}
+
+.spacer {
+  height: 16px;
+}
+
+.export-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+.format-options {
+  display: flex;
+  gap: 2rem;
+}
+
+.export-dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
 }

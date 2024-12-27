@@ -1,6 +1,9 @@
 @import "primeng/resources/themes/lara-light-blue/theme.css";
 @import "primeng/resources/primeng.css";
 @import "primeicons/primeicons.css";
+@import "highlight.js/styles/default.css";
+@import "../node_modules/quill/dist/quill.core.css";
+@import "../node_modules/quill/dist/quill.snow.css";
 
 html,
 body {
@@ -9,4 +12,43 @@ body {
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.export-dialog-content .format-options {
+  display: flex;
+  gap: 2rem;
+}
+
+.export-dialog-content .export-dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.export-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1.5rem;
+  margin: 1rem;
+}
+
+.input-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.input-label {
+  font-weight: bold;
+}
+
+input[pInputText] {
+  width: 100%;
+}
+
+.p-button.p-button-icon-only {
+  height: 3rem;
 }

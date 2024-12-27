@@ -19,7 +19,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { ExtendedSwaggerSpec, SchemaDetails } from '../../models/swagger.types';
 import { MatIconModule } from '@angular/material/icon';
 import { TreeTableModule } from 'primeng/treetable';
-import { MenuItem, TreeNode } from 'primeng/api';
+import { MenuItem, MessageService, TreeNode } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { NodeService } from '../../services/node.service';
 import { ButtonModule } from 'primeng/button';
@@ -29,6 +29,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RefButtonComponent } from '../components/ref-button/ref-button.component';
 import { Router } from '@angular/router';
 import { SchemaExamplesComponent } from './schema-examples/schema-examples.component';
+import { SchemaExtensionsComponent } from './schema-extensions/schema-extensions.component';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { TooltipModule } from 'primeng/tooltip';
+import { ToastModule } from 'primeng/toast';
+import { OverlayTextareaComponent } from '../components/overlay-textarea/overlay-textarea.component';
 
 interface Column {
   field: string;
@@ -56,14 +61,22 @@ interface Column {
     InputTextModule,
     RefButtonComponent,
     SchemaExamplesComponent,
+    SchemaExtensionsComponent,
+    ToggleButtonModule,
+    TooltipModule,
+    ToastModule,
+    OverlayTextareaComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
-  providers: [NodeService],
+  providers: [NodeService, MessageService],
 })
 export class SchemasComponent implements OnInit, OnDestroy {
   @ViewChild(SchemeTypeOverlayPanelComponent)
   childComponent!: SchemeTypeOverlayPanelComponent;
+
+  @ViewChild(OverlayTextareaComponent)
+  childComponentOverlayTextarea!: OverlayTextareaComponent;
 
   @ViewChild(AddSchemeButtonComponent)
   addSchemeButtonComponent!: AddSchemeButtonComponent;
@@ -95,7 +108,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   jsonTree: TreeNode[] = [];
   responseExamples: MenuItem[] = [];
   activeItem!: MenuItem;
-  focusNewSchemaInput = false;
   selectedRowData: any;
   selectedCol: any;
   nameOfId: string = 'myappika';
@@ -105,17 +117,19 @@ export class SchemasComponent implements OnInit, OnDestroy {
   isEditingTitle: boolean = false;
   selectedSchemaDescription: string = '';
   isEditingDescription: boolean = false;
+  private isUpdating = false;
+  checked: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private apiDataService: ApiDataService,
     private fb: FormBuilder,
     private nodeService: NodeService,
-    private router: Router
+    private router: Router,
+    private toastMessageService: MessageService
   ) {}
 
   ngOnInit(): void {
-    // Initialize base form fields
     this.schemaDetailsForm = this.fb.group({
       title: [''],
       description: [''],
@@ -139,6 +153,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchemaTitle = this.selectedSchema.title || '';
       this.selectedSchemaDescription = this.selectedSchema.description || '';
     }
+    console.log(this.apiDataService.getSelectedSwaggerSpecValue());
+    console.log(
+      'Child OverlayTextareaComponent:',
+      this.childComponentOverlayTextarea
+    );
   }
 
   formatTypeWithCount(type: string, count: number): string {
@@ -240,8 +259,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       subSchemas.forEach((subSchema: any) => {
         this.modifyExtensions(subSchema);
-
-        console.log('Processing sub-schema:', subSchema);
 
         if (subSchema?.$ref) {
           const refSchemaName = this.extractSchemaNameFromRef(subSchema.$ref);
@@ -498,7 +515,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                 ]
               : ['array', ...itemsType];
           } else if (
-            subSchema.type === 'dictionary' &&
+            subSchema.type === 'object' &&
             subSchema.additionalProperties
           ) {
             const dictionaryType = this.handleAdditionalProperties(subSchema);
@@ -516,9 +533,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
               description: subSchema?.description || '',
               type: '',
               showReferenceButton: !!subSchema?.$ref,
-              editDisabled: !!subSchema?.$ref,
+              editDisabled: true,
               isReferenceChild: false,
               isRootNode: false,
+              isSubschemeChild: true,
               uniqueId: subSchema[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -533,6 +551,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
           );
 
           resolvedSubSchemas.forEach((resolvedChild) => {
+            if (resolvedChild.data) {
+              resolvedChild.data.editDisabled = true;
+            }
             rootNode!.children!.push(resolvedChild);
           });
         }
@@ -554,6 +575,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
     if (schema?.properties) {
       this.modifyExtensions(schema);
 
+      // console.log('Scheama:', schema.required);
+
       Object.keys(schema.properties).forEach((propertyKey) => {
         const property = schema.properties[propertyKey];
 
@@ -562,12 +585,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
           return;
         }
 
-        // console.log('Property:', property);
+        // if (schema.required && schema.required.includes(propertyKey)) {
+        //   console.log('Property:', propertyKey);
+        // }
 
         this.modifyExtensions(property);
 
         if (property.$ref) {
-          // console.log('Property $ref:', propertyKey);
           const refSchemaName = this.extractSchemaNameFromRef(property.$ref);
           this.modifyExtensions(property);
 
@@ -582,6 +606,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isReferenceChild: false,
               isRootNode: false,
               isObjArrOrDisc: true,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -634,6 +659,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               showAddButton: this.shouldShowAddButton(property),
               childOfProperty: true,
               isObjectChild: true,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -670,6 +696,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isRootNode: false,
               childOfProperty: true,
               isObjectChild: true,
+              isRequired: schema.required?.includes(propertyKey),
               showAddButton: this.shouldShowAddButton(property),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
@@ -705,6 +732,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isReferenceChild: false,
               isRootNode: false,
               isObjectChild: true,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -729,6 +757,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isRootNode: false,
               isObjArrOrDisc: true,
               isObjectChild: true,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -765,6 +794,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
                   editDisabled: !!subProperty?.$ref,
                   isReferenceChild: false,
                   isRootNode: false,
+                  isRequired: schema.required?.includes(propertyKey),
                   showAddButton: this.shouldShowAddButton(subProperty),
                   uniqueId: subProperty[`x-${this.nameOfId}`]?.id || 'no-id',
                 },
@@ -821,6 +851,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               isRootNode: false,
               isObjArrOrDisc: true,
               isObjectChild: true,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-id',
             },
             children: [],
@@ -906,7 +937,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           rootNode.children!.push(childNode);
         } else if (this.isValidType(property?.type)) {
           this.modifyExtensions(property);
-          
+
           if (
             Array.isArray(property.type) &&
             property.type.includes('object') &&
@@ -928,6 +959,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
               showAddButton: this.shouldShowAddButton(property),
               isChildOfProperties: true,
               isObjArrOrDisc: false,
+              isRequired: schema.required?.includes(propertyKey),
               uniqueId: property[`x-${this.nameOfId}`]?.id || 'no-ids',
             },
             children: [],
@@ -1084,16 +1116,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   modifyExtensions = (schema: any): any => {
     if (!schema || typeof schema !== 'object') return schema;
 
-    // Always ensure the schema has a unique ID
     if (!schema[`x-${this.nameOfId}`]) {
       schema[`x-${this.nameOfId}`] = { id: this.generateUniqueId() };
-    }
-
-    for (const key in schema) {
-      // Remove other custom extensions starting with `x-` but not matching `x-myappika`
-      if (key.startsWith('x-') && key !== `x-${this.nameOfId}`) {
-        delete schema[key];
-      }
     }
 
     return schema;
@@ -1120,12 +1144,11 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const additionalProps = property.additionalProperties;
 
     if (!additionalProps) {
-      return 'dictionary[string, any]'; // Default if additionalProperties is missing
+      return 'dictionary[string, any]';
     }
 
-    // Check if additionalProperties is an array
     if (additionalProps.type === 'array' && additionalProps.items) {
-      const arrayType = additionalProps.items.type || 'any'; // Default to 'any' if type is missing in items
+      const arrayType = additionalProps.items.type || 'any';
       const nestedType = additionalProps.items.additionalProperties
         ? this.handleAdditionalProperties({
             additionalProperties: additionalProps.items.additionalProperties,
@@ -1135,7 +1158,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return `dictionary[string, array[${nestedType}]]`;
     }
 
-    // Check if additionalProperties is a dictionary (object with additionalProperties)
     if (
       additionalProps.type === 'object' &&
       additionalProps.additionalProperties
@@ -1146,15 +1168,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return `dictionary[string, ${nestedDictionaryType}]`;
     }
 
-    // Check if additionalProperties is a regular object with properties
     if (additionalProps.type === 'object' && additionalProps.properties) {
       return 'dictionary[string, object]';
     }
 
-    // Handle regular types and formats
     const types = Array.isArray(additionalProps.type)
       ? additionalProps.type.join(' or ')
-      : additionalProps.type || 'any'; // Default to 'any' if no type is provided
+      : additionalProps.type || 'any';
 
     const additionalFormat = additionalProps.format
       ? `<${additionalProps.format}>`
@@ -1165,12 +1185,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   handleArray(property: any): string {
     const resolveArrayType = (items: any): string => {
-      if (!items) {
-        return 'unknown';
-      }
-
-      if (Object.keys(items).length === 0) {
-        return 'unknown';
+      if (!items || Object.keys(items).length === 0) {
+        return '';
       }
 
       if (items.$ref) {
@@ -1188,7 +1204,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       const itemTypes = Array.isArray(items.type)
         ? items.type
-        : [items.type || 'unknown'];
+        : [items.type || ''];
       const resolvedItemType = itemTypes.includes('null')
         ? itemTypes.filter((type: string) => type !== 'null').join(' or ') +
           ' or null'
@@ -1207,8 +1223,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
     const parentHasNull = parentTypes.includes('null');
 
     return parentHasNull
-      ? `array[${resolvedItemType}] or null`
-      : `array[${resolvedItemType}]`;
+      ? resolvedItemType
+        ? `array[${resolvedItemType}] or null`
+        : `array or null`
+      : resolvedItemType
+      ? `array[${resolvedItemType}]`
+      : `array`;
   }
 
   isValidType(type: any): boolean {
@@ -1262,22 +1282,24 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
   }
 
-  onSchemaUpdated(updatedSchema: any) {
+  onSchemaUpdated(updatedSchema: any): void {
     console.log('Schema updated in child:', updatedSchema);
 
     this.selectedSchema = updatedSchema;
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
-      if (swaggerSpec?.components?.schemas) {
-        swaggerSpec.components.schemas[this.selectedSchemaName] =
-          this.selectedSchema;
-        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
-
-        this.fetchModelDetails();
-      } else {
-        console.error('No schemas found in Swagger spec.');
-      }
-    });
+    const swaggerSpec = this.apiDataService.getSelectedSwaggerSpecValue();
+    if (swaggerSpec?.components?.schemas) {
+      swaggerSpec.components.schemas[this.selectedSchemaName] =
+        this.selectedSchema;
+      this.apiDataService.updateSwaggerSpec(
+        swaggerSpec.info.title,
+        swaggerSpec
+      );
+      this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+      this.fetchModelDetails();
+    } else {
+      console.error('No schemas found in Swagger spec.');
+    }
   }
 
   getTypeStatus(input: string): boolean {
@@ -1300,25 +1322,22 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return deepestItems;
   }
 
-  onFieldBlur(field: string, event: Event, rowData: any): void {
+  onFieldBlur(_field: string, event: Event, rowData: any): void {
+    if (this.isUpdating) return;
+    this.isUpdating = true;
     const value = (event.target as HTMLInputElement).value;
-    console.log(`Blur event triggered for field: ${field}, value: ${value}`);
-    this.updateSchemaField(value, rowData); // Update the schema field
+    this.updateSchemaField(value, rowData);
+    this.isUpdating = false;
   }
 
-  onFieldEnter(field: string, event: Event, rowData: any): void {
-    if ((event as KeyboardEvent).key === 'Enter') {
-      const inputElement = event.target as HTMLInputElement;
-      const value = inputElement.value;
-
-      console.log(
-        `Enter keydown triggered for field: ${field}, value: ${value}`
-      );
-      this.updateSchemaField(value, rowData); // Update the schema field
-
-      // Programmatically trigger blur to unblur the field
-      inputElement.blur();
-    }
+  onFieldEnter(_field: string, event: Event, rowData: any): void {
+    if (this.isUpdating || (event as KeyboardEvent).key !== 'Enter') return;
+    this.isUpdating = true;
+    const inputElement = event.target as HTMLInputElement;
+    const value = inputElement.value;
+    this.updateSchemaField(value, rowData);
+    inputElement.blur();
+    this.isUpdating = false;
   }
 
   updateSchemaField(newName: string, rowData: any): void {
@@ -1328,43 +1347,43 @@ export class SchemasComponent implements OnInit, OnDestroy {
       oldName: string,
       newName: string
     ): void => {
-      const propertyValue = schema[oldName]; // Retrieve the existing property value.
+      const propertyValue = schema[oldName];
 
       if (!propertyValue) {
-        console.warn(`Property '${oldName}' not found in schema.`); // Warn if the old property doesn't exist.
+        console.warn(`Property '${oldName}' not found in schema.`);
         return;
       }
 
-      // Remove the old property
       delete schema[oldName];
 
-      // Add the new property with the updated name
       schema[newName] = propertyValue;
-
-      console.log(`Updated schema property: '${oldName}' to '${newName}'`);
     };
 
     const findAndUpdate = (schema: any): void => {
       if (!schema || typeof schema !== 'object') return;
 
-      // Check .properties
       if (schema.properties) {
         const propertyKey = Object.keys(schema.properties).find((key) => {
           const propertyId = schema.properties[key][`x-${this.nameOfId}`]?.id;
           const isMatchingId = propertyId === rowData.uniqueId;
 
-          return isMatchingId;
-        });
+          if (isMatchingId) {
+            return true;
+          }
 
+          if (schema.properties[key].properties) {
+            findAndUpdate(schema.properties[key]);
+          }
+
+          return false;
+        });
         if (propertyKey !== undefined) {
           updateInSchema(schema.properties, propertyKey, newName);
+          this.updateSwaggerSpec();
           return;
-        } else {
-          console.warn('No matching property found in .properties.');
         }
       }
 
-      // Check .allOf, .anyOf, .oneOf
       ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
         if (schema[composite] && Array.isArray(schema[composite])) {
           schema[composite].forEach((subSchema: any) => {
@@ -1373,7 +1392,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       });
 
-      // Check .items
       if (schema.items) {
         if (Array.isArray(schema.items)) {
           schema.items.forEach((item: any) => findAndUpdate(item));
@@ -1383,16 +1401,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Check .additionalItems
       if (schema.additionalItems) {
         findAndUpdate(schema.additionalItems);
       }
     };
 
-    // Start processing the selected schema
     if (this.selectedSchema) {
       findAndUpdate(this.selectedSchema);
-      this.updateSwaggerSpec(); // Save changes
+      console.log('Updated schema:', this.selectedSchema);
+      this.updateSwaggerSpec();
     } else {
       console.warn('No schema found for updating.');
     }
@@ -1401,12 +1418,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
   handleAddScheme(_event: Event, rowData: any): void {
     this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
 
+    console.log('Matched Schema Field (selectedCol):', this.selectedCol);
+
     let addedToSchema = false;
     let isComposite = false;
     let uniqueId = 'no-id';
 
     if (this.selectedCol) {
-      // Ensure necessary fields exist in the parent
       if (rowData.type === 'object' && !this.selectedCol.properties) {
         console.log("Parent node is an 'object'. Adding '.properties'.");
         this.selectedCol.properties = {};
@@ -1430,14 +1448,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const newProperty: Record<string, any> = {
         type: 'string',
         [`x-${this.nameOfId}`]: {
-          id: this.generateUniqueId(), // Generate a unique ID here
+          id: this.generateUniqueId(),
         },
       };
 
       this.modifyExtensions(newProperty);
       uniqueId = newProperty[`x-${this.nameOfId}`]?.id || 'no-id';
 
-      // Add to .properties only if it doesn't already exist
       if (this.selectedCol.properties) {
         const isDuplicate = Object.keys(this.selectedCol.properties).some(
           (key) =>
@@ -1447,14 +1464,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
         if (!isDuplicate) {
           console.log('Adding to .properties');
-          this.selectedCol.properties[`property_${uniqueId}`] = newProperty;
+          this.selectedCol.properties[''] = newProperty;
           addedToSchema = true;
         } else {
           console.warn('Property already exists in .properties. Skipping.');
         }
       }
 
-      // Add to composite fields (allOf, anyOf, oneOf) if not duplicate
       ['allOf', 'anyOf', 'oneOf'].forEach((composite) => {
         if (
           this.selectedCol[composite] &&
@@ -1465,17 +1481,16 @@ export class SchemasComponent implements OnInit, OnDestroy {
           );
 
           if (!isDuplicate) {
-            console.log(`Adding to ${composite}`);
             this.selectedCol[composite].push(newProperty);
             addedToSchema = true;
             isComposite = true;
+            this.fetchModelDetails();
           } else {
             console.warn(`Property already exists in ${composite}. Skipping.`);
           }
         }
       });
 
-      // Add to .items if not duplicate
       if (this.selectedCol.items) {
         const items = Array.isArray(this.selectedCol.items)
           ? this.selectedCol.items
@@ -1501,7 +1516,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Add to .additionalProperties if not duplicate
       if (this.selectedCol.additionalProperties) {
         const isDuplicate =
           this.selectedCol.additionalProperties[`x-${this.nameOfId}`]?.id ===
@@ -1531,8 +1545,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
 
     if (addedToSchema) {
-      console.log('New property added to the schema.');
+      this.updateSwaggerSpec();
     } else {
+      //TODO: Add toast
       console.warn('No new property added. It already exists in the schema.');
     }
 
@@ -1542,7 +1557,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
           data: {
             name: 'string',
             description: '',
-            type: '',
+            type: 'string',
             showAddButton: false,
             showReferenceButton: false,
             uniqueId: uniqueId,
@@ -1565,7 +1580,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
         };
 
     const parentNode = this.findParentNode(this.jsonTree, rowData.uniqueId);
-    console.log('parentNode', parentNode);
 
     if (parentNode) {
       if (!parentNode.children) {
@@ -1574,16 +1588,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
       const nodeAlreadyExists = parentNode.children.some(
         (child) =>
-          child.data.uniqueId === newSchemaNode.data.uniqueId || // Check for uniqueId match
-          child.data.name === newSchemaNode.data.name // Check for name match
+          child.data.uniqueId === newSchemaNode.data.uniqueId ||
+          child.data.name === newSchemaNode.data.name
       );
 
       if (!nodeAlreadyExists) {
         parentNode.children.push(newSchemaNode);
         console.log('New schema node added to parent.');
-        this.focusNewSchemaInput = true;
-      } else {
-        console.warn('Node already exists in parent. Skipping addition.');
       }
     } else {
       console.warn('Parent node not found. Adding to root level.');
@@ -1591,13 +1602,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const nodeAlreadyExistsAtRoot = this.jsonTree.some(
         (node) =>
           node.data.uniqueId === newSchemaNode.data.uniqueId ||
-          node.data.name === newSchemaNode.data.name // Check for name match
+          node.data.name === newSchemaNode.data.name
       );
 
       if (!nodeAlreadyExistsAtRoot) {
         this.jsonTree.push(newSchemaNode);
         console.log('New schema node added to root level.');
-        this.focusNewSchemaInput = true;
       } else {
         console.warn(
           'Node already exists at the root level. Skipping addition.'
@@ -1606,28 +1616,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
 
     this.jsonTree = [...this.jsonTree];
-
-    setTimeout(() => {
-      const lastTreeTableCellEditors = document.querySelectorAll(
-        'p-treeTableCellEditor'
-      );
-
-      if (lastTreeTableCellEditors.length > 0) {
-        const lastCell = lastTreeTableCellEditors[
-          lastTreeTableCellEditors.length - 1
-        ] as HTMLElement;
-        lastCell.click();
-        setTimeout(() => {
-          if (this.newSchemaInput) {
-            this.newSchemaInput.nativeElement.focus();
-          }
-        }, 0);
-      }
-
-      this.focusNewSchemaInput = false;
-    }, 0);
-
-    this.updateSwaggerSpec();
   }
 
   findParentNode(tree: TreeNode[], uniqueId: string): TreeNode | null {
@@ -1647,25 +1635,22 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   updateSwaggerSpec(): void {
     if (this.selectedSchemaName && this.selectedSchema) {
-      console.log(
-        `Updating Swagger spec for schema: ${this.selectedSchemaName}`
-      );
+      const swaggerSpec = this.apiDataService.getSelectedSwaggerSpecValue();
+      if (swaggerSpec && swaggerSpec.components.schemas) {
+        swaggerSpec.components.schemas[this.selectedSchemaName] =
+          this.selectedSchema;
 
-      this.apiDataService.getSwaggerSpec().subscribe(
-        (swaggerSpec: any) => {
-          if (swaggerSpec && swaggerSpec.components.schemas) {
-            swaggerSpec.components.schemas[this.selectedSchemaName] =
-              this.selectedSchema;
+        this.apiDataService.updateSwaggerSpec(
+          swaggerSpec.info.title,
+          swaggerSpec
+        );
 
-            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
-            console.log(swaggerSpec);
-            console.log('Swagger spec updated successfully.');
-          }
-        },
-        (error: any) => {
-          console.error('Error fetching Swagger spec:', error);
-        }
-      );
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+      } else {
+        console.error(
+          'Error: Could not fetch the Swagger spec or schema components.'
+        );
+      }
     } else {
       console.warn('No selected schema or schema name to update.');
     }
@@ -1839,49 +1824,227 @@ export class SchemasComponent implements OnInit, OnDestroy {
       ?.details;
   }
 
-  onInfoClick() {
-    console.log('Info button clicked');
-    // Add your logic here
+  onInfoClick(rowData: any): void {
+    if (!this.selectedSchema || !rowData || !rowData.uniqueId) {
+      console.warn(
+        'No schema or invalid row data provided for required toggle.'
+      );
+      return;
+    }
+
+    const toggleRequiredByUniqueId = (
+      schema: any,
+      uniqueId: string,
+      fieldName: string
+    ): boolean => {
+      if (!schema || typeof schema !== 'object') return false;
+
+      if (schema.properties) {
+        for (const key in schema.properties) {
+          if (schema.properties[key][`x-${this.nameOfId}`]?.id === uniqueId) {
+            if (!schema.required) {
+              schema.required = [];
+            }
+
+            const isRequired = schema.required.includes(fieldName);
+
+            if (isRequired) {
+              schema.required = schema.required.filter(
+                (field: string) => field !== fieldName
+              );
+            } else {
+              schema.required.push(fieldName);
+            }
+
+            return true;
+          }
+
+          if (
+            toggleRequiredByUniqueId(
+              schema.properties[key],
+              uniqueId,
+              fieldName
+            )
+          ) {
+            return true;
+          }
+        }
+      }
+
+      ['allOf', 'oneOf', 'anyOf'].forEach((compositeKey) => {
+        if (schema[compositeKey] && Array.isArray(schema[compositeKey])) {
+          schema[compositeKey].forEach((subSchema: any) =>
+            toggleRequiredByUniqueId(subSchema, uniqueId, fieldName)
+          );
+        }
+      });
+
+      if (schema.additionalProperties) {
+        toggleRequiredByUniqueId(
+          schema.additionalProperties,
+          uniqueId,
+          fieldName
+        );
+      }
+
+      if (schema.items) {
+        if (Array.isArray(schema.items)) {
+          schema.items.forEach((item: any) =>
+            toggleRequiredByUniqueId(item, uniqueId, fieldName)
+          );
+        } else {
+          toggleRequiredByUniqueId(schema.items, uniqueId, fieldName);
+        }
+      }
+
+      return false;
+    };
+
+    const fieldName = rowData.name;
+    const isUpdated = toggleRequiredByUniqueId(
+      this.selectedSchema,
+      rowData.uniqueId,
+      fieldName
+    );
+
+    if (isUpdated) {
+      console.log(
+        `Field with uniqueId '${rowData.uniqueId}' updated in required.`
+      );
+      this.updateSwaggerSpec();
+      console.log('Updated schema required:', this.selectedSchema.required);
+    }
   }
 
-  onBookClick() {
-    console.log('Book button clicked');
-    // Add your logic here
+  onBookClick(event: Event, rowData: any) {
+    console.log('Book button clicked', rowData);
+    this.selectedRowData = rowData;
+    this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
+    this.childComponentOverlayTextarea?.toggleOverlay(
+      event,
+      this.selectedRowData,
+      this.selectedCol
+    );
   }
 
-  onDeleteClick() {
-    console.log('Delete button clicked');
-    // Add your logic here
-  }
+  onDeleteClick(rowData: any): void {
+    if (!this.selectedSchema || !rowData || !rowData.uniqueId) {
+      console.warn('No schema or invalid row data provided for deletion.');
+      return;
+    }
 
-  onRowUpdated(updatedRowData: any) {
-    console.log('Updated Row Data:', updatedRowData);
-    // Here, you can apply any additional logic or state updates as needed
-    // If you need to force a UI update, you can update your component's data binding here
+    const deleteFieldByUniqueId = (schema: any, uniqueId: string): boolean => {
+      if (!schema || typeof schema !== 'object') return false;
+
+      if (schema.properties) {
+        for (const key in schema.properties) {
+          if (schema.properties[key][`x-${this.nameOfId}`]?.id === uniqueId) {
+            delete schema.properties[key];
+            return true;
+          } else if (deleteFieldByUniqueId(schema.properties[key], uniqueId)) {
+            return true;
+          }
+        }
+      }
+
+      ['allOf', 'oneOf', 'anyOf'].forEach((compositeKey) => {
+        if (schema[compositeKey] && Array.isArray(schema[compositeKey])) {
+          const beforeFilter = schema[compositeKey];
+          schema[compositeKey] = schema[compositeKey].filter(
+            (subSchema: any) => {
+              const shouldKeep =
+                subSchema[`x-${this.nameOfId}`]?.id !== uniqueId;
+              return shouldKeep;
+            }
+          );
+
+          const afterFilter = schema[compositeKey];
+
+          console.log(`Before filtering ${compositeKey}:`, beforeFilter);
+          console.log(`After filtering ${compositeKey}:`, afterFilter);
+
+          if (JSON.stringify(beforeFilter) !== JSON.stringify(afterFilter)) {
+            console.log(`Modification detected in ${compositeKey}.`);
+            return true;
+          } else {
+            schema[compositeKey].forEach((subSchema: any) => {
+              deleteFieldByUniqueId(subSchema, uniqueId);
+            });
+          }
+        }
+        return false;
+      });
+
+      if (schema.additionalProperties) {
+        if (
+          schema.additionalProperties[`x-${this.nameOfId}`]?.id === uniqueId
+        ) {
+          delete schema.additionalProperties;
+          return true;
+        } else if (
+          deleteFieldByUniqueId(schema.additionalProperties, uniqueId)
+        ) {
+          return true;
+        }
+      }
+
+      if (schema.items) {
+        if (Array.isArray(schema.items)) {
+          schema.items = schema.items.filter(
+            (item: any) => item[`x-${this.nameOfId}`]?.id !== uniqueId
+          );
+
+          schema.items.forEach((item: any) => {
+            deleteFieldByUniqueId(item, uniqueId);
+          });
+        } else if (schema.items[`x-${this.nameOfId}`]?.id === uniqueId) {
+          delete schema.items;
+          return true;
+        } else {
+          deleteFieldByUniqueId(schema.items, uniqueId);
+        }
+      }
+
+      return false;
+    };
+
+    deleteFieldByUniqueId(this.selectedSchema, rowData.uniqueId);
+
+    this.updateSwaggerSpec();
+    this.fetchModelDetails();
+
+    this.toastMessageService.add({
+      severity: 'info',
+      summary: 'Deleted',
+      detail: `Finished processing delete`,
+    });
   }
 
   fetchModelDetails(): void {
-    this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
-      next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
-        if (swaggerSpec?.components?.schemas) {
-          const schemas = swaggerSpec.components.schemas;
+    this.swaggerSubscription = this.apiDataService
+      .getSelectedSwaggerSpec()
+      .subscribe({
+        next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
+          if (swaggerSpec?.components?.schemas) {
+            const schemas = swaggerSpec.components.schemas;
 
-          this.apiSchemas = Object.keys(schemas).map((schemaName) => ({
-            name: schemaName,
-            details: schemas[schemaName],
-          }));
+            this.apiSchemas = Object.keys(schemas).map((schemaName) => ({
+              name: schemaName,
+              details: schemas[schemaName],
+            }));
 
-          if (this.schema) {
-            this.onSelectSchema(this.schema);
+            if (this.schema) {
+              this.onSelectSchema(this.schema);
+            }
+          } else {
+            //TODO: Add toast messege
+            console.warn('No schemas found in the Swagger spec.');
           }
-        } else {
-          console.log('No schemas found in the Swagger spec.');
-        }
-      },
-      error: (error) => {
-        console.error('Error fetching Swagger spec:', error);
-      },
-    });
+        },
+        error: (error) => {
+          console.error('Error fetching Swagger spec:', error);
+        },
+      });
 
     const schemaName = this.getSchemaName(this.selectedSchema);
 
@@ -1905,8 +2068,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
-
-    console.log(this.jsonTree);
+    console.log('jsonTree', this.jsonTree);
   }
 
   private initializeFormBasedOnSchema(
@@ -2035,25 +2197,29 @@ export class SchemasComponent implements OnInit, OnDestroy {
       const newSchemaName = this.selectedSchemaTitle.trim();
 
       if (newSchemaName && newSchemaName !== oldSchemaName) {
-        this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
-          if (swaggerSpec?.components?.schemas) {
-            swaggerSpec.components.schemas[newSchemaName] =
-              swaggerSpec.components.schemas[oldSchemaName];
-            delete swaggerSpec.components.schemas[oldSchemaName];
+        this.apiDataService
+          .getSelectedSwaggerSpec()
+          .subscribe((swaggerSpec: any) => {
+            if (swaggerSpec?.components?.schemas) {
+              swaggerSpec.components.schemas[newSchemaName] =
+                swaggerSpec.components.schemas[oldSchemaName];
+              delete swaggerSpec.components.schemas[oldSchemaName];
 
-            swaggerSpec.components.schemas[newSchemaName].title = newSchemaName;
+              swaggerSpec.components.schemas[newSchemaName].title =
+                newSchemaName;
 
-            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+              this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-            this.selectedSchemaName = newSchemaName;
-            this.selectedSchema = swaggerSpec.components.schemas[newSchemaName];
-            console.log('Schema name updated:', newSchemaName);
+              this.selectedSchemaName = newSchemaName;
+              this.selectedSchema =
+                swaggerSpec.components.schemas[newSchemaName];
+              console.log('Schema name updated:', newSchemaName);
 
-            this.router.navigate(['/schemas', newSchemaName]);
-          } else {
-            console.error('No schemas found in Swagger spec.');
-          }
-        });
+              this.router.navigate(['/schemas', newSchemaName]);
+            } else {
+              console.error('No schemas found in Swagger spec.');
+            }
+          });
       }
     }
   }
@@ -2078,7 +2244,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   onUpdateSchema(): void {
     this.apiDataService
-      .getSwaggerSpec()
+      .getSelectedSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (
           swaggerSpec &&
@@ -2124,7 +2290,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
             );
 
             this.apiDataService
-              .getSwaggerSpec()
+              .getSelectedSwaggerSpec()
               .subscribe((updatedSpec: ExtendedSwaggerSpec | null) => {
                 if (updatedSpec) {
                   this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
@@ -2142,6 +2308,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   isSpecialType(type: string | string[] | { type: string }[]): boolean {
     const specialTypes = [
       'allOf',
+      'anyOf',
+      'oneOf',
       'enum',
       'object',
       'array',
@@ -2185,15 +2353,33 @@ export class SchemasComponent implements OnInit, OnDestroy {
       return typeStr.replace(/ or null$/, '').trim();
     };
 
-    const cleanString = (typeStr: string): string => {
-      return typeStr.replace(/\{.*\}$/, '').trim();
+    const isObjectWithNumber = (typeStr: string): boolean => {
+      const match = typeStr.match(/^(object|allOf|anyOf|oneOf)\s*\{\d+\}$/);
+      return match !== null;
+    };
+
+    const validateDictionaryType = (typeStr: string): boolean => {
+      const match = typeStr.match(/^dictionary\[(.+), (.+)\]$/);
+      if (match) {
+        const keyType = match[1].trim();
+        const valueType = match[2].trim();
+        return (
+          keyType === 'string' &&
+          (specialTypes.includes(cleanType(valueType)) ||
+            stringFormats.includes(cleanType(valueType)) ||
+            numberFormats.includes(cleanType(valueType)) ||
+            intFormats.includes(cleanType(valueType)) ||
+            validateGenericType(valueType))
+        );
+      }
+      return false;
     };
 
     const validateGenericType = (typeStr: string): boolean => {
       const match = typeStr.match(/^(\w+)<(.+)>$/);
       if (match) {
-        const baseType = match[1]; // e.g., "string" in "string<email>"
-        const formatType = match[2]; // e.g., "email" in "string<email>"
+        const baseType = match[1];
+        const formatType = match[2];
         return (
           specialTypes.includes(cleanType(baseType)) &&
           (stringFormats.includes(cleanType(formatType)) ||
@@ -2209,22 +2395,32 @@ export class SchemasComponent implements OnInit, OnDestroy {
         return true;
       }
 
+      if (typeStr === 'array[]') {
+        return true;
+      }
+
       const match = typeStr.match(/^array\[(.+)\]$/);
       if (match) {
-        const innerType = match[1];
-        // Use getSchemaByRef to validate if the reference exists
-        const isReferenceValid = !!this.getSchemaByRef(
-          `#/components/schemas/${innerType}`
-        );
+        const innerType = match[1].trim();
+
+        if (innerType.startsWith('array')) {
+          return validateArrayType(innerType);
+        }
+
+        const isReferenceValid = this.getSchemaByRef
+          ? !!this.getSchemaByRef(`#/components/schemas/${innerType}`)
+          : false;
+
         return (
-          specialTypes.includes(cleanType(innerType)) || // Validate known special types
-          isReferenceValid || // Validate if it's a valid schema reference
+          specialTypes.includes(cleanType(innerType)) ||
+          isReferenceValid ||
           stringFormats.includes(cleanType(innerType)) ||
           numberFormats.includes(cleanType(innerType)) ||
           intFormats.includes(cleanType(innerType)) ||
           validateGenericType(innerType)
         );
       }
+
       return false;
     };
 
@@ -2242,16 +2438,25 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     if (typeof type === 'string') {
-      const cleanedType = cleanString(type);
+      const cleanedType = type.trim();
+
+      if (isObjectWithNumber(cleanedType)) {
+        return true;
+      }
+
       if (cleanedType === 'array') {
         return true;
       }
       if (cleanedType.startsWith('array')) {
         return validateArrayType(cleanedType);
       }
+      if (cleanedType.startsWith('dictionary')) {
+        return validateDictionaryType(cleanedType);
+      }
       if (cleanedType.includes(' or ')) {
         return validateUnionTypes(cleanedType);
       }
+
       return (
         specialTypes.includes(cleanType(cleanedType)) ||
         stringFormats.includes(cleanType(cleanedType)) ||
@@ -2262,20 +2467,9 @@ export class SchemasComponent implements OnInit, OnDestroy {
     }
 
     if (Array.isArray(type)) {
-      return type.every((t) => {
-        if (typeof t === 'string') {
-          return (
-            specialTypes.includes(cleanType(t)) ||
-            stringFormats.includes(cleanType(t)) ||
-            numberFormats.includes(cleanType(t)) ||
-            intFormats.includes(cleanType(t)) ||
-            validateGenericType(t)
-          );
-        } else if (typeof t === 'object' && 'type' in t) {
-          return specialTypes.includes(cleanType(t.type));
-        }
-        return false;
-      });
+      return type.every((t) =>
+        this.isSpecialType(typeof t === 'string' ? t : t.type)
+      );
     }
 
     return false;

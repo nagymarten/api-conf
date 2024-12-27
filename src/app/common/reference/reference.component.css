@@ -1,0 +1,17 @@
+.reference-container {
+    padding: 1rem;
+    font-family: Arial, sans-serif;
+}
+
+.swagger-switcher {
+    margin-bottom: 1rem;
+}
+
+.swagger-content {
+    background-color: #f9f9f9;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}

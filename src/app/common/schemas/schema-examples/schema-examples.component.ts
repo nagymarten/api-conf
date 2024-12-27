@@ -23,7 +23,7 @@ import { RippleModule } from 'primeng/ripple';
   ],
   templateUrl: './schema-examples.component.html',
   styleUrls: ['./schema-examples.component.css'],
-  providers: [MessageService],  
+  providers: [MessageService],
 })
 export class SchemaExamplesComponent implements OnInit {
   @Input() selectedSchema: any;
@@ -36,14 +36,13 @@ export class SchemaExamplesComponent implements OnInit {
 
   constructor(
     private clipboard: Clipboard,
-    private toastMessageService: MessageService
+    private toastMessageService: MessageService,
   ) {}
 
   ngOnInit(): void {
     this.initializeExamples();
   }
 
-  // Method to generate an example based on the schema structure
   generateExampleFromSchema(schema: any): any {
     if (!schema || typeof schema !== 'object') return null;
 
@@ -57,6 +56,12 @@ export class SchemaExamplesComponent implements OnInit {
       case 'boolean':
         return schema.example || schema.default || true;
       case 'array':
+        if (schema.items) {
+          return [this.generateExampleFromSchema(schema.items)];
+        }
+        return [];
+      //TODO: Make it right
+      case 'dictonary':
         if (schema.items) {
           return [this.generateExampleFromSchema(schema.items)];
         }
@@ -81,7 +86,6 @@ export class SchemaExamplesComponent implements OnInit {
   }
 
   initializeExamples(): void {
-    // Check if examples are present in the schema; if not, generate a default example
     if (
       !this.selectedSchema?.examples ||
       this.selectedSchema.examples.length === 0
@@ -152,17 +156,25 @@ export class SchemaExamplesComponent implements OnInit {
   }
 
   deleteExample(): void {
-    if (this.selectedSchema.examples.length > 1) {
+    if (this.selectedSchema.examples.length > 0) {
       this.selectedSchema.examples.splice(this.currentIndex, 1);
-      this.initializeExamples();
-      this.currentIndex = Math.min(
-        this.currentIndex,
-        this.selectedSchema.examples.length - 1
-      );
-      this.activeItem = this.responseExamples[this.currentIndex];
-      this.setExampleValue(this.currentIndex);
+
+      if (this.selectedSchema.examples.length === 0) {
+        this.responseExamples = [];
+        this.examplesControl.setValue('');
+        this.activeItem = {} as MenuItem;
+        this.currentIndex = -1;
+      } else {
+        this.initializeExamples();
+        this.currentIndex = Math.min(
+          this.currentIndex,
+          this.selectedSchema.examples.length - 1
+        );
+        this.activeItem = this.responseExamples[this.currentIndex];
+        this.setExampleValue(this.currentIndex);
+      }
     } else {
-      console.warn('At least one example must remain.');
+      console.warn('No examples to delete.');
     }
   }
 }

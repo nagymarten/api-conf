@@ -326,21 +326,17 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
   onSelectedMultipleTypesChange(
     selectedMultipleTypes: { name: string }[]
   ): void {
-    // Reset selectedMultipleTypes and multipleFormats
     this.selectedMultipleTypes = [];
     this.multipleFormats = [];
 
-    // Refill selectedMultipleTypes with the provided types
     selectedMultipleTypes.forEach((type) => {
       this.selectedMultipleTypes.push({ name: type.name.toLowerCase() });
     });
 
-    // Handle multiselect formats
     if (this.selectedMultipleTypes.length >= 2) {
       this.isMultiselectAndMoreThanOne = true;
       this.selectedType = undefined;
 
-      // Filter temporary menu based on selected types
       this.temporaryMultiSelectMenu = this.multiselectMenu.filter(
         (menuItem) =>
           menuItem.label !== 'Boolean' &&
@@ -351,7 +347,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           )
       );
 
-      // Add "Common" if not already present
       if (
         !this.temporaryMultiSelectMenu.some(
           (menuItem) => menuItem.label === 'Common'
@@ -360,7 +355,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         this.temporaryMultiSelectMenu.push({ label: 'Common' });
       }
 
-      // Add relevant formats to multipleFormats
       if (
         this.selectedMultipleTypes.some(
           (selectedType) => selectedType.name === 'integer'
@@ -385,11 +379,9 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         this.multipleFormats.push(...this.stringFormats);
       }
     } else if (this.selectedMultipleTypes.length === 1) {
-      // Handle single selected type
       this.isMultiselectAndMoreThanOne = false;
       this.selectedType = { name: this.selectedMultipleTypes[0].name };
     } else {
-      // Handle no selected types
       this.isMultiselectAndMoreThanOne = false;
       this.selectedType = undefined;
     }
@@ -434,8 +426,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       return schemaName || '';
     };
 
+    console.log('Selected column:', selectedCol);
+
     if (!selectedCol.$ref) {
       if (Array.isArray(selectedCol?.type)) {
+        console.log('Selected column type:', selectedCol.format);
         const filteredTypes = selectedCol.type.filter(
           (type: string | null) => type !== null && type !== 'null'
         );
@@ -520,6 +515,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           this.multipleOfMultiselect = selectedCol.multipleOf || null;
           this.exampleMultiselect = selectedCol.example || '';
           this.defaultMultiselect = selectedCol.default || '';
+          this.selectedMultipleFormat = { name: selectedCol.format || null };
         } else {
           const cleanedValue = cleanString(rowData.type);
           const rootType = extractRootType(cleanedValue);
@@ -527,14 +523,29 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
           this.selectedType = originalType;
           this.selectedRef = selectedCol;
         }
+      } else if (selectedCol.allOf || selectedCol.anyOf || selectedCol.oneOf) {
+        if (selectedCol.allOf) {
+          this.selectedType = { name: 'allOf' };
+        } else if (selectedCol.anyOf) {
+          this.selectedType = { name: 'anyOf' };
+        } else if (selectedCol.oneOf) {
+          this.selectedType = { name: 'oneOf' };
+        }
+      } else {
+        if (selectedCol.additionalProperties) {
+          this.selectedType = { name: 'dictionary' };
+        } else {
+          this.selectedType = { name: selectedCol.type.toLowerCase() };
+        }
       }
     } else {
       this.selectedRef = selectedCol;
       this.selectedType = { name: extractSchemaName(selectedCol.$ref) };
     }
 
-    // console.log('selected schema', selectedCol);
     // console.log('selected type', this.selectedType);
+    // console.log('Selected column in overlay:', selectedCol);
+    // console.log('Selected row in overlay:', rowData);
 
     if (selectedCol.properties) {
       this.minProperties = selectedCol.minProperties || null;
@@ -905,6 +916,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     } else if (isSpecialType) {
       this.activeItem = this.responseExamples[0];
       this.selectedType.name = selectedTypeName;
+      //TODO: handle subtypes
     } else if (isInReferences) {
       const matchedSchema = this.apiSchemas.find(
         (schema: any) => schema.name === selectedTypeName
@@ -1763,8 +1775,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     if (this.selectedRef && typeof this.selectedRef.$ref === 'string') {
       this.selectedRef.$ref = this.selectedRef.$ref.replace(
-        /#\/components\/schemas\/[^/]+/, // Match the old schema name in the $ref
-        `#/components/schemas/${this.selectedRefSchema}` // Replace with the new schema name
+        /#\/components\/schemas\/[^/]+/,
+        `#/components/schemas/${this.selectedRefSchema}`
       );
       console.log('Updated selectedRef.$ref:', this.selectedRef.$ref);
     } else {
@@ -1779,6 +1791,63 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
   onCombineTypeChange() {
     console.log('Selected combine type:', this.selectedCombineType);
+
+    if (this.selectedCombineType) {
+      this.selectedCol.combineType = this.selectedCombineType.name;
+
+      this.resetFieldsForCombineType(this.selectedCol, this.rowData);
+
+      console.log(
+        'Updated selectedCol after combine type change:',
+        this.selectedCol
+      );
+      console.log('Row data:', this.rowData);
+    } else {
+      console.warn('No combine type selected.');
+    }
+  }
+
+  resetFieldsForCombineType(selectedCol: any, rowData: any): void {
+    const combineKeys = ['allOf', 'anyOf', 'oneOf'];
+    combineKeys.forEach((key) => {
+      if (selectedCol[key]) {
+        console.log(`Deleting existing '${key}' from selectedCol`);
+        delete selectedCol[key];
+      }
+    });
+
+     if (selectedCol.type) {
+       console.log("Deleting 'type' from selectedCol");
+       delete selectedCol.type;
+     }
+     
+    const resetKeys = [
+      'combineType',
+      'properties',
+      'items',
+      'additionalProperties',
+      'description',
+    ];
+    resetKeys.forEach((key) => {
+      if (selectedCol[key]) {
+        console.log(`Resetting '${key}' in selectedCol`);
+        delete selectedCol[key];
+      }
+    });
+
+    if (this.selectedCombineType?.name === 'AND') {
+      console.log("Combine type is 'AND', initializing allOf");
+      selectedCol.allOf = [];
+      rowData.showAddButton = true;
+    } else if (this.selectedCombineType?.name === 'OR') {
+      console.log("Combine type is 'OR', initializing anyOf");
+      selectedCol.anyOf = [];
+      rowData.showAddButton = true;
+    } else if (this.selectedCombineType?.name === 'XOR') {
+      console.log("Combine type is 'XOR', initializing oneOf");
+      selectedCol.oneOf = [];
+      rowData.showAddButton = true;
+    }
   }
 
   updateRowData(selectedType: any) {
@@ -1913,7 +1982,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
 
     selectedCol.description = '';
 
-    // Initialize specific structures if missing
     if (selectedCol?.type === 'object' && !selectedCol.properties) {
       console.log("Type is 'object', adding '.properties'");
       selectedCol.properties = {};
@@ -1929,6 +1997,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       console.log("Type is 'dictionary', adding '.additionalProperties'");
       selectedCol.additionalProperties = {};
       rowData.showAddButton = true;
+      selectedCol.type = 'object';
     } else {
       console.log(
         `Type '${selectedCol?.type}' does not support adding children.`
@@ -1937,6 +2006,6 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     }
 
     console.log('Final selectedCol:', selectedCol);
-    console.log('Final rowData:', rowData);
+    // console.log('Final rowData:', rowData);
   }
 }

@@ -20,9 +20,15 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { FormsModule } from '@angular/forms';
+import { DividerModule } from 'primeng/divider';
+import { ToolbarModule } from 'primeng/toolbar';
+import { InputTextModule } from 'primeng/inputtext';
+import * as yaml from 'js-yaml';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { CheckboxModule } from 'primeng/checkbox';
 
 @Component({
   selector: 'app-sidebar',
@@ -42,6 +48,12 @@ import { FormsModule } from '@angular/forms';
     RouterModule,
     DialogModule,
     FormsModule,
+    DividerModule,
+    ToolbarModule,
+    InputTextModule,
+    ButtonModule,
+    RadioButtonModule,
+    CheckboxModule,
   ],
   providers: [MessageService],
 })
@@ -50,6 +62,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('contextHeaderMenu') contextHeaderMenu!: ContextMenu;
   @ViewChild('pathMethodContextMenu') pathMethodContextMenu!: ContextMenu;
   @ViewChild('inputRef') inputElement!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef;
 
   paths: { [key: string]: any } = {};
   models: any[] = [];
@@ -58,41 +71,211 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   editingPath: string | null = null;
   validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
   contextMenuItems: MenuItem[] = [];
-  topLevelContextMenuItems: MenuItem[] = [];
+  modelContextMenuItems: MenuItem[] = [];
+  topLevelPathContextMenuItems: MenuItem[] = [];
+  topLevelModelContextMenuItems: MenuItem[] = [];
+  topLevelReferenceContextMenuItems: MenuItem[] = [];
+  referenceContextMenuItems: MenuItem[] = [];
   selectedItem: any;
   pathEndpointItems: MenuItem[] = [];
   clickedType!: string;
   expandAllPaths = false;
   private currentMenu: ContextMenu | null = null;
-  visible: boolean = false;
+  visibleAddPath: boolean = false;
+  visibleAddModel: boolean = false;
   newPathName: string = '';
+  newModelName: string = '';
   renameEndpointDialogVisible: boolean = false;
   newMethodKey: string = '';
   selectedPath: any = null;
   selectedMethod: any = null;
+  searchQuery: string = '';
+  swaggerKeys: string[] = [];
+  selectedSwaggerKey: string | null = null;
+  swaggerSpec: any = null;
+  isAddNewRefDialogVisible: boolean = false;
+  newOpenApiTitle: string = '';
+  selectedFileType: 'yaml' | 'json' = 'json';
+  selectedVersion: 'v3.1' | 'v3.0' | 'v2.0' = 'v3.1';
+  isExportDialogVisible: boolean = false;
+  selectedReference: 'bundled' = 'bundled';
+  includeExtensions: boolean = true;
+  selectedFormat: 'json' | 'yaml' = 'json';
 
-  constructor(private apiDataService: ApiDataService) {}
+  constructor(private apiDataService: ApiDataService, private router: Router) {}
 
   ngOnInit(): void {
-    this.swaggerSubscription = this.apiDataService.getSwaggerSpec().subscribe({
-      next: (swaggerSpec) => {
-        if (swaggerSpec && swaggerSpec.paths) {
-          this.paths = this.getPaths(swaggerSpec);
-          this.models = this.getModels(swaggerSpec);
-        }
-      },
-      error: (error) => {
-        console.error('Error fetching Swagger spec:', error);
-      },
-    });
-
-    this.setupContextMenuItems();
+    this.initializeComponentState();
+    const savedKey = this.apiDataService.getSelectedSwaggerKey();
+    if (savedKey) {
+      this.selectedSwaggerKey = savedKey;
+      this.apiDataService.setSelectedSwaggerSpec(savedKey);
+    } else if (this.swaggerKeys.length > 0) {
+      this.selectedSwaggerKey = this.swaggerKeys[0];
+      this.apiDataService.setSelectedSwaggerSpec(this.selectedSwaggerKey);
+    }
   }
 
   ngAfterViewChecked(): void {
     if (this.editingPath && this.inputElement) {
       this.inputElement.nativeElement.focus();
     }
+  }
+
+  initializeComponentState(): void {
+    this.swaggerSubscription = this.apiDataService
+      .getSelectedSwaggerSpec()
+      .subscribe({
+        next: (swaggerSpec) => {
+          if (swaggerSpec && swaggerSpec.paths) {
+            this.paths = this.getPaths(swaggerSpec);
+            this.models = this.getModels(swaggerSpec);
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching Swagger spec:', error);
+        },
+      });
+
+    this.loadAvailableSwaggerSpecs();
+    this.setupContextMenuItems();
+  }
+
+  loadAvailableSwaggerSpecs(): void {
+    const allSpecs = this.apiDataService.getAllSwaggerSpecs();
+    this.swaggerKeys = Object.keys(allSpecs);
+
+    if (this.swaggerKeys.length > 0) {
+      this.selectedSwaggerKey = this.swaggerKeys[0];
+      this.loadSwaggerSpec();
+    }
+  }
+
+  onSwaggerKeyRightClick(event: MouseEvent, key: string): void {
+    event.preventDefault();
+    console.log(`Right-clicked on Swagger Key: ${key}`);
+  }
+
+  openAddNewRefDialog(
+    fileType: 'yaml' | 'json',
+    version: 'v3.1' | 'v3.0' | 'v2.0'
+  ): void {
+    this.isAddNewRefDialogVisible = true;
+    this.newOpenApiTitle = '';
+    this.selectedFileType = fileType;
+    this.selectedVersion = version;
+  }
+
+  confirmCreateNewOpenApi(): void {
+    //TODO: toast messeges
+    if (!this.newOpenApiTitle.trim()) {
+      console.warn('Title is required!');
+      return;
+    }
+
+    if (this.isTitleExisting(this.newOpenApiTitle.trim())) {
+      console.warn('A reference with this title already exists!');
+      return;
+    }
+
+    console.log('confirmCreateNewOpenApi');
+    console.log(this.newOpenApiTitle);
+    this.createNewOpenApi( this.selectedVersion);
+    this.isAddNewRefDialogVisible = false;
+  }
+
+  isTitleExisting(title: string): boolean {
+    const allSpecs = this.apiDataService.getAllSwaggerSpecs();
+    return Object.keys(allSpecs).some(
+      (key) => key.toLowerCase() === title.toLowerCase()
+    );
+  }
+
+  onReferenceRightClick(event: MouseEvent, key: string): void {
+    event.preventDefault();
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+
+    this.currentMenu = this.contextMenu;
+    this.selectedItem = key;
+    this.referenceContextMenuItems = [
+      {
+        label: 'Export',
+        icon: 'pi pi-download',
+        command: () => this.exportReference(),
+      },
+      {
+        label: 'Copy Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyPath(),
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyRelativePath(),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Rename',
+        icon: 'pi pi-pencil',
+        command: () => this.renameReference(),
+      },
+      {
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.deleteReference(key),
+      },
+      {
+        label: 'Duplicate',
+        icon: 'pi pi-clone',
+        command: () => this.duplicateReference(),
+      },
+    ];
+    this.contextMenu.model = [...this.referenceContextMenuItems];
+    this.contextMenu.show(event);
+  }
+  duplicateReference(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  onReferenceSelect(key: string): void {
+    this.selectedSwaggerKey = key;
+    this.apiDataService.setSelectedSwaggerSpec(key);
+    this.router.navigate(['/reference', key]);
+  }
+
+  onReferenceRightClickHeader(event: MouseEvent): void {
+    event.preventDefault();
+
+    if (this.currentMenu) {
+      this.currentMenu.hide();
+      this.currentMenu = null;
+    }
+
+    this.currentMenu = this.contextHeaderMenu;
+
+    this.contextHeaderMenu.model = [...this.topLevelReferenceContextMenuItems];
+
+    this.contextHeaderMenu.show(event);
+  }
+
+  loadSwaggerSpec(): void {
+    if (this.selectedSwaggerKey) {
+      this.swaggerSpec = this.apiDataService.getSwaggerSpecByKey(
+        this.selectedSwaggerKey
+      );
+    }
+  }
+
+  switchSwaggerReference(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    this.selectedSwaggerKey = selectElement.value;
+    this.loadSwaggerSpec();
   }
 
   @HostListener('document:click', ['$event'])
@@ -129,15 +312,13 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private setupContextMenuItems(): void {
-    this.contextMenuItems = [
+    this.modelContextMenuItems = [
       {
-        originalLabel: 'Copy Path',
         label: 'Copy Path',
         icon: 'pi pi-copy',
         command: () => this.copyPath(),
       },
       {
-        originalLabel: 'Copy Relative Path',
         label: 'Copy Relative Path',
         icon: 'pi pi-copy',
         command: () => this.copyRelativePath(),
@@ -146,57 +327,599 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         separator: true,
       },
       {
-        originalLabel: 'Rename {type}',
-        label: 'Rename {type}',
+        label: 'Rename Model',
         icon: 'pi pi-pencil',
-        // command: () => this.renameEndpoint(),
+        command: () => this.renameModel(),
       },
       {
-        originalLabel: 'Delete {type}',
-        label: 'Delete {type}',
+        label: 'Delete Model',
         icon: 'pi pi-trash',
-        // command: () => this.deleteEndpoint(),
+        command: () => this.deleteModel(),
       },
     ];
 
-    this.topLevelContextMenuItems = [
+    this.topLevelPathContextMenuItems = [
       {
-        originalLabel: 'New {type}',
-        label: 'New {type}',
+        label: 'New Path',
         icon: 'pi pi-plus',
         command: () => this.createNewPath(),
-        //TODO: do it for method
       },
       {
         separator: true,
       },
       {
-        originalLabel: 'Copy Path',
         label: 'Copy Path',
         icon: 'pi pi-copy',
         command: () => this.copyPath(),
       },
       {
-        originalLabel: 'Copy Relative Path',
         label: 'Copy Relative Path',
         icon: 'pi pi-copy',
         command: () => this.copyRelativePath(),
       },
     ];
+
+    this.topLevelModelContextMenuItems = [
+      {
+        label: 'New Model',
+        icon: 'pi pi-plus',
+        command: () => this.createNewModel(),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Copy Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyPath(),
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyRelativePath(),
+      },
+    ];
+
+    this.topLevelReferenceContextMenuItems = [
+      {
+        label: 'New OpenAPI',
+        icon: 'pi pi-plus',
+        items: [
+          {
+            label: 'YAML',
+            items: [
+              {
+                label: 'v3.1',
+                command: () => this.openAddNewRefDialog('yaml', 'v3.1'),
+              },
+              {
+                label: 'v3.0',
+                command: () => this.openAddNewRefDialog('yaml', 'v3.0'),
+              },
+              {
+                label: 'v2.0',
+                command: () => this.openAddNewRefDialog('yaml', 'v2.0'),
+              },
+            ],
+          },
+          {
+            label: 'JSON',
+            items: [
+              {
+                label: 'v3.1',
+                command: () => this.openAddNewRefDialog('json', 'v3.1'),
+              },
+              {
+                label: 'v3.0',
+                command: () => this.openAddNewRefDialog('json', 'v3.0'),
+              },
+              {
+                label: 'v2.0',
+                command: () => this.openAddNewRefDialog('json', 'v2.0'),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        label: 'New Model',
+        icon: 'pi pi-plus',
+        items: [
+          {
+            label: 'JSON Schema (YAML)',
+            icon: 'pi pi-file',
+            command: () => this.createNewRefModel('yaml'),
+          },
+          {
+            label: 'JSON Schema (JSON)',
+            icon: 'pi pi-file',
+            command: () => this.createNewRefModel('json'),
+          },
+        ],
+      },
+      {
+        label: 'Import',
+        icon: 'pi pi-download',
+        items: [
+          {
+            label: 'YAML',
+            icon: 'pi pi-file',
+            command: () => this.triggerFileUpload('yaml'),
+          },
+          {
+            label: 'JSON',
+            icon: 'pi pi-file',
+            command: () => this.triggerFileUpload('json'),
+          },
+          // {
+          //   label: 'Postman Collection',
+          //   icon: 'pi pi-file',
+          //   command: () => this.importPostmanCollection(),
+          // },
+        ],
+      },
+
+      {
+        separator: true,
+      },
+      {
+        label: 'Copy Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyPath(),
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: 'pi pi-copy',
+        command: () => this.copyRelativePath(),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Rename',
+        icon: 'pi pi-pencil',
+        command: () => this.renameItem(),
+      },
+      {
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.selectedItem(),
+      },
+    ];
+  }
+
+  deleteReference(key: string): void {
+    try {
+      const allSpecs = this.apiDataService.getAllSwaggerSpecs();
+
+      if (allSpecs[key]) {
+        delete allSpecs[key];
+
+        localStorage.setItem('swaggerSpecs', JSON.stringify(allSpecs));
+
+        this.initializeComponentState();
+      } else {
+        console.warn(`Swagger spec with key "${key}" does not exist.`);
+      }
+    } catch (error) {
+      console.error(`Error deleting Swagger spec with key "${key}":`, error);
+    }
+  }
+
+  renameReference(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  exportReference(): void {
+    this.isExportDialogVisible = true;
+  }
+
+  exportFile(): void {
+    this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
+      if (swaggerSpec) {
+        let fileContent: string;
+        let fileType: string;
+        let fileExtension: string;
+
+        if (this.selectedFormat === 'json') {
+          fileContent = JSON.stringify(swaggerSpec, null, 2);
+          fileType = 'application/json';
+          fileExtension = 'json';
+        } else {
+          fileContent = yaml.dump(swaggerSpec);
+          fileType = 'text/yaml';
+          fileExtension = 'yaml';
+        }
+
+        const fileName = `${
+          swaggerSpec.info?.title || 'openapi'
+        }.${fileExtension}`;
+        this.downloadFile(fileContent, fileName, fileType);
+      } else {
+        console.error('No Swagger specification is currently selected.');
+      }
+
+      this.isExportDialogVisible = false;
+    });
+  }
+
+  copyToClipboard(): void {
+    this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
+      if (swaggerSpec) {
+        let contentToCopy: string;
+
+        if (this.selectedFormat === 'json') {
+          contentToCopy = JSON.stringify(swaggerSpec, null, 2);
+        } else {
+          contentToCopy = yaml.dump(swaggerSpec);
+        }
+
+        navigator.clipboard.writeText(contentToCopy).then(
+          () => {
+            console.log('Content copied to clipboard.');
+          },
+          (err) => {
+            console.error('Failed to copy content: ', err);
+          }
+        );
+      } else {
+        console.error('No Swagger specification is currently selected.');
+      }
+    });
+  }
+
+  private downloadFile(
+    content: string,
+    fileName: string,
+    fileType: string
+  ): void {
+    const blob = new Blob([content], { type: fileType });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+  }
+
+  importPostmanCollection(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  handleFileUpload(event: any, fileType?: string): void {
+    const files = event?.target?.files || [];
+    if (files.length > 0) {
+      (Array.from(files) as File[]).forEach((file: File) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const fileContent = reader.result as string;
+            let parsedContent;
+            let normalizedFileName = file.name.replace(
+              /\.(json|yaml|yml)$/i,
+              ''
+            );
+
+            if (
+              (!fileType || fileType === 'json') &&
+              file.name.endsWith('.json')
+            ) {
+              parsedContent = JSON.parse(fileContent);
+              console.log(`JSON file uploaded: ${normalizedFileName}`);
+            } else if (
+              (!fileType || fileType === 'yaml') &&
+              (file.name.endsWith('.yaml') || file.name.endsWith('.yml'))
+            ) {
+              parsedContent = yaml.load(fileContent);
+              console.log(`YAML file uploaded: ${normalizedFileName}`);
+            } else {
+              console.warn(`Unsupported file type: ${file.name}`);
+              return;
+            }
+
+            console.log('Parsed content:', parsedContent);
+
+            if (
+              !parsedContent ||
+              (!parsedContent.swagger && !parsedContent.openapi) ||
+              !parsedContent.info ||
+              !parsedContent.paths
+            ) {
+              throw new Error(
+                `Invalid Swagger/OpenAPI file: Missing required fields (swagger/openapi, info, paths) in ${file.name}.`
+              );
+            }
+
+            this.apiDataService.storeSwaggerSpec(
+              normalizedFileName,
+              parsedContent
+            );
+            this.initializeComponentState();
+          } catch (error) {
+            console.error(`Error processing file ${file.name}:`, error);
+          }
+        };
+
+        reader.readAsText(file);
+      });
+
+      event.target.value = '';
+    }
+  }
+
+  triggerFileUpload(fileType: string): void {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = fileType === 'yaml' ? '.yaml,.yml' : '.json';
+    fileInput.style.display = 'none';
+
+    fileInput.addEventListener('change', (event: any) =>
+      this.handleFileUpload(event, fileType)
+    );
+
+    fileInput.click();
+  }
+
+  createNewRefModel(_arg0: string): void {
+    throw new Error('Method not implemented.');
+  }
+  renameItem(): void {
+    throw new Error('Method not implemented.');
+  }
+  importModel(): void {
+    throw new Error('Method not implemented.');
+  }
+  createNewOpenApi(
+    version: 'v3.1' | 'v3.0' | 'v2.0'
+  ): void {
+    try {
+      let newSpec: any;
+
+      if (version === 'v3.1') {
+        newSpec = {
+          openapi: '3.1.0',
+          info: {
+            title: this.newOpenApiTitle,
+            version: '1.0',
+          },
+          servers: [
+            {
+              url: 'http://localhost:3000',
+            },
+          ],
+          paths: {
+            '/users/{userId}': {
+              parameters: [
+                {
+                  schema: {
+                    type: 'integer',
+                  },
+                  name: 'userId',
+                  in: 'path',
+                  required: true,
+                  description: 'Id of an existing user.',
+                },
+              ],
+              get: {
+                summary: 'Get User Info by User ID',
+                operationId: 'get-users-userId',
+                responses: {
+                  '200': {
+                    description: 'User Found',
+                    content: {
+                      'application/json': {
+                        schema: {
+                          $ref: '#/components/schemas/User',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          components: {
+            schemas: {
+              User: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  email: { type: 'string', format: 'email' },
+                },
+                required: ['id', 'firstName', 'lastName', 'email'],
+              },
+            },
+          },
+        };
+      } else if (version === 'v3.0') {
+        newSpec = {
+          openapi: '3.0.0',
+          info: {
+            title: this.newOpenApiTitle,
+            version: '1.0',
+          },
+          servers: [
+            {
+              url: 'http://localhost:3000',
+            },
+          ],
+          paths: {
+            '/users/{userId}': {
+              parameters: [
+                {
+                  schema: {
+                    type: 'integer',
+                  },
+                  name: 'userId',
+                  in: 'path',
+                  required: true,
+                  description: 'Id of an existing user.',
+                },
+              ],
+              get: {
+                summary: 'Get User Info by User ID',
+                operationId: 'get-users-userId',
+                responses: {
+                  '200': {
+                    description: 'User Found',
+                    content: {
+                      'application/json': {
+                        schema: {
+                          $ref: '#/components/schemas/User',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          components: {
+            schemas: {
+              User: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  email: { type: 'string', format: 'email' },
+                },
+                required: ['id', 'firstName', 'lastName', 'email'],
+              },
+            },
+          },
+        };
+      }
+
+      this.apiDataService.storeSwaggerSpec(this.newOpenApiTitle, newSpec);
+
+      console.log(`New OpenAPI specification stored: ${this.newOpenApiTitle}`);
+
+      this.initializeComponentState();
+    } catch (error) {
+      console.error('Error creating new OpenAPI/Swagger document:', error);
+    }
+  }
+
+  renameModel(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  deleteModel(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  filter(): void {
+    const query = this.searchQuery.toLowerCase().trim();
+
+    if (!query) {
+      this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
+        if (swaggerSpec && swaggerSpec.paths) {
+          this.paths = this.getPaths(swaggerSpec);
+          this.models = this.getModels(swaggerSpec);
+        }
+      });
+      return;
+    }
+
+    this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
+      if (swaggerSpec && swaggerSpec.paths) {
+        const originalPaths = this.getPaths(swaggerSpec);
+        const originalModels = this.getModels(swaggerSpec);
+
+        this.paths = Object.fromEntries(
+          Object.entries(originalPaths).filter(([pathKey, methods]) => {
+            return (
+              pathKey.toLowerCase().includes(query) ||
+              methods.some(
+                (method: any) =>
+                  method.summary && method.summary.toLowerCase().includes(query)
+              )
+            );
+          })
+        );
+
+        this.models = originalModels.filter((model: any) =>
+          model.name.toLowerCase().includes(query)
+        );
+      }
+    });
+  }
+
+  createNewModel(): void {
+    this.visibleAddModel = true;
+  }
+
+  saveNewModel(): void {
+    const newModelKey = this.newModelName.trim();
+
+    if (!newModelKey) {
+      console.warn('Model name cannot be empty.');
+      return;
+    }
+
+    if (!this.models) {
+      this.models = [];
+    }
+
+    const newModel = {
+      name: newModelKey,
+      title: this.newModelName,
+      type: 'object',
+      properties: {
+        exampleField: { type: 'string', example: 'Example value' },
+      },
+      required: ['exampleField'],
+      description: `Auto-generated model for ${newModelKey}`,
+    };
+
+    this.models.push(newModel);
+
+    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+      if (
+        swaggerSpec &&
+        swaggerSpec.components &&
+        swaggerSpec.components.schemas
+      ) {
+        swaggerSpec.components.schemas[newModelKey] = {
+          title: this.newModelName,
+          type: 'object',
+          properties: {
+            exampleField: { type: 'string', example: 'Example value' },
+          },
+          required: ['exampleField'],
+          description: ``,
+        };
+
+        this.apiDataService.setSchemes(
+          JSON.stringify(swaggerSpec.components.schemas, null, 2)
+        );
+        this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+        console.log('New model added to Swagger spec with title:', swaggerSpec);
+
+        this.models = [...this.models];
+        this.visibleAddModel = false;
+      }
+    });
+  }
+
+  saveAndNavigate(): void {
+    this.saveNewModel();
+
+    this.router.navigate(['/schemas', this.newModelName.trim()]);
+    this.newModelName = '';
   }
 
   addOperation(method: string, pathKey: string): void {
     console.log(`Adding ${method.toUpperCase()} operation to path: ${pathKey}`);
 
-    // Fetch the current Swagger spec
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
       if (swaggerSpec && swaggerSpec.paths) {
-        // Check if the path already exists in the Swagger spec
         if (!swaggerSpec.paths[pathKey]) {
           swaggerSpec.paths[pathKey] = {};
         }
 
-        // Check if the method already exists
         if (swaggerSpec.paths[pathKey][method]) {
           console.warn(
             `Method "${method}" already exists for path "${pathKey}"`
@@ -204,7 +927,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           return;
         }
 
-        // Add the new operation (method) to the path
         swaggerSpec.paths[pathKey][method] = {
           summary: `Default ${method.toUpperCase()} operation for ${pathKey}`,
           description: `This is an auto-generated ${method.toUpperCase()} operation.`,
@@ -296,7 +1018,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
           console.log('Updated Swagger spec with renamed path:', swaggerSpec);
 
-          this.paths = { ...this.paths }; // Force UI re-render
+          this.paths = { ...this.paths };
         } else {
           console.warn(
             `Original path "${originalKey}" does not exist in the Swagger spec.`
@@ -307,7 +1029,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       }
     });
 
-    this.editingPath = null; // Exit editing mode
+    this.editingPath = null;
   }
 
   deletePath(selectedPath: any): void {
@@ -368,7 +1090,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
         );
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-        this.paths = { ...this.paths }; 
+        this.paths = { ...this.paths };
       } else {
         console.error('Failed to fetch Swagger spec.');
       }
@@ -378,7 +1100,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   openRenameEndpointDialog(path: any, method: any): void {
     this.selectedPath = path;
     this.selectedMethod = method;
-    this.newMethodKey = ''; // Reset input field
+    this.newMethodKey = '';
     this.renameEndpointDialogVisible = true;
   }
 
@@ -447,11 +1169,11 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   showDialog() {
-    this.visible = true;
+    this.visibleAddPath = true;
   }
 
   createNewPath(): void {
-    this.visible = true; // Show the dialog
+    this.visibleAddPath = true;
   }
 
   saveNewPath(): void {
@@ -466,7 +1188,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.paths = {};
     }
 
-    // Add the new path with a default GET operation
     this.paths[newPathKey] = [
       {
         method: 'get',
@@ -490,7 +1211,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
     ];
 
-    // Save the new path to Swagger spec
     this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
       if (swaggerSpec && swaggerSpec.paths) {
         swaggerSpec.paths[newPathKey] = {
@@ -522,10 +1242,9 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
         console.log('New path added to Swagger spec:', swaggerSpec);
 
-        // Reset dialog state
         this.newPathName = '';
-        this.visible = false;
-        this.paths = { ...this.paths }; // Trigger UI update
+        this.visibleAddPath = false;
+        this.paths = { ...this.paths };
       }
     });
   }
@@ -585,8 +1304,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.currentMenu = this.contextHeaderMenu;
 
-    this.updateContextMenuLabels('Path');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
+    this.contextHeaderMenu.model = [...this.topLevelPathContextMenuItems];
 
     this.contextHeaderMenu.show(event);
   }
@@ -669,7 +1387,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       { separator: true },
       { label: 'Copy Path', command: () => this.copyPath() },
       {
-        label: 'Rename',
+        label: 'Rename Path',
         command: () => {
           this.editingPath = path.key;
           setTimeout(() => this.inputElement?.nativeElement?.focus(), 0);
@@ -690,8 +1408,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
 
     this.currentMenu = this.contextHeaderMenu;
-    this.updateContextMenuLabels('Model');
-    this.contextHeaderMenu.model = [...this.topLevelContextMenuItems];
+    this.contextHeaderMenu.model = [...this.topLevelModelContextMenuItems];
     this.contextHeaderMenu.show(event);
   }
 
@@ -705,24 +1422,8 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.currentMenu = this.contextMenu;
     this.selectedItem = model;
-    this.updateContextMenuLabels('Model');
-    this.contextMenu.model = [...this.contextMenuItems];
+    this.contextMenu.model = [...this.modelContextMenuItems];
     this.contextMenu.show(event);
-  }
-
-  private updateContextMenuLabels(type: string): void {
-    this.clickedType = type;
-    this.contextMenuItems = this.contextMenuItems.map((item) => ({
-      ...item,
-      label: item['originalLabel']?.replace(/\{type\}/g, type) || item.label,
-    }));
-
-    this.topLevelContextMenuItems = this.topLevelContextMenuItems.map(
-      (item) => ({
-        ...item,
-        label: item['originalLabel']?.replace(/\{type\}/g, type) || item.label,
-      })
-    );
   }
 
   ngOnDestroy(): void {

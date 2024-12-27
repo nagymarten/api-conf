@@ -1180,6 +1180,13 @@ export class SubSchemeTypeComponent implements OnInit {
         this.selectedCol.items = {
           type: selectedType.name,
         };
+        if(selectedType.name === 'array') {
+          this.selectedCol.items.items = {}
+        }else if(selectedType.name === 'object') {
+          this.selectedCol.items.properties = {}
+        }else if(selectedType.name === 'dictionary') {
+          this.selectedCol.items.additionalProperties = {}
+        }
       }
     } else if (this.selectedCol?.type === 'dictionary') {
       if (this.selectedCol.additionalProperties) {
@@ -1229,14 +1236,12 @@ export class SubSchemeTypeComponent implements OnInit {
   }
 
   resetFieldsForNewType(selectedCol: any, rowData: any) {
-    // Object
     this.minProperties = null;
     this.maxProperties = null;
     this.allowAdditionalProperties = false;
     this.deprecatedObject = false;
     this.isNullableObject = false;
 
-    // String
     this.selectedStringFormat = undefined;
     this.selectedStringBehavior = undefined;
     this.defaultString = '';
@@ -1247,7 +1252,6 @@ export class SubSchemeTypeComponent implements OnInit {
     this.isStringDeprecated = false;
     this.isNullableString = false;
 
-    // Integer
     this.selectedIntegerFormat = undefined;
     this.selectedIntegerBehavior = undefined;
     this.defaultInteger = '';
@@ -1260,7 +1264,6 @@ export class SubSchemeTypeComponent implements OnInit {
     this.deprecatedInteger = false;
     this.isNullableInteger = false;
 
-    // Number
     this.selectedNumberFormat = undefined;
     this.selectedNumberBehavior = undefined;
     this.defaultNumber = '';
@@ -1273,13 +1276,11 @@ export class SubSchemeTypeComponent implements OnInit {
     this.deprecatedNumber = false;
     this.isNullableNumber = false;
 
-    // Boolean
     this.selectedBooleanBehavior = undefined;
     this.defaultBoolean = undefined;
     this.deprecatedBoolean = false;
     this.isNullableBoolean = false;
 
-    // Enum
     this.selectedEnumBehavior = undefined;
     this.deprecatedEnum = false;
     this.enumDefault = null;
@@ -1288,7 +1289,6 @@ export class SubSchemeTypeComponent implements OnInit {
     this.enumValues = [];
     this.showEnumInput = false;
 
-    // Array
     this.selectedArrayBehavior = undefined;
     this.minArrayItems = null;
     this.maxArrayItems = null;
@@ -1297,20 +1297,17 @@ export class SubSchemeTypeComponent implements OnInit {
     this.arrayItemsSub = null;
     this.isNullableArray = false;
 
-    // Dictionary
     this.selectedDictionaryBehavior = undefined;
     this.minDictionaryProperties = null;
     this.maxDictionaryProperties = null;
     this.deprecatedDictionary = false;
     this.additionalPropertiesDisc = null;
 
-    // Common
     this.minItems = null;
     this.maxItems = null;
     this.uniqueItems = false;
     this.selectedCol.format = undefined;
 
-    // Remove unwanted properties from selectedCol
     ['properties', 'additionalProperties', 'items'].forEach((key) => {
       if (selectedCol && selectedCol[key]) {
         console.log(`Deleting '${key}' from selectedCol`);

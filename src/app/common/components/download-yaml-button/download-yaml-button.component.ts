@@ -14,7 +14,7 @@ export class DownloadYamlButtonComponent {
   constructor(private apiDataService: ApiDataService) {}
 
   onDownloadYaml(): void {
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+    this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
       if (swaggerSpec) {
         const yamlContent = yaml.dump(swaggerSpec);
 
@@ -30,6 +30,21 @@ export class DownloadYamlButtonComponent {
       }
     });
   }
+  // onDownloadJSON(): void {
+  //   this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
+  //     if (swaggerSpec) {
+  //       const jsonContent = JSON.stringify(swaggerSpec, null, 2);
+  //       const currentDate = this.getFormattedDate();
+  //       this.downloadFile(
+  //         jsonContent,
+  //         `openapi_${currentDate}.json`,
+  //         'application/json'
+  //       );
+  //     } else {
+  //       console.error('Swagger spec is null or undefined.');
+  //     }
+  //   });
+  // }
 
   private getFormattedDate(): string {
     const date = new Date();

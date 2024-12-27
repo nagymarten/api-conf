@@ -14,45 +14,114 @@ export class ApiDataService {
   swaggerSpec$: Observable<ExtendedSwaggerSpec | null> =
     this.swaggerSpecSubject.asObservable();
 
+  private swaggerSpecs: { [key: string]: any } = {};
+  private selectedSwaggerSpecSubject = new BehaviorSubject<any | null>(null);
+
+  selectedSwaggerSpec$ = this.selectedSwaggerSpecSubject.asObservable();
+
+  private selectedSwaggerKey: string | null =
+    localStorage.getItem('selectedSwaggerKey') || null;
+
   private openApiVersion: string = '';
   private version: string = '';
   private title: string = '';
   private schemes: string = '';
   private paths: string = '';
   private security: string = '';
-  // private servers: string = '';
   private responses: string = '';
 
-  constructor() {}
+  constructor() {
+    this.swaggerSpecs = this.getAllSwaggerSpecs();
+    if (this.selectedSwaggerKey) {
+      this.setSelectedSwaggerSpec(this.selectedSwaggerKey);
+    }
+  }
 
-  parseSwaggerFile(file: File): void {
-    const reader = new FileReader();
+  getSelectedSwaggerKey(): string | null {
+    return this.selectedSwaggerKey;
+  }
 
-    reader.onload = (event: any) => {
-      const fileContent = event.target.result;
-
-      if (fileContent) {
-        try {
-          const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
-          this.swaggerSpecSubject.next(swaggerSpec);
-          this.setApiData(swaggerSpec);
-          this.saveSwaggerSpecToStorage(swaggerSpec);
-        } catch (error) {
-          console.error('Error parsing the file as YAML:', error);
-          this.swaggerSpecSubject.error(error);
-        }
-      } else {
-        console.error('File content is null or empty');
-        this.swaggerSpecSubject.error('File content is null or empty');
+  logSwaggerSpecFromStorage(): void {
+    const swaggerSpecString = localStorage.getItem('swaggerSpec');
+    if (swaggerSpecString) {
+      try {
+        const swaggerSpec = JSON.parse(swaggerSpecString);
+        console.log('Swagger Spec in Memory:', swaggerSpec);
+      } catch (error) {
+        console.error('Error parsing stored Swagger spec:', error);
       }
-    };
+    } else {
+      console.warn('No Swagger Spec found in memory.');
+    }
+  }
 
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-      this.swaggerSpecSubject.error(error);
-    };
+  setSwaggerSpec(swaggerSpec: any): void {
+    this.swaggerSpecSubject.next(swaggerSpec);
+  }
 
-    reader.readAsText(file);
+  updatePaths(paths: { [key: string]: any }): void {
+    const currentSpec = this.swaggerSpecSubject.value;
+    if (currentSpec) {
+      currentSpec.paths = paths;
+      this.swaggerSpecSubject.next(currentSpec);
+      this.saveSwaggerSpecToStorage(currentSpec);
+    }
+  }
+
+  setSelectedSwaggerSpec(key: string): void {
+    const currentSpec = this.selectedSwaggerSpecSubject.value;
+    const newSpec = this.swaggerSpecs[key] || null;
+
+    if (currentSpec !== newSpec) {
+      this.selectedSwaggerSpecSubject.next(newSpec);
+      this.selectedSwaggerKey = key;
+      localStorage.setItem('selectedSwaggerKey', key);
+    }
+  }
+
+  getSelectedSwaggerSpec(): Observable<any | null> {
+    return this.selectedSwaggerSpec$;
+  }
+
+  getSelectedSwaggerSpecValue(): any | null {
+    return this.selectedSwaggerSpecSubject.value;
+  }
+
+  getSwaggerSpecByKey(key: string): ExtendedSwaggerSpec | null {
+    const allSpecs = this.getAllSwaggerSpecs();
+    return allSpecs[key] || null;
+  }
+
+  getAllSwaggerSpecs(): { [key: string]: ExtendedSwaggerSpec } {
+    const swaggerSpecs = localStorage.getItem('swaggerSpecs');
+    if (swaggerSpecs) {
+      try {
+        const parsedSpecs = JSON.parse(swaggerSpecs);
+        const cleanKeys = Object.keys(parsedSpecs).reduce((acc, key) => {
+          const value = parsedSpecs[key];
+          try {
+            if (typeof value === 'string') {
+              try {
+                acc[key] = JSON.parse(value) as ExtendedSwaggerSpec;
+              } catch {
+                acc[key] = yaml.load(value) as ExtendedSwaggerSpec;
+              }
+            } else {
+              acc[key] = value;
+            }
+          } catch (error) {
+            console.error(`Error parsing spec for key: ${key}`, error);
+          }
+          return acc;
+        }, {} as { [key: string]: ExtendedSwaggerSpec });
+
+        return cleanKeys;
+      } catch (error) {
+        console.error('Error parsing stored Swagger specs:', error);
+        return {};
+      }
+    }
+    return {};
   }
 
   setApiData(swaggerSpec: ExtendedSwaggerSpec): void {
@@ -67,11 +136,38 @@ export class ApiDataService {
     this.responses = JSON.stringify(swaggerSpec.responses || '', null, 2);
   }
 
+  deleteSwaggerSpecFromStorage(key: string): void {
+    const allSpecs = this.getAllSwaggerSpecs();
+    if (allSpecs[key]) {
+      delete allSpecs[key];
+      localStorage.setItem('swaggerSpecs', JSON.stringify(allSpecs));
+    } else {
+      console.warn(`Swagger spec with key '${key}' not found in storage.`);
+    }
+  }
+
+  updateSwaggerSpec(
+    key: string,
+    updatedSwaggerSpec: ExtendedSwaggerSpec
+  ): void {
+    const currentSpec = this.swaggerSpecs[key];
+    if (currentSpec) {
+      this.deleteSwaggerSpecFromStorage(key);
+    }
+
+    this.storeSwaggerSpec(key, updatedSwaggerSpec);
+
+    const selectedSpec = this.getSelectedSwaggerSpecValue();
+    if (selectedSpec?.info?.title === key) {
+      this.setSelectedSwaggerSpec(key);
+    }
+
+  }
+
   getSwaggerSpec(): Observable<ExtendedSwaggerSpec | null> {
     return this.swaggerSpec$;
   }
 
-  // Getters to retrieve the stored data
   getOpenApiVersion(): string {
     return this.openApiVersion;
   }
@@ -116,7 +212,6 @@ export class ApiDataService {
     return this.responses;
   }
 
-  // Methods to set data
   setOpenApiVersion(openApiVersion: string): void {
     this.openApiVersion = openApiVersion;
   }
@@ -153,7 +248,6 @@ export class ApiDataService {
     localStorage.setItem('swaggerSpec', JSON.stringify(swaggerSpec));
   }
 
-  // Retrieve the Swagger spec from localStorage
   getSwaggerSpecFromStorage(): ExtendedSwaggerSpec | null {
     const swaggerSpecString = localStorage.getItem('swaggerSpec');
     if (swaggerSpecString) {
@@ -167,13 +261,58 @@ export class ApiDataService {
     return null;
   }
 
-  // Clear the Swagger spec from localStorage
+  storeSwaggerSpec(key: string, swaggerSpec: ExtendedSwaggerSpec): void {
+    const allSpecs: { [key: string]: ExtendedSwaggerSpec | string } =
+      this.getAllSwaggerSpecs();
+
+    allSpecs[key] = JSON.stringify(swaggerSpec, null, 2);
+
+    localStorage.setItem('swaggerSpecs', JSON.stringify(allSpecs));
+    this.swaggerSpecs = this.getAllSwaggerSpecs();
+  }
+
   clearSwaggerSpecStorage(): void {
     localStorage.removeItem('swaggerSpec');
   }
+
+  logAllSwaggerSpecs(): void {
+    const allSpecs = this.getAllSwaggerSpecs();
+    console.log('All stored Swagger specs:', allSpecs);
+  }
+
+  clearAllSwaggerSpecs(): void {
+    localStorage.removeItem('swaggerSpecs');
+    console.log('Cleared all stored Swagger specs.');
+  }
+
+  parseSwaggerFile(file: File): void {
+    const reader = new FileReader();
+
+    reader.onload = (event: any) => {
+      const fileContent = event.target.result;
+
+      if (fileContent) {
+        try {
+          const swaggerSpec = yaml.load(fileContent) as ExtendedSwaggerSpec;
+          const key = file.name;
+          this.storeSwaggerSpec(key, swaggerSpec);
+          console.log(`Swagger spec stored under key: ${key}`);
+        } catch (error) {
+          console.error('Error parsing the file as YAML:', error);
+        }
+      } else {
+        console.error('File content is null or empty');
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+    };
+
+    reader.readAsText(file);
+  }
 }
 
-// Extending the Swagger Spec to include OpenAPI 3.0 components
 interface ExtendedSwaggerSpec extends Swagger.Spec {
   openapi?: string; // OpenAPI 3.x.x
   servers?: Array<{ url: string; description?: string }>; // OpenAPI 3.x.x

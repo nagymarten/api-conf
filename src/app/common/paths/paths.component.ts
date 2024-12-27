@@ -17,7 +17,12 @@ import { PathRequestPageComponent } from "./path-request-page/path-request-page.
 @Component({
   selector: 'paths',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, PathRequestPageComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    PathRequestPageComponent,
+],
   templateUrl: './paths.component.html',
   styleUrls: ['./paths.component.css'],
 })
@@ -31,6 +36,25 @@ export class PathsComponent implements OnInit, OnDestroy {
   responsesArray: any[] = [];
   showDeleteButtons: boolean = false;
   hoveredResponseCode: string | null = null;
+  openApiSpec = {
+    openapi: '3.1.0',
+    info: {
+      title: 'UDBK-Hugo-API',
+      version: '1.0',
+    },
+    paths: {
+      '/FleetService/ud/sectionPurchaseRequest': {
+        post: {
+          summary: 'Data provision for toll sections affected by vehicles',
+          responses: {
+            '200': {
+              description: 'SectionPurchaseResponse',
+            },
+          },
+        },
+      },
+    },
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -39,14 +63,13 @@ export class PathsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-
     this.methodDetailsForm = this.fb.group({
       summary: [''],
       description: [''],
       requestBody: [''],
-      responseMessage: [''], 
-      headers: [''], 
-      responseBody: [''], 
+      responseMessage: [''],
+      headers: [''],
+      responseBody: [''],
     });
 
     this.route.params.subscribe((params) => {
@@ -61,20 +84,18 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   fetchMethodDetails(): void {
-    this.apiDataService.getSwaggerSpec().subscribe({
+    this.apiDataService.getSelectedSwaggerSpec().subscribe({
       next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (swaggerSpec) {
           const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
           console.log('apiPathObject:', apiPathObject);
-          
+
           if (apiPathObject) {
             const methodDetails = apiPathObject[
               this.method.toLowerCase() as keyof typeof apiPathObject
             ] as ExtendedOperation;
-              // console.log('methodDetails:', methodDetails);
 
             if (methodDetails) {
-              // Populate form with summary and description
               this.methodDetailsForm.patchValue({
                 summary: methodDetails.summary || '',
                 description: methodDetails.description || '',
@@ -82,7 +103,6 @@ export class PathsComponent implements OnInit, OnDestroy {
                   JSON.stringify(methodDetails.requestBody, null, 2) || '',
               });
 
-              // Parse the responses and store them
               if (methodDetails.responses) {
                 this.responsesArray = this.parseResponses(
                   methodDetails.responses
@@ -109,11 +129,10 @@ export class PathsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Parse the responses object into a usable array
   parseResponses(responses: any): Array<any> {
     const parsedResponses = [];
     for (const [statusCode, response] of Object.entries(responses)) {
-      const responseDetails = response as ResponseDetails; // Cast to known type
+      const responseDetails = response as ResponseDetails;
       const responseContent =
         responseDetails.content?.['application/json']?.schema || null;
       parsedResponses.push({
@@ -128,7 +147,6 @@ export class PathsComponent implements OnInit, OnDestroy {
     return parsedResponses;
   }
 
-  // Set the form values based on the selected response code
   setResponseData(statusCode: string): void {
     this.activeResponseCode = parseInt(statusCode, 10);
     const response = this.responsesArray.find((r) => r.code === statusCode);
@@ -146,7 +164,7 @@ export class PathsComponent implements OnInit, OnDestroy {
 
   onUpdatePath() {
     this.apiDataService
-      .getSwaggerSpec()
+      .getSelectedSwaggerSpec()
       .subscribe((swaggerSpec: ExtendedSwaggerSpec | null) => {
         if (swaggerSpec && swaggerSpec.paths) {
           const apiPathObject = swaggerSpec.paths[this.apiPath];
@@ -159,12 +177,10 @@ export class PathsComponent implements OnInit, OnDestroy {
             if (methodDetails) {
               const formData = this.methodDetailsForm.value;
 
-              // Update the method summary and description
               methodDetails.summary = formData.summary || methodDetails.summary;
               methodDetails.description =
                 formData.description || methodDetails.description;
 
-              // Parse and update requestBody if it exists and is valid
               if (
                 formData.requestBody &&
                 this.isValidJson(formData.requestBody)
@@ -172,12 +188,10 @@ export class PathsComponent implements OnInit, OnDestroy {
                 methodDetails.requestBody = JSON.parse(formData.requestBody);
               }
 
-              // Update only the active response
               if (this.activeResponseCode) {
                 const responseToUpdate =
                   methodDetails.responses[this.activeResponseCode];
 
-                // Ensure the response exists and is not a reference ($ref)
                 if (responseToUpdate && !('$ref' in responseToUpdate)) {
                   const responseDetails = responseToUpdate as ResponseDetails;
 
@@ -200,10 +214,8 @@ export class PathsComponent implements OnInit, OnDestroy {
                 }
               }
 
-              // Update the paths in the Swagger spec
               swaggerSpec.paths[this.apiPath][method] = methodDetails;
 
-              // Call the service to update the Swagger spec and notify subscribers
               this.apiDataService.setPaths(
                 JSON.stringify(swaggerSpec.paths, null, 2)
               );
@@ -225,37 +237,30 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   onDeleteResponse(responseCode: string): void {
-    // Confirm if the user really wants to delete the response
     const confirmDelete = confirm(
       `Are you sure you want to delete the response with code ${responseCode}?`
     );
 
     if (confirmDelete) {
-      // Remove the response from the responsesArray
       this.responsesArray = this.responsesArray.filter(
         (response) => response.code !== responseCode
       );
 
-      // Update the Swagger spec with the removed response
-      this.apiDataService.getSwaggerSpec().subscribe({
+      this.apiDataService.getSelectedSwaggerSpec().subscribe({
         next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
           if (swaggerSpec && swaggerSpec.paths) {
-            const apiPathObject = swaggerSpec.paths[this.apiPath]; // Get the current API path
+            const apiPathObject = swaggerSpec.paths[this.apiPath];
 
             if (apiPathObject) {
               const method = this.method.toLowerCase() as HttpMethod;
               const methodDetails = apiPathObject[method] as ExtendedOperation;
 
               if (methodDetails) {
-                // Check if the response code exists in methodDetails.responses
                 if (methodDetails.responses[responseCode]) {
-                  // Delete the response by deleting the property with the response code
                   delete methodDetails.responses[responseCode];
 
-                  // Update the paths in the Swagger spec
                   swaggerSpec.paths[this.apiPath][method] = methodDetails;
 
-                  // Call the service to update the Swagger spec and notify subscribers
                   this.apiDataService.setPaths(
                     JSON.stringify(swaggerSpec.paths, null, 2)
                   );
@@ -287,19 +292,16 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   onAddResponse(): void {
-    // Prompt the user to enter a new response code
     const newResponseCode = prompt(
       'Enter the new response code (e.g., 201, 404):'
     );
 
     if (newResponseCode && !isNaN(Number(newResponseCode))) {
-      // Check if the response code already exists in the array
       const existingResponse = this.responsesArray.find(
         (response) => response.code === newResponseCode
       );
 
       if (!existingResponse) {
-        // Create a new response entry
         const newResponse: ResponseDetails = {
           description: 'New response description',
           headers: {},
@@ -322,7 +324,7 @@ export class PathsComponent implements OnInit, OnDestroy {
             ) || 'No body content',
         });
 
-        this.apiDataService.getSwaggerSpec().subscribe({
+        this.apiDataService.getSelectedSwaggerSpec().subscribe({
           next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
             if (swaggerSpec && swaggerSpec.paths) {
               const apiPathObject = swaggerSpec.paths[this.apiPath];
@@ -334,17 +336,14 @@ export class PathsComponent implements OnInit, OnDestroy {
                 ] as ExtendedOperation;
 
                 if (methodDetails) {
-                  // Create a response object that matches the `Response` type
                   const newSwaggerResponse = {
                     description: newResponse.description || '',
                   };
 
-                  // Only add headers if they are defined
                   if (Object.keys(newResponse.headers || {}).length > 0) {
                     (newSwaggerResponse as any).headers = newResponse.headers;
                   }
 
-                  // Only add content if it is defined
                   if (
                     newResponse.content &&
                     newResponse.content['application/json']

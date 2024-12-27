@@ -3,6 +3,7 @@ import { SidebarComponent } from './common/components/sidebar/sidebar.component'
 import { PathsComponent } from './common/paths/paths.component';
 import { SchemasComponent } from './common/schemas/schemas.component';
 import { ResponsesComponent } from './common/responses/responses.component';
+import { ReferenceComponent } from './common/reference/reference.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '', pathMatch: 'full' },
@@ -12,4 +13,7 @@ export const routes: Routes = [
   { path: 'schemas/:schema', component: SchemasComponent },
   { path: 'responses', component: ResponsesComponent },
   { path: 'responses/:response', component: ResponsesComponent },
+  { path: 'reference', component: ReferenceComponent },
+  { path: 'reference/:reference', component: ReferenceComponent },
+  { path: '**', redirectTo: '' }, 
 ];

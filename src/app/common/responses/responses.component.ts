@@ -39,14 +39,12 @@ export class ResponsesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Initialize the form
     this.responseDetailsForm = this.fb.group({
       description: [''],
       headers: [''],
       content: [''],
     });
 
-    // Subscribe to route params
     this.route.params.subscribe((params) => {
       this.responses = params['responses'];
       this.response = params['response'];
@@ -83,7 +81,6 @@ export class ResponsesComponent implements OnInit, OnDestroy {
   onSelectResponse(eventOrResponseName: Event | string): void {
     let responseName: string;
 
-    // Check if the argument is an event or a string
     if (typeof eventOrResponseName === 'string') {
       responseName = eventOrResponseName;
     } else {
@@ -91,16 +88,13 @@ export class ResponsesComponent implements OnInit, OnDestroy {
       responseName = selectElement.value;
     }
 
-    // Find the response by its name
     const selectedResponse = this.apiResponse.find(
       (r) => r.name === responseName
     );
 
     if (selectedResponse) {
-      // Store the selected response data
       this.selectedResponseData = selectedResponse.details;
 
-      // Patch the form with the response details
       this.responseDetailsForm.patchValue({
         description: selectedResponse.details?.description || '',
         headers: JSON.stringify(
@@ -123,10 +117,8 @@ export class ResponsesComponent implements OnInit, OnDestroy {
     if (this.selectedResponseData) {
       const formData = this.responseDetailsForm.value;
 
-      // Update the selected response details
       this.selectedResponseData.description = formData.description;
 
-      // Parse and update headers and content
       if (formData.headers && this.isValidJson(formData.headers)) {
         this.selectedResponseData.headers = JSON.parse(formData.headers);
       }
@@ -134,13 +126,11 @@ export class ResponsesComponent implements OnInit, OnDestroy {
         this.selectedResponseData.content = JSON.parse(formData.content);
       }
 
-      // Update the Swagger spec in the service
       this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
         if (swaggerSpec && swaggerSpec.components?.responses) {
           swaggerSpec.components.responses[this.response] =
             this.selectedResponseData;
 
-          // Sync the updated Swagger spec back to the service
           this.apiDataService.setResponses(
             JSON.stringify(swaggerSpec.components.responses, null, 2)
           );
@@ -154,7 +144,6 @@ export class ResponsesComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Utility function to validate if the JSON string is valid
   isValidJson(jsonString: string): boolean {
     try {
       JSON.parse(jsonString);

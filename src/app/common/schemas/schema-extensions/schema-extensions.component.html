@@ -1,10 +1,10 @@
-<h3>Schema Examples</h3>
+<h3>Schema Extension</h3>
 <div>
   <div class="button-row mt-3">
     <p-button
-      label="Add example"
+      label="Add Extension"
       icon="pi pi-file-plus"
-      (click)="generateAndAddExample()"
+      (click)="generateAndAddExtension()"
       class="p-button-outlined p-button-primary"
     ></p-button>
 
@@ -13,23 +13,20 @@
       <p-button
         icon="pi pi-copy"
         (click)="copyExample()"
-        title="Copy Example"
+        title="Copy Extension"
         class="p-button-text"
       ></p-button>
       <p-button
         *ngIf="selectedSchema?.examples?.length > 0"
         icon="pi pi-trash"
-        (click)="deleteExample()"
-        title="Delete Example"
+        (click)="deleteExtension()"
+        title="Delete Extension"
         class="p-button-text"
       ></p-button>
     </div>
   </div>
   <div class="card">
-    <p-tabMenu
-      [model]="responseExamples"
-      [(activeItem)]="activeItem"
-    ></p-tabMenu>
+    <p-tabMenu [model]="extensions" [(activeItem)]="activeItem"></p-tabMenu>
   </div>
 
   <div
@@ -41,8 +38,8 @@
       cols="50"
       pInputTextarea
       [autoResize]="true"
-      [formControl]="examplesControl"
-      placeholder="Edit example JSON here"
+      [formControl]="extensionsControl"
+      placeholder="Edit Extension here"
       class="example-textarea"
       (blur)="saveCurrentExample()"
     ></textarea>

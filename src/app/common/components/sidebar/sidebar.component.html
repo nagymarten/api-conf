@@ -1,9 +1,49 @@
 <div class="sidenav">
   <p-toast></p-toast>
-  <mat-toolbar color="primary">API Overview</mat-toolbar>
+  <mat-toolbar color="primary" [routerLink]="['/']">API Loom</mat-toolbar>
 
   <mat-accordion>
-    <!-- Paths Section -->
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header
+        (contextmenu)="onReferenceRightClickHeader($event)"
+      >
+        <mat-panel-title>
+          <mat-icon>folder</mat-icon> Reference
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <mat-list>
+        <mat-list-item
+          *ngFor="let key of swaggerKeys"
+          (click)="onReferenceSelect(key)"
+          (contextmenu)="onReferenceRightClick($event, key)"
+          class="swagger-key-link"
+          routerLinkActive="active-swagger-key"
+        >
+          <mat-icon>folder</mat-icon> {{ key }}
+        </mat-list-item>
+      </mat-list>
+    </mat-expansion-panel>
+  </mat-accordion>
+  <mat-accordion>
+    <p-divider />
+
+    <div class="card">
+      <p-toolbar>
+        <div class="p-toolbar-group-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input
+              pInputText
+              placeholder="Search"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="filter()"
+            />
+          </span>
+        </div>
+      </p-toolbar>
+    </div>
+
     <mat-expansion-panel [expanded]="expandAllPaths" (closed)="onPanelClose()">
       <mat-expansion-panel-header
         (contextmenu)="onPathRightClickHeader($event)"
@@ -11,7 +51,6 @@
         <mat-panel-title> <mat-icon>folder</mat-icon> Paths </mat-panel-title>
       </mat-expansion-panel-header>
 
-      <!-- Dynamically render all paths -->
       <mat-list>
         <mat-expansion-panel
           *ngFor="let path of paths | keyvalue"
@@ -56,7 +95,7 @@
       </mat-list>
     </mat-expansion-panel>
 
-    <mat-expansion-panel>
+    <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header
         (contextmenu)="onModelsRightClickHeader($event)"
       >
@@ -81,7 +120,7 @@
 
     <p-contextMenu
       #contextHeaderMenu
-      [model]="topLevelContextMenuItems"
+      [model]="topLevelModelContextMenuItems"
     ></p-contextMenu>
     <p-contextMenu #contextMenu [model]="contextMenuItems"></p-contextMenu>
     <p-contextMenu
@@ -93,7 +132,7 @@
   <p-dialog
     header="Add New Path"
     [modal]="true"
-    [(visible)]="visible"
+    [(visible)]="visibleAddPath"
     [style]="{ width: '25rem' }"
   >
     <div class="flex align-items-center gap-3 mb-3">
@@ -110,9 +149,131 @@
       <p-button
         label="Cancel"
         severity="secondary"
-        (onClick)="visible = false"
+        (onClick)="visibleAddPath = false"
       />
-      <p-button label="Save" (onClick)="saveNewPath()" />
+      <p-button
+        label="Save"
+        (onClick)="saveNewPath()"
+        [disabled]="!newPathName || newPathName.trim().length === 0"
+      />
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    header="Add New Model"
+    [modal]="true"
+    [(visible)]="visibleAddModel"
+    [style]="{ width: '25rem' }"
+  >
+    <div class="flex align-items-center gap-3 mb-3">
+      <label for="pathName" class="font-semibold w-6rem">Model name:</label>
+      <input
+        pInputText
+        id="pathName"
+        [(ngModel)]="newModelName"
+        autocomplete="off"
+        placeholder="Enter new Model name"
+      />
+    </div>
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (onClick)="visibleAddModel = false"
+      />
+      <p-button
+        label="Save"
+        (onClick)="saveAndNavigate()"
+        [disabled]="!newModelName || newModelName.trim().length === 0"
+      />
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    [(visible)]="isAddNewRefDialogVisible"
+    [header]="'Set OpenAPI Title'"
+    [closable]="true"
+    [dismissableMask]="true"
+    [modal]="true"
+    [style]="{ width: '400px' }"
+    class="export-dialog"
+  >
+    <div class="export-dialog-content">
+      <div class="p-field">
+        <label for="openapi-title">Title</label>
+        <input
+          id="openapi-title"
+          type="text"
+          pInputText
+          [(ngModel)]="newOpenApiTitle"
+          placeholder="Enter OpenAPI Title"
+          (keydown.enter)="confirmCreateNewOpenApi()"
+        />
+      </div>
+      <div class="export-dialog-actions">
+        <button
+          pButton
+          label="Create"
+          icon="pi pi-check"
+          class="p-button-success"
+          (click)="confirmCreateNewOpenApi()"
+        ></button>
+        <button
+          pButton
+          label="Cancel"
+          icon="pi pi-times"
+          class="p-button-secondary"
+          (click)="isAddNewRefDialogVisible = false"
+        ></button>
+      </div>
+    </div>
+  </p-dialog>
+
+  <p-dialog
+    [(visible)]="isExportDialogVisible"
+    header="Export"
+    [modal]="true"
+    [dismissableMask]="true"
+    [style]="{ width: '500px' }"
+    class="export-dialog"
+  >
+    <div class="export-dialog-content">
+      <h4>Format</h4>
+      <div class="format-options">
+        <p-radioButton
+          name="format"
+          value="json"
+          [(ngModel)]="selectedFormat"
+          label="JSON"
+        ></p-radioButton>
+        <p-radioButton
+          name="format"
+          value="yaml"
+          [(ngModel)]="selectedFormat"
+          label="YAML"
+        ></p-radioButton>
+      </div>
+
+      <div class="export-dialog-actions">
+        <button
+          pButton
+          label="Cancel"
+          class="p-button-secondary"
+          (click)="isExportDialogVisible = false"
+        ></button>
+        <button
+          pButton
+          label="Copy to clipboard"
+          class="p-button-secondary"
+          (click)="copyToClipboard()"
+        ></button>
+        <button
+          pButton
+          label="Save to file"
+          class="p-button-primary"
+          (click)="exportFile()"
+        ></button>
+      </div>
     </div>
   </p-dialog>
 
@@ -141,4 +302,13 @@
       <p-button label="Save" (onClick)="saveRenamedEndpoint()"></p-button>
     </div>
   </p-dialog>
+
+  <div class="upload-container">
+    <input
+      type="file"
+      #fileInput
+      (change)="handleFileUpload($event)"
+      style="display: none"
+    />
+  </div>
 </div>
