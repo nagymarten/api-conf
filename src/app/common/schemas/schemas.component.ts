@@ -1923,7 +1923,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     this.childComponentOverlayTextarea?.toggleOverlay(
       event,
       this.selectedRowData,
-      this.selectedCol
     );
   }
 

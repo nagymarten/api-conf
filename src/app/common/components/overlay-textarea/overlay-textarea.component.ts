@@ -16,18 +16,17 @@ export class OverlayTextareaComponent {
 
   @ViewChild('opTextarea') opTextarea!: OverlayPanel;
 
-  text: string =
-    '<div>Hello World!</div><div>PrimeNG <b>Editor</b> Rocks</div><div><br></div>';
+  text: string = '';
 
   onOverlayHide(): void {
     console.log('Overlay hidden. Text content:', this.text);
   }
 
-  toggleOverlay(event: Event, selectedRowData: any,selectedCol : any): void {
-    console.log(this.selectedSchema);
-    console.log(selectedRowData);
-    console.log(selectedCol);
-
+  toggleOverlay(event: Event, selectedRowData: any): void {
+    this.text =
+      selectedRowData.description !== undefined
+        ? selectedRowData.description
+        : '';
     this.opTextarea.toggle(event);
   }
 }

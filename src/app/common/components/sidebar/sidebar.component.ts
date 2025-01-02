@@ -603,19 +603,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
               file.name.endsWith('.json')
             ) {
               parsedContent = JSON.parse(fileContent);
-              console.log(`JSON file uploaded: ${normalizedFileName}`);
             } else if (
               (!fileType || fileType === 'yaml') &&
               (file.name.endsWith('.yaml') || file.name.endsWith('.yml'))
             ) {
               parsedContent = yaml.load(fileContent);
-              console.log(`YAML file uploaded: ${normalizedFileName}`);
             } else {
-              console.warn(`Unsupported file type: ${file.name}`);
               return;
             }
 
-            console.log('Parsed content:', parsedContent);
 
             if (
               !parsedContent ||
@@ -624,7 +620,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
               !parsedContent.paths
             ) {
               throw new Error(
-                `Invalid Swagger/OpenAPI file: Missing required fields (swagger/openapi, info, paths) in ${file.name}.`
+                `Invalid Swagger/OpenAPI file: Missing required fields in ${file.name}.`
               );
             }
 
