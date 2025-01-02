@@ -70,13 +70,23 @@ export class ApiDataService {
 
   setSelectedSwaggerSpec(key: string): void {
     const currentSpec = this.selectedSwaggerSpecSubject.value;
+
+    if (currentSpec && this.selectedSwaggerKey) {
+      this.storeSwaggerSpec(this.selectedSwaggerKey, currentSpec);
+    }
+
+    this.clearCurrentSpec();
+
     const newSpec = this.swaggerSpecs[key] || null;
 
-    if (currentSpec !== newSpec) {
+    if (newSpec) {
       this.selectedSwaggerSpecSubject.next(newSpec);
       this.selectedSwaggerKey = key;
       localStorage.setItem('selectedSwaggerKey', key);
+    } else {
+      console.warn(`No spec found for key: ${key}`);
     }
+    console.log('Selected Swagger Spec:', newSpec);
   }
 
   getSelectedSwaggerSpec(): Observable<any | null> {
@@ -161,7 +171,6 @@ export class ApiDataService {
     if (selectedSpec?.info?.title === key) {
       this.setSelectedSwaggerSpec(key);
     }
-
   }
 
   getSwaggerSpec(): Observable<ExtendedSwaggerSpec | null> {
@@ -269,6 +278,22 @@ export class ApiDataService {
 
     localStorage.setItem('swaggerSpecs', JSON.stringify(allSpecs));
     this.swaggerSpecs = this.getAllSwaggerSpecs();
+  }
+
+  clearCurrentSpec(): void {
+    this.swaggerSpecSubject.next(null);
+    this.selectedSwaggerSpecSubject.next(null);
+
+    // Reset in-memory variables to empty objects
+    this.openApiVersion = '';
+    this.version = '';
+    this.title = '';
+    this.schemes = '{}';
+    this.paths = '{}';
+    this.security = '{}';
+    this.responses = '{}';
+
+    localStorage.removeItem('swaggerSpec');
   }
 
   clearSwaggerSpecStorage(): void {

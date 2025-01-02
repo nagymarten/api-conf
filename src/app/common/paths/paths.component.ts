@@ -12,7 +12,7 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { RouterModule } from '@angular/router';
-import { PathRequestPageComponent } from "./path-request-page/path-request-page.component";
+import { PathRequestPageComponent } from './path-request-page/path-request-page.component';
 
 @Component({
   selector: 'paths',
@@ -22,7 +22,7 @@ import { PathRequestPageComponent } from "./path-request-page/path-request-page.
     ReactiveFormsModule,
     RouterModule,
     PathRequestPageComponent,
-],
+  ],
   templateUrl: './paths.component.html',
   styleUrls: ['./paths.component.css'],
 })
@@ -84,48 +84,41 @@ export class PathsComponent implements OnInit, OnDestroy {
   }
 
   fetchMethodDetails(): void {
-    this.apiDataService.getSelectedSwaggerSpec().subscribe({
-      next: (swaggerSpec: ExtendedSwaggerSpec | null) => {
-        if (swaggerSpec) {
-          const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
-          console.log('apiPathObject:', apiPathObject);
 
-          if (apiPathObject) {
-            const methodDetails = apiPathObject[
-              this.method.toLowerCase() as keyof typeof apiPathObject
-            ] as ExtendedOperation;
+    this.apiDataService.getSelectedSwaggerSpec().subscribe((swaggerSpec) => {
+      const apiPathObject = swaggerSpec.paths[this.apiPath as keyof Paths];
 
-            if (methodDetails) {
-              this.methodDetailsForm.patchValue({
-                summary: methodDetails.summary || '',
-                description: methodDetails.description || '',
-                requestBody:
-                  JSON.stringify(methodDetails.requestBody, null, 2) || '',
-              });
+      if (!apiPathObject) {
+        console.error(`API path not found: ${this.apiPath}`);
+        return;
+      }
 
-              if (methodDetails.responses) {
-                this.responsesArray = this.parseResponses(
-                  methodDetails.responses
-                );
-                this.setResponseData(this.responsesArray[0].code);
-              }
-            } else {
-              console.error(
-                'methodDetails is undefined for the given API path and method.'
-              );
-            }
+      const methodDetails = apiPathObject[
+        this.method.toLowerCase() as keyof typeof apiPathObject
+      ] as ExtendedOperation;
+
+      if (methodDetails) {
+        this.methodDetailsForm.patchValue({
+          summary: methodDetails.summary || '',
+          description: methodDetails.description || '',
+          requestBody: methodDetails.requestBody
+            ? JSON.stringify(methodDetails.requestBody, null, 2)
+            : '',
+        });
+
+        if (methodDetails.responses) {
+          this.responsesArray = this.parseResponses(methodDetails.responses);
+          if (this.responsesArray.length > 0) {
+            this.setResponseData(this.responsesArray[0].code);
           } else {
-            console.error(
-              `Method not found for path: ${this.apiPath} and method: ${this.method}`
-            );
+            console.warn('No responses available for the selected method.');
           }
-        } else {
-          console.error('Received null Swagger spec');
         }
-      },
-      error: (error) => {
-        console.error('Error fetching Swagger spec:', error);
-      },
+      } else {
+        console.error(
+          'methodDetails is undefined for the given API path and method.'
+        );
+      }
     });
   }
 

@@ -10,7 +10,7 @@ import {
 import { MenuItem, MessageService } from 'primeng/api';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { ToastModule } from 'primeng/toast';
-import { Subscription } from 'rxjs';
+import { Subscription, debounceTime, distinctUntilChanged, take } from 'rxjs';
 import { ApiDataService } from '../../../services/api-data.service';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { ButtonModule } from 'primeng/button';
@@ -69,7 +69,16 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   swaggerSubscription!: Subscription;
   items: MenuItem[] | undefined;
   editingPath: string | null = null;
-  validHttpMethods = ['get', 'post', 'put', 'delete', 'patch'];
+  validHttpMethods = [
+    'get',
+    'post',
+    'put',
+    'delete',
+    'patch',
+    'head',
+    'options',
+    'trace',
+  ];
   contextMenuItems: MenuItem[] = [];
   modelContextMenuItems: MenuItem[] = [];
   topLevelPathContextMenuItems: MenuItem[] = [];
@@ -105,6 +114,10 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   constructor(private apiDataService: ApiDataService, private router: Router) {}
 
   ngOnInit(): void {
+    this.fetchSidebar();
+  }
+
+  fetchSidebar(): void {
     this.initializeComponentState();
     const savedKey = this.apiDataService.getSelectedSwaggerKey();
     if (savedKey) {
@@ -125,6 +138,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   initializeComponentState(): void {
     this.swaggerSubscription = this.apiDataService
       .getSelectedSwaggerSpec()
+      .pipe(debounceTime(100), distinctUntilChanged())
       .subscribe({
         next: (swaggerSpec) => {
           if (swaggerSpec && swaggerSpec.paths) {
@@ -180,7 +194,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     console.log('confirmCreateNewOpenApi');
     console.log(this.newOpenApiTitle);
-    this.createNewOpenApi( this.selectedVersion);
+    this.createNewOpenApi(this.selectedVersion);
     this.isAddNewRefDialogVisible = false;
   }
 
@@ -275,6 +289,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   switchSwaggerReference(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
     this.selectedSwaggerKey = selectElement.value;
+    this.apiDataService.clearCurrentSpec();
     this.loadSwaggerSpec();
   }
 
@@ -289,6 +304,11 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getPaths(swaggerSpec: any): { [key: string]: any } {
+    if (!swaggerSpec || !swaggerSpec.paths) {
+      console.warn('Swagger spec or paths is null.');
+      return {};
+    }
+
     const apiPaths: { [key: string]: any } = {};
 
     Object.keys(swaggerSpec.paths).forEach((pathKey) => {
@@ -612,7 +632,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
               return;
             }
 
-
             if (
               !parsedContent ||
               (!parsedContent.swagger && !parsedContent.openapi) ||
@@ -663,9 +682,7 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   importModel(): void {
     throw new Error('Method not implemented.');
   }
-  createNewOpenApi(
-    version: 'v3.1' | 'v3.0' | 'v2.0'
-  ): void {
+  createNewOpenApi(version: 'v3.1' | 'v3.0' | 'v2.0'): void {
     try {
       let newSpec: any;
 
@@ -871,12 +888,33 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.models.push(newModel);
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
-      if (
-        swaggerSpec &&
-        swaggerSpec.components &&
-        swaggerSpec.components.schemas
-      ) {
+    console.log('New model added locally:', newModel);
+
+    // Use `pipe(take(1))` to ensure only one emission
+    this.apiDataService
+      .getSelectedSwaggerSpec()
+      .pipe(take(1)) // Ensures that only the first emission is handled
+      .subscribe((swaggerSpec) => {
+        if (!swaggerSpec) {
+          console.error('No Swagger spec found.');
+          return;
+        }
+
+        // Initialize components and schemas if they don't exist
+        if (!swaggerSpec.components) {
+          swaggerSpec.components = { schemas: {} };
+        }
+        if (!swaggerSpec.components.schemas) {
+          swaggerSpec.components.schemas = {};
+        }
+
+        // Prevent duplicate models
+        if (swaggerSpec.components.schemas[newModelKey]) {
+          console.warn('Model with this key already exists:', newModelKey);
+          return;
+        }
+
+        // Add the new model to schemas
         swaggerSpec.components.schemas[newModelKey] = {
           title: this.newModelName,
           type: 'object',
@@ -884,20 +922,24 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
             exampleField: { type: 'string', example: 'Example value' },
           },
           required: ['exampleField'],
-          description: ``,
+          description: `Auto-generated model for ${newModelKey}`,
         };
 
-        this.apiDataService.setSchemes(
-          JSON.stringify(swaggerSpec.components.schemas, null, 2)
-        );
+        // Save the updated Swagger spec
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-        console.log('New model added to Swagger spec with title:', swaggerSpec);
+        console.log(
+          'New model added to selected Swagger spec:',
+          swaggerSpec.components.schemas[newModelKey]
+        );
 
+        // Update the local models array and UI state
         this.models = [...this.models];
+        
+        this,this.fetchSidebar();
+
         this.visibleAddModel = false;
-      }
-    });
+      });
   }
 
   saveAndNavigate(): void {
@@ -910,8 +952,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   addOperation(method: string, pathKey: string): void {
     console.log(`Adding ${method.toUpperCase()} operation to path: ${pathKey}`);
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
-      if (swaggerSpec && swaggerSpec.paths) {
+    this.apiDataService
+      .getSelectedSwaggerSpec()
+      .pipe(take(1))
+      .subscribe((swaggerSpec: any) => {
+        if (!swaggerSpec || !swaggerSpec.paths) {
+          console.error('No selected Swagger spec found or paths missing.');
+          return;
+        }
+
         if (!swaggerSpec.paths[pathKey]) {
           swaggerSpec.paths[pathKey] = {};
         }
@@ -943,43 +992,15 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           },
         };
 
-        if (!this.paths[pathKey]) {
-          this.paths[pathKey] = [];
-        }
-
-        this.paths[pathKey].push({
-          method: method.toLowerCase(),
-          summary: `Default ${method.toUpperCase()} operation for ${pathKey}`,
-          description: `This is an auto-generated ${method.toUpperCase()} operation.`,
-          responses: {
-            200: {
-              description: 'Successful response',
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    properties: {
-                      message: { type: 'string', example: 'Success' },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        this.apiDataService.setPaths(
-          JSON.stringify(swaggerSpec.paths, null, 2)
-        );
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-        console.log('Updated Swagger spec:', swaggerSpec);
+        console.log(
+          `Added ${method.toUpperCase()} operation to path "${pathKey}" in the selected Swagger spec.`
+        );
 
         this.paths = { ...this.paths };
-      } else {
-        console.error('Failed to fetch Swagger spec.');
-      }
-    });
+        this.fetchSidebar();
+      });
   }
 
   renamePath(originalKey: string, event: any): void {
@@ -1029,30 +1050,32 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   deletePath(selectedPath: any): void {
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
-      if (swaggerSpec && swaggerSpec.paths) {
-        if (swaggerSpec.paths[selectedPath.key]) {
-          delete swaggerSpec.paths[selectedPath.key];
+    this.apiDataService
+      .getSwaggerSpec()
+      .pipe(take(1))
+      .subscribe((swaggerSpec) => {
+        if (swaggerSpec && swaggerSpec.paths) {
+          if (swaggerSpec.paths[selectedPath.key]) {
+            delete swaggerSpec.paths[selectedPath.key];
+            delete this.paths[selectedPath.key];
 
-          delete this.paths[selectedPath.key];
+            this.apiDataService.setPaths(
+              JSON.stringify(swaggerSpec.paths, null, 2)
+            );
+            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-          this.apiDataService.setPaths(
-            JSON.stringify(swaggerSpec.paths, null, 2)
-          );
-          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+            console.log('Updated Swagger spec:', swaggerSpec);
 
-          console.log('Updated Swagger spec:', swaggerSpec);
-
-          this.paths = { ...this.paths };
+            this.paths = { ...this.paths };
+          } else {
+            console.warn(
+              `Path "${selectedPath.key}" does not exist in Swagger spec.`
+            );
+          }
         } else {
-          console.warn(
-            `Path "${selectedPath.key}" does not exist in Swagger spec.`
-          );
+          console.error('Failed to fetch Swagger spec.');
         }
-      } else {
-        console.error('Failed to fetch Swagger spec.');
-      }
-    });
+      });
   }
 
   renameEndpoint(pathKey: any, methodKey: any, newSummary: string): void {
@@ -1121,47 +1144,49 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       `Deleting endpoint: ${methodKey.method} from path: ${pathKey.key}`
     );
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec: any) => {
-      if (swaggerSpec && swaggerSpec.paths) {
-        console.log(
-          'Available Paths Before Deletion:',
-          Object.keys(swaggerSpec.paths)
-        );
-
-        if (
-          swaggerSpec.paths[pathKey.key] &&
-          swaggerSpec.paths[pathKey.key][methodKey.method]
-        ) {
-          delete swaggerSpec.paths[pathKey.key][methodKey.method];
+    this.apiDataService
+      .getSelectedSwaggerSpec()
+      .subscribe((swaggerSpec: any) => {
+        if (swaggerSpec && swaggerSpec.paths) {
           console.log(
-            `Endpoint "${methodKey.method}" deleted successfully from path "${pathKey.key}"`
+            'Available Paths Before Deletion:',
+            Object.keys(swaggerSpec.paths)
           );
 
-          if (this.paths[pathKey.key]) {
-            const pathEndpoints: any = this.paths[pathKey.key];
-            this.paths[pathKey.key] = pathEndpoints.filter(
-              (endpoint: any) => endpoint.method !== methodKey.method
+          if (
+            swaggerSpec.paths[pathKey.key] &&
+            swaggerSpec.paths[pathKey.key][methodKey.method]
+          ) {
+            delete swaggerSpec.paths[pathKey.key][methodKey.method];
+            console.log(
+              `Endpoint "${methodKey.method}" deleted successfully from path "${pathKey.key}"`
+            );
+
+            if (this.paths[pathKey.key]) {
+              const pathEndpoints: any = this.paths[pathKey.key];
+              this.paths[pathKey.key] = pathEndpoints.filter(
+                (endpoint: any) => endpoint.method !== methodKey.method
+              );
+            }
+
+            this.apiDataService.setPaths(
+              JSON.stringify(swaggerSpec.paths, null, 2)
+            );
+            this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
+
+            console.log('Updated Swagger spec:', swaggerSpec);
+
+            this.paths = { ...this.paths };
+            console.log('Updated paths:', this.paths);
+          } else {
+            console.warn(
+              `Endpoint "${methodKey.method}" does not exist in path "${pathKey.key}" within the Swagger spec.`
             );
           }
-
-          this.apiDataService.setPaths(
-            JSON.stringify(swaggerSpec.paths, null, 2)
-          );
-          this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
-
-          console.log('Updated Swagger spec:', swaggerSpec);
-
-          this.paths = { ...this.paths };
-          console.log('Updated paths:', this.paths);
         } else {
-          console.warn(
-            `Endpoint "${methodKey.method}" does not exist in path "${pathKey.key}" within the Swagger spec.`
-          );
+          console.error('Failed to fetch Swagger spec.');
         }
-      } else {
-        console.error('Failed to fetch Swagger spec.');
-      }
-    });
+      });
   }
 
   showDialog() {
@@ -1207,8 +1232,20 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
     ];
 
-    this.apiDataService.getSwaggerSpec().subscribe((swaggerSpec) => {
-      if (swaggerSpec && swaggerSpec.paths) {
+    this.apiDataService
+      .getSelectedSwaggerSpec()
+      .pipe(take(1))
+      .subscribe((swaggerSpec) => {
+        if (!swaggerSpec || !swaggerSpec.paths) {
+          console.error('No selected Swagger spec found or paths missing.');
+          return;
+        }
+
+        if (swaggerSpec.paths[newPathKey]) {
+          console.warn('Path with this key already exists:', newPathKey);
+          return;
+        }
+
         swaggerSpec.paths[newPathKey] = {
           get: {
             summary: `Default GET operation for ${newPathKey}`,
@@ -1226,23 +1263,19 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
                     },
                   },
                 },
-              } as any,
+              },
             },
           },
         };
 
-        this.apiDataService.setPaths(
-          JSON.stringify(swaggerSpec.paths, null, 2)
-        );
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
-        console.log('New path added to Swagger spec:', swaggerSpec);
+        console.log('New path added to the selected Swagger spec:', newPathKey);
 
         this.newPathName = '';
         this.visibleAddPath = false;
         this.paths = { ...this.paths };
-      }
-    });
+      });
   }
 
   cancelEditPath(_key: string): void {
@@ -1261,6 +1294,10 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getModels(swaggerSpec: any): any[] {
+    if (!swaggerSpec.components || !swaggerSpec.components.schemas) {
+      return [];
+    }
+
     return Object.keys(swaggerSpec.components.schemas)
       .sort()
       .map((key) => ({

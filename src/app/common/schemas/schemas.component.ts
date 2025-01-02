@@ -153,11 +153,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchemaTitle = this.selectedSchema.title || '';
       this.selectedSchemaDescription = this.selectedSchema.description || '';
     }
-    console.log(this.apiDataService.getSelectedSwaggerSpecValue());
-    console.log(
-      'Child OverlayTextareaComponent:',
-      this.childComponentOverlayTextarea
-    );
   }
 
   formatTypeWithCount(type: string, count: number): string {
@@ -1917,12 +1912,12 @@ export class SchemasComponent implements OnInit, OnDestroy {
   }
 
   onBookClick(event: Event, rowData: any) {
-    console.log('Book button clicked', rowData);
+    //TODO: Save the description to the selected schema
     this.selectedRowData = rowData;
     this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
     this.childComponentOverlayTextarea?.toggleOverlay(
       event,
-      this.selectedRowData,
+      this.selectedRowData
     );
   }
 
@@ -2067,6 +2062,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
     };
 
     this.jsonTree = this.schemaToTreeNode(this.selectedSchema, rootNode);
+    if (this.selectedSchema) {
+      this.selectedSchemaTitle = this.selectedSchema.title || '';
+      this.selectedSchemaDescription = this.selectedSchema.description || '';
+    }
     console.log('jsonTree', this.jsonTree);
   }
 
@@ -2123,12 +2122,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return node.parent ? this.getRootNode(node.parent) : node;
   }
 
-  objectKeys(obj: any): string[] {
-    if (!obj) {
-      return [];
-    }
-    return Object.keys(obj);
-  }
 
   onSelectSchema(eventOrSchemaName: Event | string): void {
     let schemaName: string;
@@ -2544,6 +2537,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
         updatedNodeData.name
       );
     }
+  }
+
+  objectKeys(obj: any): string[] {
+    return obj ? Object.keys(obj) : [];
   }
 
   ngOnDestroy(): void {
