@@ -1053,10 +1053,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         console.warn('Property not found in selected schema.');
         return;
       }
-
+      console.log(value);
       switch (field) {
         case 'selectedStringFormat':
-          string.format = value.name || null;
+          string.format = value || null;
           break;
         case 'selectedStringBehavior':
           if (value === 'WriteOnly') {
@@ -1119,6 +1119,7 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         default:
           console.warn(`Unhandled field: ${field}`);
       }
+      console.log(string);
 
       this.updateSwaggerSpec();
     }
