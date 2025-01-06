@@ -900,7 +900,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           return;
         }
 
-        // Initialize components and schemas if they don't exist
         if (!swaggerSpec.components) {
           swaggerSpec.components = { schemas: {} };
         }
@@ -908,13 +907,11 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           swaggerSpec.components.schemas = {};
         }
 
-        // Prevent duplicate models
         if (swaggerSpec.components.schemas[newModelKey]) {
           console.warn('Model with this key already exists:', newModelKey);
           return;
         }
 
-        // Add the new model to schemas
         swaggerSpec.components.schemas[newModelKey] = {
           title: this.newModelName,
           type: 'object',
@@ -925,7 +922,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           description: `Auto-generated model for ${newModelKey}`,
         };
 
-        // Save the updated Swagger spec
         this.apiDataService.saveSwaggerSpecToStorage(swaggerSpec);
 
         console.log(
@@ -933,7 +929,6 @@ export class SidebarComponent implements OnInit, OnDestroy, AfterViewChecked {
           swaggerSpec.components.schemas[newModelKey]
         );
 
-        // Update the local models array and UI state
         this.models = [...this.models];
         
         this,this.fetchSidebar();

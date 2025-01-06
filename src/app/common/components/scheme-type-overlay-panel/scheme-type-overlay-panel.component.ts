@@ -1772,6 +1772,8 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
     this.selectedRefSchema = scheme.name;
     console.log('Selected scheme in overlay:', scheme);
     console.log('Selected selectedRef:', this.selectedRef);
+    console.log('Selected selectedRefSchema:', this.selectedSchema);
+    console.log('Selected selectedRowData:', this.selectedCol);
 
     if (this.selectedRef && typeof this.selectedRef.$ref === 'string') {
       this.selectedRef.$ref = this.selectedRef.$ref.replace(
@@ -1779,6 +1781,10 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
         `#/components/schemas/${this.selectedRefSchema}`
       );
       console.log('Updated selectedRef.$ref:', this.selectedRef.$ref);
+    } else if (scheme && !this.selectedCol.$ref) {
+      delete this.selectedCol.type;
+      this.selectedCol.$ref =`#/components/schemas/${this.selectedRefSchema}`;
+      console.log('Updated selectedCol.$ref:', this.selectedCol);
     } else {
       console.warn(
         '`selectedRef` is not in the expected format or does not have a $ref property:',
@@ -1816,11 +1822,11 @@ export class SchemeTypeOverlayPanelComponent implements OnInit {
       }
     });
 
-     if (selectedCol.type) {
-       console.log("Deleting 'type' from selectedCol");
-       delete selectedCol.type;
-     }
-     
+    if (selectedCol.type) {
+      console.log("Deleting 'type' from selectedCol");
+      delete selectedCol.type;
+    }
+
     const resetKeys = [
       'combineType',
       'properties',
