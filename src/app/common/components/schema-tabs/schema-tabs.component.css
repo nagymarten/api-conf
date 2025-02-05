@@ -1,0 +1,259 @@
+/* Tabs for Schema, Examples, Extensions */
+.tabs ul {
+    display: flex;
+    list-style-type: none;
+    border-bottom: 1px solid #ccc;
+    padding: 0;
+}
+
+.tabs ul li {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-weight: bold;
+    color: #6c757d;
+    transition: color 0.3s, border-bottom 0.3s;
+}
+
+.tabs ul li.active {
+    border-bottom: 3px solid #007bff;
+    color: #000;
+}
+
+.tabs ul li:hover {
+    color: #007bff;
+}
+
+/* Schema details section */
+.schema-details {
+    margin-top: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.description-text {
+    display: block;
+    /* Ensure the p behaves like a textarea */
+    width: 100%;
+    /* Match the textarea width */
+    padding: 8px;
+    /* Add some padding for appearance */
+    font-size: inherit;
+    /* Match the font size */
+    font-family: inherit;
+    /* Match the font family */
+    border: 1px solid transparent;
+    /* Make it look like it's not editable */
+    cursor: pointer;
+    /* Indicate it is clickable */
+    white-space: pre-wrap;
+    /* Allow line breaks to match textarea behavior */
+}
+
+.description-editor {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    font-size: inherit;
+    font-family: inherit;
+    border: 1px solid #ccc;
+    /* Match input borders */
+    border-radius: 4px;
+    /* Rounded edges for a textarea */
+    resize: none;
+    /* Prevent resizing for consistency */
+    outline: none;
+    /* Remove outline on focus */
+    box-sizing: border-box;
+    /* Ensure padding and borders don't affect size */
+}
+
+.title-editor {
+    font-size: inherit;
+    /* Match the font size of the span */
+    font-family: inherit;
+    /* Match the font family of the span */
+    width: 100%;
+    /* Take up the full width */
+    padding: 0;
+    /* Remove any default padding */
+    border: none;
+    /* Remove the border for a clean look */
+    outline: none;
+    /* Remove the outline on focus */
+    text-align: inherit;
+    /* Match the text alignment of the span */
+}
+
+.title-text {
+    display: inline-block;
+    /* Ensure the span behaves like the input */
+    width: 100%;
+    /* Take up the full width */
+}
+
+.placeholder-grey {
+    color: #aaa;
+    /* Light grey color */
+    font-style: italic;
+    /* Optional for a placeholder-like look */
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Properties section styling */
+.properties-section {
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.properties-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.properties-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: middle;
+}
+
+.property-name {
+    font-weight: bold;
+}
+
+.property-type {
+    color: #6c63ff;
+    font-weight: normal;
+}
+
+.property-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    /* Center the icons in their cell */
+    align-items: center;
+    /* Vertically align the icons */
+}
+
+/* Adjusting the icon button size */
+.icon-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    /* Remove padding */
+    min-width: 0;
+    /* Prevent default Material button width */
+    width: 24px;
+    /* Adjust width to a smaller size */
+    height: 24px;
+    /* Adjust height to a smaller size */
+}
+
+.icon-button mat-icon {
+    font-size: 18px;
+    /* Adjust the icon size */
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+}
+
+/* Align icon buttons inside the actions column */
+.property-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+/* Ensure specific colors for the icons */
+.info-icon mat-icon {
+    color: #ffcc00;
+}
+
+.book-icon mat-icon {
+    color: #6c63ff;
+}
+
+.trash-icon mat-icon {
+    color: #dc3545;
+}
+
+.nested-property-name {
+    padding-left: 20px;
+    font-style: italic;
+}
+
+.nested-property-type {
+    color: #6c63ff;
+}
+
+p-treeTable {
+    width: 100%;
+}
+
+p-treeTable th,
+p-treeTable td {
+    padding: 10px;
+    text-align: left;
+}
+
+.p-treeTable-header,
+.p-treeTable-body {
+    font-size: 14px;
+}
+
+p-treeTable {
+    width: 100%;
+}
+
+p-treeTable th,
+p-treeTable td {
+    padding: 10px;
+    text-align: left;
+}
+
+.p-treeTable-header,
+.p-treeTable-body {
+    font-size: 14px;
+}
+
+.no-border-button .p-button {
+    border: none !important;
+}
+
+.button-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    white-space: nowrap;
+}

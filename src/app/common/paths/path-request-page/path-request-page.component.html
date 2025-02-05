@@ -1,13 +1,37 @@
 <div>
-  <h2>Request Details:</h2>
-  <div>
-    <strong>Body:</strong>
-    <textarea
-      [(ngModel)]="requestBodyValue"
-      (blur)="updateRequestBody()"
-      placeholder="Enter request body here"
-      rows="10"
-      cols="50"
-    ></textarea>
+  <h2>Request Details</h2>
+  <p-divider />
+  <div class="card">
+    <p-editor [(ngModel)]="requestBodyValue" [style]="{ height: '320px' }">
+      <ng-template #header>
+        <span class="ql-formats">
+          <button type="button" class="ql-bold" aria-label="Bold"></button>
+          <button type="button" class="ql-italic" aria-label="Italic"></button>
+          <button
+            type="button"
+            class="ql-underline"
+            aria-label="Underline"
+          ></button>
+        </span>
+      </ng-template>
+    </p-editor>
+    <p-divider />
+    <div class="body-section">
+      <div class="body-header">
+        <i class="pi pi-table"></i>
+        <strong>Body</strong>
+        <p-splitButton
+          label="Add"
+          [model]="menuItems"
+          icon="pi pi-plus"
+          class="add-dropdown-button"
+        >
+        </p-splitButton>
+      </div>
+      <div class="body-content">
+     
+        <p-divider />
+      </div>
+    </div>
   </div>
 </div>

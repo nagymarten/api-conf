@@ -438,5 +438,22 @@
       >
       </app-schema-extensions>
     </div>
+    <app-schema-tabs
+      [activeTab]="activeTab"
+      [jsonTree]="jsonTree"
+      [cols]="cols"
+      [selectedSchema]="selectedSchema"
+      [selectedSchemaName]="selectedSchemaName"
+      [apiSchemas]="apiSchemas"
+      [nameOfId]="nameOfId"
+      [selectedCol]="selectedCol"
+      [apiDataService]="getApiDataService"
+      (activeTabChange)="activeTab = $event"
+      (updateSwaggerSpec)="updateSwaggerSpec()"
+      (handleAddScheme)="handleAddScheme($event, rowData)"
+      (deleteRow)="handleRowDeletion($event)"
+    >
+      ></app-schema-tabs
+    >
   </div>
 </div>

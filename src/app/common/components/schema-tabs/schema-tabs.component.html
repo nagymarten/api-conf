@@ -1,0 +1,397 @@
+<div class="tabs">
+  <ul>
+    <li
+      [ngClass]="{ active: activeTab === 'schema' }"
+      (click)="setActiveTab('schema')"
+    >
+      <button type="button">Schema</button>
+    </li>
+    <li
+      [ngClass]="{ active: activeTab === 'examples' }"
+      (click)="setActiveTab('examples')"
+    >
+      <button type="button">Examples</button>
+    </li>
+    <li
+      [ngClass]="{ active: activeTab === 'extensions' }"
+      (click)="setActiveTab('extensions')"
+    >
+      <button type="button">Extensions</button>
+    </li>
+  </ul>
+</div>
+
+<div *ngIf="activeTab === 'schema'" class="api-details">
+  <div class="properties-section">
+    <div *ngIf="selectedSchema">
+      <p-treeTable
+        [value]="jsonTree"
+        [columns]="cols"
+        [scrollable]="true"
+        [tableStyle]="{ 'min-width': '50rem' }"
+      >
+        <ng-template pTemplate="header" let-columns>
+          <tr>
+            <th *ngFor="let col of columns">
+              {{ col.header }}
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template
+          pTemplate="body"
+          let-rowNode
+          let-rowData="rowData"
+          let-columns="columns"
+        >
+          <tr [ttRow]="rowNode">
+            <td
+              *ngFor="let col of columns; let i = index"
+              [ttEditableColumn]="
+                (col.field === 'name' && rowNode.parent) ||
+                !rowData.editDisabled
+              "
+              [ttEditableColumnDisabled]="
+                !rowNode.parent ||
+                rowData.editDisabled ||
+                (rowData.showAddButton &&
+                  col.field === 'name' &&
+                  !rowData.isObjArrOrDisc)
+              "
+              [ngClass]="{ 'p-toggler-column': i === 0 }"
+            >
+              <p-treeTableToggler [rowNode]="rowNode" *ngIf="i === 0" />
+
+              <ng-container
+                *ngIf="
+                  col.field === 'name' &&
+                  rowNode.parent &&
+                  (!isSpecialType(rowData[col.field]) ||
+                    rowData.isChildOfProperties)
+                "
+              >
+                <p-treeTableCellEditor>
+                  <ng-template pTemplate="input">
+                    <!-- TODO: update only default not scheme name -->
+
+                    <input
+                      pInputText
+                      type="text"
+                      [(ngModel)]="rowData[col.field]"
+                      [ngModelOptions]="{ standalone: true }"
+                      placeholder="Enter schema name"
+                      (blur)="onFieldBlur(rowData[col.field], $event, rowData)"
+                      (keydown.enter)="
+                        onFieldEnter(rowData[col.field], $event, rowData)
+                      "
+                    />
+                  </ng-template>
+
+                  <ng-template pTemplate="output">
+                    <ng-container
+                      *ngIf="
+                        !rowData.isChildOfProperties &&
+                          ((rowData.showReferenceButton &&
+                            !rowData.isObjArrOrDisc) ||
+                            (rowData.showAddButton &&
+                              isSpecialType(rowData[col.field]))) &&
+                          col.field === 'name';
+                        else defaultOutput
+                      "
+                    >
+                      <p-button
+                        label="{{ rowData[col.field] || 'name' }}"
+                        [outlined]="true"
+                        (click)="toggleChildOverlay($event, rowData)"
+                        class="no-border-button"
+                      ></p-button>
+                      <app-scheme-type-overlay-panel
+                        #overlayPanel
+                        [rowData]="rowData"
+                        [selectedCol]="selectedCol"
+                        [apiSchemas]="apiSchemas"
+                        [selectedSchema]="selectedSchema"
+                        [selectedSchemaName]="selectedSchemaName"
+                        (updateRow)="updateButtonLabel($event)"
+                        (schemaUpdated)="onSchemaUpdated($event)"
+                      ></app-scheme-type-overlay-panel>
+                    </ng-container>
+                    <ng-template #defaultOutput>
+                      <span
+                        [ngClass]="{
+                          'placeholder-grey': !rowData[col.field]
+                        }"
+                      >
+                        {{ rowData[col.field] || "name" }}
+                      </span>
+                    </ng-template>
+                  </ng-template>
+                </p-treeTableCellEditor>
+              </ng-container>
+
+              <ng-container
+                *ngIf="
+                  col.field !== 'name' &&
+                  rowData.showReferenceButton &&
+                  rowData.isObjArrOrDisc
+                "
+              >
+                <p-button
+                  label="{{ rowData[col.field] }}"
+                  [outlined]="true"
+                  (click)="toggleChildOverlay($event, rowData)"
+                  class="no-border-button"
+                ></p-button>
+                <app-scheme-type-overlay-panel
+                  #overlayPanel
+                  [rowData]="rowData"
+                  [selectedCol]="selectedCol"
+                  [apiSchemas]="apiSchemas"
+                  [selectedSchema]="selectedSchema"
+                  (updateRow)="updateButtonLabel($event)"
+                  (schemaUpdated)="onSchemaUpdated($event)"
+                ></app-scheme-type-overlay-panel>
+              </ng-container>
+
+              <ng-container *ngIf="col.field !== 'name'">
+                <ng-container
+                  *ngIf="
+                    (isSpecialType(rowData[col.field]) &&
+                      !rowData.isReferenceChild &&
+                      !rowData.isRootNode &&
+                      !rowData.showReferenceButton &&
+                      !rowData.showAddButton) ||
+                    (rowData.isObjArrOrDisc &&
+                      isSpecialType(rowData[col.field]))
+                  "
+                >
+                  <p-button
+                    label="{{ rowData[col.field] }}"
+                    [outlined]="true"
+                    (click)="toggleChildOverlay($event, rowData)"
+                    class="no-border-button"
+                  ></p-button>
+                  <app-scheme-type-overlay-panel
+                    #overlayPanel
+                    [rowData]="rowData"
+                    [selectedCol]="selectedCol"
+                    [apiSchemas]="apiSchemas"
+                    [selectedSchema]="selectedSchema"
+                    (updateRow)="updateButtonLabel($event)"
+                    (schemaUpdated)="onSchemaUpdated($event)"
+                  ></app-scheme-type-overlay-panel>
+                </ng-container>
+                <ng-container
+                  *ngIf="
+                    !isSpecialType(rowData[col.field]) &&
+                    !rowData.isRootNode &&
+                    getTypeStatus(
+                      rowData[col.field] || rowData.isReferenceChild
+                    )
+                  "
+                >
+                  {{ rowData[col.field] }}
+                </ng-container>
+                <ng-container
+                  *ngIf="
+                    isSpecialType(rowData[col.field]) &&
+                    !rowData.isRootNode &&
+                    rowData.showAddButton &&
+                    !rowData.isObjArrOrDisc &&
+                    !rowData.isReferenceChild &&
+                    !rowData.isSubschemeChild
+                  "
+                >
+                  <p-button
+                    label="{{ rowData[col.field] }}"
+                    [outlined]="true"
+                    (click)="toggleChildOverlay($event, rowData)"
+                    class="no-border-button"
+                  ></p-button>
+                  <app-scheme-type-overlay-panel
+                    #overlayPanel
+                    [rowData]="rowData"
+                    [selectedCol]="selectedCol"
+                    [apiSchemas]="apiSchemas"
+                    [selectedSchema]="selectedSchema"
+                    (updateRow)="updateButtonLabel($event)"
+                    (schemaUpdated)="onSchemaUpdated($event)"
+                  ></app-scheme-type-overlay-panel>
+                </ng-container>
+              </ng-container>
+
+              <ng-container
+                *ngIf="
+                  (col.field == 'name' &&
+                    rowNode.parent &&
+                    !rowData.isReferenceChild &&
+                    rowData.isSubschemeChild) ||
+                  (rowData.isObjArrOrDisc && col.field == 'name')
+                "
+              >
+                <ng-container *ngIf="isSpecialType(rowData[col.field])">
+                  <p-button
+                    label="{{ rowData[col.field] }}"
+                    [outlined]="true"
+                    (click)="toggleChildOverlay($event, rowData)"
+                    class="no-border-button"
+                  ></p-button>
+                  <app-scheme-type-overlay-panel
+                    #overlayPanel
+                    [rowData]="rowData"
+                    [selectedCol]="selectedCol"
+                    [apiSchemas]="apiSchemas"
+                    [selectedSchema]="selectedSchema"
+                    (updateRow)="updateButtonLabel($event)"
+                    (schemaUpdated)="onSchemaUpdated($event)"
+                  ></app-scheme-type-overlay-panel>
+                </ng-container>
+
+                <ng-container
+                  *ngIf="
+                    isSpecialType(rowData[col.field]) &&
+                    rowData.isReferenceChild
+                  "
+                >
+                  {{ rowData[col.field] }}
+                </ng-container>
+              </ng-container>
+
+              <!-- TODO: Check that !isSpecialType(rowData[col.field]) is changing anything from   isSpecialType(rowData[col.field]) -->
+              <ng-container
+                *ngIf="
+                  col.field === 'name' &&
+                  rowNode.parent &&
+                  rowData.editDisabled &&
+                  !isSpecialType(rowData[col.field]) &&
+                  !rowData.isReferenceChild
+                "
+              >
+                {{ rowData[col.field] }}
+              </ng-container>
+
+              <ng-container *ngIf="col.field === 'name' && !rowNode.parent">
+                <ng-container *ngIf="isSpecialType(rowData[col.field])">
+                  <p-button
+                    label="{{ rowData[col.field] }}"
+                    [outlined]="true"
+                    (click)="toggleChildOverlay($event, rowData)"
+                    class="no-border-button"
+                  ></p-button>
+                  <app-scheme-type-overlay-panel
+                    #overlayPanel
+                    [rowData]="rowData"
+                    [selectedCol]="selectedCol"
+                    [apiSchemas]="apiSchemas"
+                    [selectedSchema]="selectedSchema"
+                    (updateRow)="updateButtonLabel($event)"
+                    (schemaUpdated)="onSchemaUpdated($event)"
+                  ></app-scheme-type-overlay-panel>
+                </ng-container>
+                <ng-container *ngIf="!isSpecialType(rowData[col.field])">
+                  <p-button
+                    label="{{ rowData[col.field] }}"
+                    [outlined]="true"
+                    (click)="toggleChildOverlay($event, rowData)"
+                    class="no-border-button"
+                  ></p-button>
+                  <app-scheme-type-overlay-panel
+                    #overlayPanel
+                    [rowData]="rowData"
+                    [selectedCol]="selectedCol"
+                    [apiSchemas]="apiSchemas"
+                    [selectedSchema]="selectedSchema"
+                    (updateRow)="updateButtonLabel($event)"
+                    (schemaUpdated)="onSchemaUpdated($event)"
+                  ></app-scheme-type-overlay-panel>
+                </ng-container>
+                <ng-container
+                  *ngIf="
+                    isSpecialType(rowData[col.field]) &&
+                    rowData.isReferenceChild
+                  "
+                >
+                  {{ rowData[col.field] }}
+                </ng-container>
+              </ng-container>
+
+              <ng-container
+                *ngIf="col.field == 'name' && rowData.isReferenceChild"
+              >
+                <ng-container
+                  *ngIf="
+                    isSpecialType(rowData[col.field]) &&
+                    rowData.isReferenceChild
+                  "
+                >
+                  {{ rowData[col.field] }}
+                </ng-container>
+              </ng-container>
+
+              <div
+                class="button-container"
+                *ngIf="
+                  col.field === 'type' &&
+                  rowNode.parent &&
+                  !rowData.isReferenceChild
+                "
+              >
+                <p-toggleButton
+                  [(ngModel)]="rowData.isRequired"
+                  type="button"
+                  offIcon="pi pi-times"
+                  onIcon="pi pi-check"
+                  (click)="onInfoClick(rowData)"
+                  pTooltip="Required?"
+                  tooltipPosition="top"
+                  disabled="{{ rowData.editDisabled }}"
+                />
+                <p-button
+                  type="button"
+                  icon="pi pi-book"
+                  (click)="onBookClick($event, rowData)"
+                ></p-button>
+                <app-overlay-textarea [selectedSchema]="selectedSchema">
+                </app-overlay-textarea>
+                <p-button
+                  type="button"
+                  icon="pi pi-trash"
+                  (click)="onDeleteClick(rowData)"
+                ></p-button>
+              </div>
+
+              <app-add-scheme-button
+                [rowData]="rowData"
+                [col]="col"
+                [jsonTree]="jsonTree"
+                (addScheme)="handleAddScheme($event, rowData)"
+              ></app-add-scheme-button>
+
+              <app-ref-button
+                [rowData]="rowData"
+                [col]="col"
+                (onGoRefSchemeClick)="handleGoRefScheme($event)"
+              ></app-ref-button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-treeTable>
+    </div>
+    <div *ngIf="selectedSchema.enum"></div>
+  </div>
+</div>
+
+<div *ngIf="activeTab === 'examples'" class="api-details">
+  <app-schema-examples
+    [selectedSchema]="selectedSchema"
+    (exampleChanged)="updateSwaggerSpec()"
+  ></app-schema-examples>
+</div>
+<div *ngIf="activeTab === 'extensions'" class="api-details">
+  <app-schema-extensions
+    [selectedSchema]="selectedSchema"
+    [nameOfId]="nameOfId"
+    (extensionChanged)="updateSwaggerSpec()"
+  >
+  </app-schema-extensions>
+</div>

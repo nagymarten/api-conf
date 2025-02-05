@@ -34,6 +34,7 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { OverlayTextareaComponent } from '../components/overlay-textarea/overlay-textarea.component';
+import { SchemaTabsComponent } from '../components/schema-tabs/schema-tabs.component';
 
 interface Column {
   field: string;
@@ -66,6 +67,7 @@ interface Column {
     TooltipModule,
     ToastModule,
     OverlayTextareaComponent,
+    SchemaTabsComponent,
   ],
   templateUrl: './schemas.component.html',
   styleUrls: ['./schemas.component.css'],
@@ -157,6 +159,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   formatTypeWithCount(type: string, count: number): string {
     return `${type} {${count}}`;
+  }
+  
+  get getApiDataService(): ApiDataService {
+    return this.apiDataService;
   }
 
   getSchemaName(schema: any): string {
@@ -2014,6 +2020,13 @@ export class SchemasComponent implements OnInit, OnDestroy {
     });
   }
 
+  handleRowDeletion(deletedRow: any): void {
+    console.log('Row deleted:', deletedRow);
+    this.jsonTree = this.jsonTree.filter(
+      (node) => node.data.uniqueId !== deletedRow.uniqueId
+    );
+  }
+
   fetchModelDetails(): void {
     this.swaggerSubscription = this.apiDataService
       .getSelectedSwaggerSpec()
@@ -2121,7 +2134,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
   getRootNode(node: TreeNode): TreeNode {
     return node.parent ? this.getRootNode(node.parent) : node;
   }
-
 
   onSelectSchema(eventOrSchemaName: Event | string): void {
     let schemaName: string;
