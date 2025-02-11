@@ -26,10 +26,7 @@ import { ButtonModule } from 'primeng/button';
 import { AddSchemeButtonComponent } from '../components/add-scheme-button/add-scheme-button.component';
 import { SchemeTypeOverlayPanelComponent } from '../components/scheme-type-overlay-panel/scheme-type-overlay-panel.component';
 import { InputTextModule } from 'primeng/inputtext';
-import { RefButtonComponent } from '../components/ref-button/ref-button.component';
 import { Router } from '@angular/router';
-import { SchemaExamplesComponent } from './schema-examples/schema-examples.component';
-import { SchemaExtensionsComponent } from './schema-extensions/schema-extensions.component';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
@@ -57,16 +54,10 @@ interface Column {
     MatIconModule,
     TreeTableModule,
     ButtonModule,
-    AddSchemeButtonComponent,
-    SchemeTypeOverlayPanelComponent,
     InputTextModule,
-    RefButtonComponent,
-    SchemaExamplesComponent,
-    SchemaExtensionsComponent,
     ToggleButtonModule,
     TooltipModule,
     ToastModule,
-    OverlayTextareaComponent,
     SchemaTabsComponent,
   ],
   templateUrl: './schemas.component.html',
@@ -86,6 +77,8 @@ export class SchemasComponent implements OnInit, OnDestroy {
   @ViewChild('newSchemaInput') newSchemaInput!: ElementRef;
 
   @ViewChild('myText') myTextInput!: ElementRef;
+
+  @ViewChild('titleInput') titleInput!: ElementRef<HTMLInputElement>;
 
   VALID_TYPES = [
     'string',
@@ -160,7 +153,7 @@ export class SchemasComponent implements OnInit, OnDestroy {
   formatTypeWithCount(type: string, count: number): string {
     return `${type} {${count}}`;
   }
-  
+
   get getApiDataService(): ApiDataService {
     return this.apiDataService;
   }
@@ -1927,6 +1920,18 @@ export class SchemasComponent implements OnInit, OnDestroy {
     );
   }
 
+  handleBookClick(eventData: { event: Event; rowData: any }): void {
+    const { event, rowData } = eventData;
+
+    this.selectedRowData = rowData;
+    this.selectedCol = this.findFieldInSchema(rowData, this.selectedSchema);
+
+    this.childComponentOverlayTextarea?.toggleOverlay(
+      event,
+      this.selectedRowData
+    );
+  }
+
   onDeleteClick(rowData: any): void {
     if (!this.selectedSchema || !rowData || !rowData.uniqueId) {
       console.warn('No schema or invalid row data provided for deletion.');
@@ -2135,6 +2140,10 @@ export class SchemasComponent implements OnInit, OnDestroy {
     return node.parent ? this.getRootNode(node.parent) : node;
   }
 
+  get fetchModelDetailsFn(): () => void {
+    return this.fetchModelDetails.bind(this);
+  }
+
   onSelectSchema(eventOrSchemaName: Event | string): void {
     let schemaName: string;
 
@@ -2172,7 +2181,6 @@ export class SchemasComponent implements OnInit, OnDestroy {
       this.selectedSchema,
       this.selectedSchemaName
     );
-    // console.log(this.schemaDetailsForm.value);
   }
 
   updateSchemaProperty(propertyKey: string, newValue: any): void {
@@ -2191,6 +2199,15 @@ export class SchemasComponent implements OnInit, OnDestroy {
 
   startEditingTitle(): void {
     this.isEditingTitle = true;
+
+    setTimeout(() => {
+      if (this.titleInput) {
+        const inputEl = this.titleInput.nativeElement;
+        inputEl.focus();
+
+        inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+      }
+    });
   }
 
   stopEditingTitle(): void {
